@@ -17,11 +17,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Maik Thalmann \email{battles.drifter-2g@icloud.com}
+\strong{Maintainer}: Maik Thalmann \email{maik.thalmann@gmail.com}
 
 Authors:
 \itemize{
-  \item Maik Thalmann \email{battles.drifter-2g@icloud.com}
+  \item Maik Thalmann \email{maik.thalmann@gmail.com}
 }
 
 }

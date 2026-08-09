@@ -2,7 +2,7 @@ Package: emptyviz
 Title: Markdown-Aware ggplot2 Theme and Plot Helpers for Frequentist and Bayesian Analyses
 Version: 0.1.0
 Authors@R:
-    person("Maik", "Thalmann", email = "battles.drifter-2g@icloud.com", role = c("aut", "cre"))
+    person("Maik", "Thalmann", email = "maik.thalmann@gmail.com", role = c("aut", "cre"))
 Description: A ggplot2 theme (theme_mt()) plus a set of composable geoms and
     plot builders used across the author's experimental projects: mean +/-
     1 SD violin/half-violin/split-violin geoms for raw observations, and
