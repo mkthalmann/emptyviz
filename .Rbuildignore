@@ -5,3 +5,9 @@
 ^\.github$
 ^\.DS_Store$
 ^LICENSE\.md$
+^data-raw$
+^doc$
+^Meta$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
