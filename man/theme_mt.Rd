@@ -53,9 +53,8 @@ plus fill defaults for \code{geom_bar()}/\code{geom_area()}/\code{geom_col()}/
 repeating \code{fill = ...} on every layer.
 }
 \details{
-Call \code{\link[=use_theme_mt]{use_theme_mt()}} to make this the session's active theme, the way
-\code{theme_set(theme_mt())} did automatically on \code{source("theme.R")} before
-this became a package - that no longer happens on \code{library(emptyviz)}.
+Call \code{\link[=use_theme_mt]{use_theme_mt()}} to make this the session's active theme -
+\code{library(emptyviz)} does not do this automatically.
 }
 \seealso{
 \code{\link[=use_theme_mt]{use_theme_mt()}}

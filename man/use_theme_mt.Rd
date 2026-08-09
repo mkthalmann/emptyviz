@@ -17,9 +17,9 @@ Calls \code{\link[ggplot2:theme_set]{ggplot2::theme_set()}} with \code{theme_mt(
 sets \code{geom_density()}'s default \code{adjust} to 5 (a heavier smoothing
 bandwidth than ggplot2's own default, matching how \code{geom_density()} is
 used throughout this package's plots). Call this once per session/script
-after \code{library(emptyviz)} - unlike the pre-package \code{theme.R}, loading the
-package no longer does this automatically, since a package silently
-mutating global \code{ggplot2} state on load is a bad default.
+after \code{library(emptyviz)} - loading the package does not do this
+automatically, since a package silently mutating global \code{ggplot2} state
+on load is a bad default.
 }
 \seealso{
 \code{\link[=theme_mt]{theme_mt()}}

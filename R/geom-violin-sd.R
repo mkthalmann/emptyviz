@@ -134,9 +134,9 @@ geom_half_violin_sd <- function(
   # `side` is passed through as-is (scalar or vector); gghalves'
   # GeomHalfViolin$setup_params() recycles it against the real, fully
   # resolved internal group order at build time. Pre-recycling it here
-  # against unique(data[[x]]) (as this used to do) goes stale the moment
-  # data isn't already sorted to match factor-level order, silently
-  # mirroring violins onto the wrong side.
+  # against unique(data[[x]]) would go stale the moment data isn't already
+  # sorted to match factor-level order, silently mirroring violins onto the
+  # wrong side.
   dots_clean <- warn_reserved_dots(list(...), "geom_half_violin_sd")
 
   fill_args <- if (!is.null(fill)) list(fill = fill) else list()

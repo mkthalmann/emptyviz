@@ -40,9 +40,8 @@ colors_many <- colorRampPalette(c(colors[1], colors[2]))
 #' `geom_ribbon()`/`geom_density()`) so plots look consistent without
 #' repeating `fill = ...` on every layer.
 #'
-#' Call [use_theme_mt()] to make this the session's active theme, the way
-#' `theme_set(theme_mt())` did automatically on `source("theme.R")` before
-#' this became a package - that no longer happens on `library(emptyviz)`.
+#' Call [use_theme_mt()] to make this the session's active theme -
+#' `library(emptyviz)` does not do this automatically.
 #'
 #' @param base_size Base font size, in points.
 #' @param base_family,plot_title_family,subtitle_family,strip_text_family,axis_title_family,axis_text_family,caption_family
@@ -261,9 +260,9 @@ theme_mt <- function(
 #' sets `geom_density()`'s default `adjust` to 5 (a heavier smoothing
 #' bandwidth than ggplot2's own default, matching how `geom_density()` is
 #' used throughout this package's plots). Call this once per session/script
-#' after `library(emptyviz)` - unlike the pre-package `theme.R`, loading the
-#' package no longer does this automatically, since a package silently
-#' mutating global `ggplot2` state on load is a bad default.
+#' after `library(emptyviz)` - loading the package does not do this
+#' automatically, since a package silently mutating global `ggplot2` state
+#' on load is a bad default.
 #'
 #' @param base_size Passed to `theme_mt()`.
 #' @return `invisible(NULL)`, called for its side effect.
