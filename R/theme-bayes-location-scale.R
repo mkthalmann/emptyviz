@@ -31,7 +31,15 @@
 #' @param category Unquoted column identifying each condition - drives color
 #'   and (together with `shape`, if given) the ellipse/point grouping.
 #' @param location,sigma Unquoted columns holding the per-draw location and
-#'   scale values.
+#'   scale values. No default - unlike [layer_halfeye_hdi()]'s `value =
+#'   .value` (a real tidybayes convention), there's no equivalent
+#'   widely-used column name for a paired location/sigma draw, so a
+#'   same-named default (`location = location`) would only "work" by
+#'   coincidence when the caller's data happens to have columns literally
+#'   called `location`/`sigma` - and crash with a cryptic R-level
+#'   "recursive default argument reference" error otherwise, since looking
+#'   up the unmatched symbol falls through to the function's own unforced
+#'   argument promise of the same name. Always pass both explicitly.
 #' @param shape Optional unquoted column for a second crossed factor (e.g.
 #'   negation) - mapped to the point glyph only (ellipses have no shape
 #'   aesthetic); grouping becomes the interaction of `category` and `shape`
@@ -71,8 +79,8 @@
 plot_location_scale <- function(
   data,
   category,
-  location = location,
-  sigma = sigma,
+  location,
+  sigma,
   shape = NULL,
   facet = NULL,
   facet_nrow = NULL,

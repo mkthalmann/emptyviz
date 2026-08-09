@@ -1,5 +1,5 @@
 test_that("plot_location_scale() builds without error and returns shaded ellipse (polygon) layers + a point layer by default", {
-  p <- plot_location_scale(location_scale_fixture, category = category)
+  p <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma)
   expect_true(inherits(p, "ggplot"))
   expect_no_error(ggplot_build(p))
   layer_geoms <- unname(sapply(p$layers, function(l) class(l$geom)[1]))
@@ -14,7 +14,7 @@ test_that("plot_location_scale() forces both axis titles to element_markdown() (
   # axis directly - both need guarding against ggplot2's theme engine
   # dropping markdown when only the base (not position-suffixed) element
   # is set explicitly.
-  p <- plot_location_scale(location_scale_fixture, category = category)
+  p <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma)
   th <- p$theme
   expect_true(inherits(th$axis.title.x, "element_markdown"))
   expect_true(inherits(th$axis.title.x.top, "element_markdown"))
@@ -23,14 +23,14 @@ test_that("plot_location_scale() forces both axis titles to element_markdown() (
 })
 
 test_that("every default ellipse layer has no outline (a literal colour = NA override, not mapped)", {
-  p <- plot_location_scale(location_scale_fixture, category = category)
+  p <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma)
   ellipse_layers <- Filter(function(l) inherits(l$geom, "GeomPolygon"), p$layers)
   expect_length(ellipse_layers, 2)
   for (l in ellipse_layers) expect_equal(l$aes_params$colour, NA)
 })
 
 test_that("default ellipse_level = c(.5, .95) draws widest-first with the narrowest level at the highest alpha", {
-  p <- plot_location_scale(location_scale_fixture, category = category)
+  p <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma)
   ellipse_layers <- Filter(function(l) inherits(l$geom, "GeomPolygon"), p$layers)
   levels <- unname(sapply(ellipse_layers, function(l) l$stat_params$level))
   alphas <- unname(sapply(ellipse_layers, function(l) l$aes_params$alpha))
@@ -39,7 +39,7 @@ test_that("default ellipse_level = c(.5, .95) draws widest-first with the narrow
 })
 
 test_that("a single ellipse_level reproduces the old one-ellipse behavior with flat alpha = .25", {
-  p <- plot_location_scale(location_scale_fixture, category = category, ellipse_level = .95)
+  p <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma, ellipse_level = .95)
   ellipse_layers <- Filter(function(l) inherits(l$geom, "GeomPolygon"), p$layers)
   expect_length(ellipse_layers, 1)
   expect_equal(ellipse_layers[[1]]$aes_params$alpha, .25)
@@ -49,7 +49,7 @@ test_that("ellipse_alpha errors on a length mismatched with the deduped ellipse_
   expect_error(
     plot_location_scale(
       location_scale_fixture,
-      category = category,
+      category = category, location = location, sigma = sigma,
       ellipse_level = c(.5, .8, .95),
       ellipse_alpha = c(.1, .2)
     ),
@@ -61,7 +61,7 @@ test_that("ellipse_alpha errors clearly on out-of-range values, naming the offen
   expect_error(
     plot_location_scale(
       location_scale_fixture,
-      category = category,
+      category = category, location = location, sigma = sigma,
       ellipse_level = .95,
       ellipse_alpha = 1.5
     ),
@@ -70,7 +70,7 @@ test_that("ellipse_alpha errors clearly on out-of-range values, naming the offen
   expect_error(
     plot_location_scale(
       location_scale_fixture,
-      category = category,
+      category = category, location = location, sigma = sigma,
       ellipse_level = c(.5, .95),
       ellipse_alpha = c(.2, -.1)
     ),
@@ -81,7 +81,7 @@ test_that("ellipse_alpha errors clearly on out-of-range values, naming the offen
 test_that("a scalar ellipse_alpha applies to every level", {
   p <- plot_location_scale(
     location_scale_fixture,
-    category = category,
+    category = category, location = location, sigma = sigma,
     ellipse_level = c(.5, .95),
     ellipse_alpha = .3
   )
@@ -91,19 +91,19 @@ test_that("a scalar ellipse_alpha applies to every level", {
 })
 
 test_that("the default xlab/ylab name every ellipse_level shown, pluralizing only when there's more than one", {
-  p_multi <- plot_location_scale(location_scale_fixture, category = category)
+  p_multi <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma)
   expect_match(p_multi$labels$x, "50%/95% credible ellipses", fixed = TRUE)
 
-  p_single <- plot_location_scale(location_scale_fixture, category = category, ellipse_level = .95)
+  p_single <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma, ellipse_level = .95)
   expect_match(p_single$labels$x, "95% credible ellipse)", fixed = TRUE)
   expect_no_match(p_single$labels$x, "ellipses")
 })
 
 test_that("`bounds` adds a sigma_max reference curve layer with the right shape", {
-  p_no_bounds <- plot_location_scale(location_scale_fixture, category = category)
+  p_no_bounds <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma)
   p_bounds <- plot_location_scale(
     location_scale_fixture,
-    category = category,
+    category = category, location = location, sigma = sigma,
     bounds = c(-2, 2)
   )
   expect_length(p_no_bounds$layers, 3)
@@ -125,7 +125,7 @@ test_that("point_data respects faceting - a category's point differs correctly a
   # same (wrong, cross-facet-averaged) point for a given category.
   p <- plot_location_scale(
     location_scale_fixture,
-    category = category,
+    category = category, location = location, sigma = sigma,
     facet = trigger,
     bounds = c(-2, 2)
   )
@@ -146,7 +146,7 @@ test_that("point_data respects faceting - a category's point differs correctly a
 test_that("`shape` maps a second factor onto the point layer and groups ellipses by the interaction", {
   d <- location_scale_fixture
   d$negation <- rep(c("with", "without"), length.out = nrow(d))
-  p <- plot_location_scale(d, category = category, shape = negation)
+  p <- plot_location_scale(d, category = category, location = location, sigma = sigma, shape = negation)
   b <- ggplot_build(p)
   # 2 categories x 2 negation levels = 4 distinct ellipse groups
   ellipse_groups <- unique(b$data[[1]]$group)
@@ -158,10 +158,10 @@ test_that("`shape` maps a second factor onto the point layer and groups ellipses
 })
 
 test_that("`ellipse_geom` switches between polygon (default) and path", {
-  p_poly <- plot_location_scale(location_scale_fixture, category = category)
+  p_poly <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma)
   p_path <- plot_location_scale(
     location_scale_fixture,
-    category = category,
+    category = category, location = location, sigma = sigma,
     ellipse_geom = "path"
   )
   expect_true(inherits(p_poly$layers[[1]]$geom, "GeomPolygon"))
@@ -175,7 +175,7 @@ test_that("location_transform/sigma_transform apply before aggregation (mean-of-
   # matches plot_ridge_hdi()'s established value_transform convention
   p <- plot_location_scale(
     location_scale_fixture,
-    category = category,
+    category = category, location = location, sigma = sigma,
     sigma_transform = exp
   )
   b <- ggplot_build(p)
@@ -192,6 +192,6 @@ test_that("location_transform/sigma_transform apply before aggregation (mean-of-
 })
 
 test_that("bounds = NULL (default) omits the sigma_max curve", {
-  p <- plot_location_scale(location_scale_fixture, category = category)
+  p <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma)
   expect_false(any(sapply(p$layers, function(l) inherits(l$geom, "GeomLine"))))
 })

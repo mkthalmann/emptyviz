@@ -17,3 +17,11 @@ scripts previously copy-pasted into each project.
 * The former `demo/demo.qmd` walkthrough is now two package vignettes,
   `vignette("geoms-and-theme")` and `vignette("bayesian-plots")`, plus a
   short README.
+* **Fixed:** `plot_location_scale()`'s `location`/`sigma` arguments no
+  longer default to same-named bare symbols (`location = location`,
+  `sigma = sigma`). That self-referential default crashed with a cryptic
+  "promise already under evaluation: recursive default argument reference"
+  error whenever the caller's data lacked columns literally named
+  `location`/`sigma` and didn't pass those arguments explicitly - which was
+  every realistic use case, since posterior draws are never naturally named
+  that way. `location`/`sigma` are now required arguments with no default.

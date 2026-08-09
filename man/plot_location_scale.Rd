@@ -7,8 +7,8 @@
 plot_location_scale(
   data,
   category,
-  location = location,
-  sigma = sigma,
+  location,
+  sigma,
   shape = NULL,
   facet = NULL,
   facet_nrow = NULL,
@@ -35,7 +35,14 @@ plot_location_scale(
 and (together with \code{shape}, if given) the ellipse/point grouping.}
 
 \item{location, sigma}{Unquoted columns holding the per-draw location and
-scale values.}
+scale values. No default - unlike \code{\link[=layer_halfeye_hdi]{layer_halfeye_hdi()}}'s \code{value = .value} (a real tidybayes convention), there's no equivalent
+widely-used column name for a paired location/sigma draw, so a
+same-named default (\code{location = location}) would only "work" by
+coincidence when the caller's data happens to have columns literally
+called \code{location}/\code{sigma} - and crash with a cryptic R-level
+"recursive default argument reference" error otherwise, since looking
+up the unmatched symbol falls through to the function's own unforced
+argument promise of the same name. Always pass both explicitly.}
 
 \item{shape}{Optional unquoted column for a second crossed factor (e.g.
 negation) - mapped to the point glyph only (ellipses have no shape
