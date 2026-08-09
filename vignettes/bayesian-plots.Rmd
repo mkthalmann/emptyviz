@@ -1,0 +1,464 @@
+---
+title: "Plotting Bayesian posteriors: halfeye, location-scale, and BF forest plots"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Plotting Bayesian posteriors: halfeye, location-scale, and BF forest plots}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 10,
+  fig.height = 6
+)
+```
+
+```{r setup, message = FALSE}
+library(emptyviz)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(forcats)
+library(patchwork)
+use_theme_mt()
+```
+
+## `plot_ridge_hdi()` / `plot_coef_grid_hdi()`
+
+Two layout wrappers around one shared layer builder, `layer_halfeye_hdi()`
+(a `ggdist::stat_slab()` + `ggdist::stat_pointinterval()` "halfeye" block:
+an HDI-shaded density plus a multi-width ETI point-interval per category).
+Both expect long-format posterior draws — one row per draw per category, as
+produced by `tidybayes::gather_emmeans_draws()` or `spread_draws()` — not
+raw observations, unlike the `_sd` violin geoms in `vignette("geoms-and-theme")`.
+
+- `plot_ridge_hdi()`: every category stacked as a row in one shared-scale
+  panel, for when the categories themselves are what's being compared.
+- `plot_coef_grid_hdi()`: each category gets its own free-scale panel in a
+  grid, for coefficient posteriors that differ wildly in natural magnitude.
+
+Synthetic data below stands in for a Bayesian distributional model's
+posterior: four scenarios crossed with a 2-level factor, faceted by a
+between-item factor, with the middle two scenarios deliberately given wider
+spread than the outer two, to illustrate a location+scale pattern.
+
+```{r ridge-data}
+set.seed(42)
+conditions <- expand_grid(
+  scenario = c("true", "false", "undefined", "critical"),
+  negation = c("without", "with"),
+  trigger = c("again", "stop")
+) |>
+  mutate(
+    mu = case_when(
+      scenario == "true" & negation == "without" ~ 1.5,
+      scenario == "false" & negation == "with" ~ 1.5,
+      scenario == "true" & negation == "with" ~ -1.5,
+      scenario == "false" & negation == "without" ~ -1.5,
+      TRUE ~ 0
+    ),
+    # undefined/critical get wider posteriors - the location+scale pattern
+    # plot_ridge_hdi() (paired with a second call on the sigma submodel) is
+    # meant to make visible
+    sigma = if_else(scenario %in% c("undefined", "critical"), .8, .3)
+  )
+
+ridge_draws <- conditions |>
+  rowwise() |>
+  mutate(draws = list(rnorm(600, mu, sigma))) |>
+  ungroup() |>
+  unnest(draws) |>
+  rename(.value = draws) |>
+  mutate(cond = paste0(scenario, "-", negation))
+```
+
+### `plot_ridge_hdi()`
+
+```{r ridge-basic, fig.height = 7}
+plot_ridge_hdi(
+  ridge_draws,
+  category = cond,
+  facet = trigger,
+  facet_nrow = 2,
+  value_limits = c(-2.05, 2.05),
+  value_breaks = c(-2, -1, 0, 1, 2)
+)
+```
+
+### `category_reorder`
+
+Default `TRUE` sorts rows by mean value (descending); `FALSE` keeps
+`category`'s existing factor-level order instead — useful when the order
+itself is meaningful (e.g. matching a fixed condition sequence elsewhere in
+a paper).
+
+```{r ridge-reorder, fig.height = 5}
+p_reorder_on <- plot_ridge_hdi(
+  ridge_draws |> filter(trigger == "again"),
+  category = cond,
+  value_limits = c(-2.05, 2.05)
+) +
+  labs(x = "Reordered (default)")
+
+p_reorder_off <- plot_ridge_hdi(
+  ridge_draws |> filter(trigger == "again"),
+  category = cond,
+  category_reorder = FALSE,
+  value_limits = c(-2.05, 2.05)
+) +
+  labs(x = "Original factor order")
+
+p_reorder_on + p_reorder_off
+```
+
+### `value_transform`
+
+For a scale (sigma) submodel typically fit on the log scale — pass
+`value_transform = exp` to back-transform before plotting, matching a
+`aes(y = exp(.value))`-style back-transformation done by hand.
+
+```{r ridge-transform, fig.height = 5}
+log_sigma_draws <- conditions |>
+  distinct(scenario, negation, trigger, sigma) |>
+  mutate(log_sigma_mean = log(sigma)) |>
+  rowwise() |>
+  mutate(draws = list(rnorm(600, log_sigma_mean, .15))) |>
+  ungroup() |>
+  unnest(draws) |>
+  rename(.value = draws) |>
+  mutate(cond = paste0(scenario, "-", negation))
+
+plot_ridge_hdi(
+  log_sigma_draws |> filter(trigger == "again"),
+  category = cond,
+  value_transform = exp,
+  ylab = "Posterior marginal SD ±HDI<sub>95</sub> ±ETI<sub>50;90;95</sub>"
+)
+```
+
+### `plot_coef_grid_hdi()`
+
+Free-scale small multiples for a set of model coefficients — deliberately
+simulated here with very different magnitudes/spreads, the case a shared
+axis would flatten.
+
+```{r coef-grid-data}
+coef_specs <- tibble::tribble(
+  ~coef, ~mu, ~sd,
+  "Intercept", 1.0, .35,
+  "Negation", -.4, .25,
+  "false", 1.3, .3,
+  "undef", .3, .5,
+  "critical", .35, .12,
+  "stop", .8, .3,
+  "Negation:false", -.9, .3,
+  "Negation:undef", .8, .55
+) |>
+  mutate(coef = fct_inorder(coef))
+
+coef_draws <- coef_specs |>
+  rowwise() |>
+  mutate(draws = list(rnorm(1200, mu, sd))) |>
+  ungroup() |>
+  unnest(draws) |>
+  rename(.value = draws)
+```
+
+```{r coef-grid-basic, fig.height = 6}
+plot_coef_grid_hdi(coef_draws, category = coef, scale = 1.4)
+```
+
+`hline` defaults to `0` (a common null-effect reference line for coefficient
+grids); pass a different value or `NULL` to move or omit it.
+
+```{r coef-grid-no-hline, fig.height = 6}
+plot_coef_grid_hdi(coef_draws, category = coef, scale = 1.4, hline = NULL)
+```
+
+## `plot_location_scale()`
+
+A joint (posterior marginal mean) x (posterior marginal standard deviation)
+plot: one point + a shaded bivariate credible ellipse per condition, plus an
+optional sigma_max ceiling-effect reference curve — `y = sqrt((x -
+lower)(upper - x))`, the maximum SD a bounded response scale permits at a
+given mean. Lets a reader check whether a condition's spread is close to or
+far from that ceiling directly, rather than computing it by hand for one
+condition at a time.
+
+No custom `Stat` here either — the bivariate region is
+`ggplot2::stat_ellipse()`, already in ggplot2 core.
+
+### Why the draws have to be paired
+
+`data` must contain the location and scale draws already **paired** - one
+row per (category[, shape], `.draw`), where the location value and the
+scale value on that row came from the *same* posterior iteration. That's
+different from independently summarizing the two submodels (e.g. taking
+`mean_hdi()` of each separately) - a genuine join is what lets the ellipse
+reflect their *joint* uncertainty (including any correlation between a
+condition's location and scale draws) rather than two unrelated marginal
+intervals mashed into a fake cross.
+
+In a real analysis, this means calling `tidybayes::gather_emmeans_draws()`
+twice - once on the location submodel, once with `dpar = "sigma"` - and
+joining the results on `.draw` (plus whatever grouping columns identify a
+condition):
+
+```{r location-scale-real-analysis, eval = FALSE}
+library(brms)
+library(emmeans)
+library(tidybayes)
+
+mod <- brm(
+  bf(rating ~ condition, sigma ~ condition),
+  family = gaussian(),
+  data = my_data
+)
+
+# one row per (condition, .draw)
+loc_draws <- mod |>
+  emmeans(~condition) |>
+  gather_emmeans_draws()
+
+# dpar = "sigma" pulls the scale submodel instead - fit (and so returned)
+# on the log scale, hence sigma_transform = exp below
+sig_draws <- mod |>
+  emmeans(~condition, dpar = "sigma") |>
+  gather_emmeans_draws()
+
+# the join is what pairs each location draw with the scale draw from the
+# *same* posterior iteration, rather than treating them as independent
+paired_draws <- inner_join(
+  loc_draws, sig_draws,
+  by = c("condition", ".draw"),
+  suffix = c("_location", "_sigma")
+)
+
+plot_location_scale(
+  paired_draws,
+  category = condition,
+  location = .value_location,
+  sigma = .value_sigma,
+  sigma_transform = exp,
+  bounds = c(1, 7) # e.g. a 1-7 Likert-type response scale
+)
+```
+
+The synthetic draws below stand in for `paired_draws` above - already
+paired by construction, since each row is built directly from one `mu`/`sig`
+pair per condition, so no join is needed here.
+
+```{r location-scale-data}
+set.seed(42)
+loc_scale_specs <- expand_grid(
+  scenario = c("true", "false", "undefined", "critical"),
+  negation = c("without", "with"),
+  trigger = c("again", "stop")
+) |>
+  mutate(
+    mu_base = case_when(
+      scenario == "true" & negation == "without" ~ 1.5,
+      scenario == "false" & negation == "with" ~ 1.5,
+      scenario == "true" & negation == "with" ~ -1.5,
+      scenario == "false" & negation == "without" ~ -1.5,
+      TRUE ~ 0
+    ),
+    # `trigger` plus a bit of per-condition jitter nudges each condition off
+    # its "pure" mu_base - a real dataset practically never has, e.g.,
+    # `undefined`/`critical` land on the exact same mean, so a demo where
+    # every condition sat exactly on mu_base (and every facet was a near-
+    # identical copy of the other) undersold what this plot actually looks
+    # like on real data.
+    mu = mu_base +
+      if_else(trigger == "again", -0.2, 0.3) +
+      rnorm(n(), 0, .25),
+    # same location+scale pattern as the plot_ridge_hdi() demo above -
+    # undefined/critical get wider posteriors than true/false - plus the
+    # same idea as `mu`: trigger and per-condition noise vary the *width*
+    # too, so conditions don't all carry an identical, interchangeable
+    # uncertainty band.
+    sig_base = if_else(scenario %in% c("undefined", "critical"), .8, .3),
+    sig = pmax(
+      .12,
+      sig_base +
+        if_else(negation == "with", .12, -.05) +
+        if_else(trigger == "stop", .08, -.04) +
+        rnorm(n(), 0, .12)
+    ),
+    # the ellipses' own size varies by condition too - not just their
+    # center - via the per-row SDs the draws below are sampled from.
+    loc_draw_sd = pmax(
+      .06,
+      if_else(scenario %in% c("undefined", "critical"), .22, .13) + rnorm(n(), 0, .04)
+    ),
+    sig_draw_sd = pmax(
+      .03,
+      if_else(scenario %in% c("undefined", "critical"), .11, .06) + rnorm(n(), 0, .02)
+    )
+  )
+
+loc_scale_draws <- loc_scale_specs |>
+  rowwise() |>
+  mutate(draws = list(data.frame(
+    .draw = 1:500,
+    location = rnorm(500, mu, loc_draw_sd),
+    sigma = rnorm(500, sig, sig_draw_sd)
+  ))) |>
+  ungroup() |>
+  select(scenario, negation, trigger, draws) |>
+  unnest(draws)
+```
+
+`ellipse_level` defaults to `c(.5, .95)` - a narrow "core" credible ellipse
+nested inside a wider outer one, told apart by alpha alone (darker/more
+opaque core, fainter outer band), the same multi-width idea
+`layer_halfeye_hdi()` uses for its point-intervals. Pass a single level
+(e.g. `ellipse_level = .95`) to go back to one ellipse per condition.
+
+```{r location-scale-basic, fig.height = 6}
+plot_location_scale(
+  loc_scale_draws,
+  category = scenario,
+  shape = negation,
+  facet = trigger,
+  bounds = c(-2, 2)
+)
+```
+
+`true`/`false` sit tucked well inside their own (narrow) local ceiling near
+the scale's edges, and `undefined`/`critical` sit well inside their own
+(much higher) local ceiling near the scale's midpoint.
+
+## `plot_bf_forest()` / `prepare_bf_contrasts()` / `layer_bf_evidence_scale()`
+
+A log Bayes Factor forest plot: one row per contrast, point &plusmn;
+optional SE, colored by sign, with a shaded "weak evidence" region
+(`layer_bf_evidence_scale()`, bundled in by default) at the Jeffreys/Lee
+`&plusmn;log(3)` "weak/anecdotal evidence" convention. `layer_bf_evidence_scale()`
+itself is composable (like `layer_halfeye_hdi()`) - usable on its own on any
+plot with a log-BF-valued axis, in either orientation.
+
+### `pairs`: selecting contrasts without hand-parsing strings
+
+`bayestestR::bayesfactor_rope()` computes *every* pairwise contrast in a
+reference grid and names each one with an auto-generated `"<left> - <right>"`
+string. Picking out just the pairs you actually want to show, and giving
+them clean labels, is exactly what's error-prone about doing this by hand
+(position-counting words out of the string, then a long hardcoded
+`filter(left == "x" & right == "y" | ...)` chain). `plot_bf_forest()`'s
+`pairs` argument takes that off your plate: give it a plain list of
+`c(left, right)` pairs, in your own words, and it filters + labels +
+reorders for you - and errors, naming the exact pair, if one isn't found,
+instead of the filter silently matching nothing. You don't need to know
+which order `bayesfactor_rope()`'s reference grid happened to enumerate a
+given pair in either - a pair matched in the opposite order gets relabeled
+*and* sign-flipped to the order you asked for, automatically.
+
+```{r bf-forest-data}
+# stands in for `bayestestR::bayesfactor_rope(pairs(ref_grid), ...)`
+# coerced to a data frame - note there's no SE column at all here, which is
+# the normal case for this kind of Bayes Factor (unlike a repeated
+# bridge-sampling estimate) and needs nothing special to work.
+bf_raw <- data.frame(
+  contrast = c(
+    "true with - true without NA",
+    "false with - false without NA",
+    "false with - critical with NA",
+    "false without - critical without NA",
+    "critical with - critical without NA",
+    "undef with - undef without NA",
+    "true with - false with NA" # not requested below - stays excluded
+  ),
+  log_BF = c(8.2, 7.9, 5.3, 4.8, 1.1, -0.4, 0.9)
+)
+
+bf_pairs <- list(
+  c("true with", "true without"),
+  c("false with", "false without"),
+  c("false with", "critical with"),
+  c("false without", "critical without"),
+  c("critical with", "critical without"),
+  c("undef with", "undef without")
+)
+```
+
+```{r bf-forest-basic, fig.height = 5}
+plot_bf_forest(bf_raw, contrast = contrast, log_bf = log_BF, pairs = bf_pairs)
+```
+
+The trailing `" NA"` (emmeans' placeholder for a reference-grid variable
+marginalized out via e.g. `at = list(trigger = NA)`) is stripped
+automatically; see `prepare_bf_contrasts()` - the function `plot_bf_forest()`
+calls internally - if you want to inspect the split-and-labeled table
+directly, or reuse it outside a plot.
+
+If your data already has one clean, pre-labeled row per contrast (no
+`bayestestR`-style string to split), just omit `pairs` and pass that column
+straight to `contrast` - unchanged from before `pairs` existed.
+
+### `direction_labels`
+
+Naming what a positive/negative log-BF supports turns the plot into a
+self-contained legend for the sign convention, instead of requiring the
+reader to already know which direction means what. The arrows and labels
+sit right at the top edge of the panel, out of the way of the data, adding
+essentially no extra space to the figure.
+
+```{r bf-forest-arrows, fig.height = 5}
+plot_bf_forest(
+  bf_raw,
+  contrast = contrast,
+  log_bf = log_BF,
+  pairs = bf_pairs,
+  direction_labels = c("supports difference", "supports equivalence")
+)
+```
+
+### `secondary_axis`
+
+A dual log/linear Bayes Factor axis - opt-in, since a log-only axis is
+perfectly fine on its own.
+
+```{r bf-forest-secaxis, fig.height = 5}
+plot_bf_forest(
+  bf_raw,
+  contrast = contrast,
+  log_bf = log_BF,
+  pairs = bf_pairs,
+  direction_labels = c("supports difference", "supports equivalence"),
+  secondary_axis = TRUE
+)
+```
+
+### `layer_bf_evidence_scale(orientation = "y")`
+
+The same annotation bundle on a continuous-x sweep (e.g. log-BF as a
+function of a prior's width), with log-BF on the *y*-axis instead - the
+rect, arrows, and labels all rotate to hug the right edge of the panel
+instead of the top.
+
+```{r bf-evidence-scale-y, fig.height = 5}
+sweep_data <- data.frame(
+  prior_sd = seq(0.1, 1.5, by = 0.2),
+  log_bf = c(6.2, 5.1, 3.8, 2.5, 1.4, 0.3, -0.6, -1.5)
+)
+
+ggplot(sweep_data, aes(x = prior_sd, y = log_bf)) +
+  layer_bf_evidence_scale(
+    orientation = "y",
+    range = c(-3, 8),
+    direction_labels = c("supports difference", "supports equivalence")
+  ) +
+  geom_line(color = colors[1]) +
+  geom_point(color = colors[1], size = 3) +
+  labs(x = "Prior standard deviation", y = "log Bayes factor") +
+  # unlike orientation = "x"'s top edge, the default right-side expansion
+  # isn't quite wide enough for orientation = "y"'s rotated label + arrow -
+  # this is the caller's own coord/margin choice, not something
+  # layer_bf_evidence_scale() should impose on every plot itself.
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(5.5, 55, 5.5, 5.5, "pt"))
+```

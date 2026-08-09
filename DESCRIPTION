@@ -1,0 +1,48 @@
+Package: emptyviz
+Title: Markdown-Aware ggplot2 Theme and Plot Helpers for Frequentist and Bayesian Analyses
+Version: 0.1.0
+Authors@R:
+    person("Maik", "Thalmann", email = "battles.drifter-2g@icloud.com", role = c("aut", "cre"))
+Description: A ggplot2 theme (theme_mt()) plus a set of composable geoms and
+    plot builders used across the author's experimental projects: mean +/-
+    1 SD violin/half-violin/split-violin geoms for raw observations, and
+    ggdist-based halfeye/ridge/coefficient-grid, location-scale, and log
+    Bayes Factor forest plot builders for posterior draws from Bayesian
+    models (typically fit with 'brms'). Not intended for general audiences;
+    published to make the analyses that depend on it reproducible.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.1)
+Imports:
+    dplyr,
+    forcats,
+    gghalves,
+    ggarrow,
+    ggdist,
+    ggplot2 (>= 4.0.0),
+    ggtext,
+    grDevices,
+    grid,
+    rlang,
+    scales,
+    stats,
+    utils
+Suggests:
+    bayestestR,
+    brms,
+    emmeans,
+    knitr,
+    patchwork,
+    purrr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    tibble,
+    tidybayes,
+    tidyr
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+URL: https://github.com/mkthalmann/emptyviz
+BugReports: https://github.com/mkthalmann/emptyviz/issues
+Config/roxygen2/version: 8.1.0
