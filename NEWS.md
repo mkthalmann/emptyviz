@@ -17,6 +17,10 @@ scripts previously copy-pasted into each project.
 * The former `demo/demo.qmd` walkthrough is now two package vignettes,
   `vignette("geoms-and-theme")` and `vignette("bayesian-plots")`, plus a
   short README.
+* Both vignettes now use real data (`believe_projection` and the
+  `believe_projection_draws`/`believe_projection_coef_draws`/
+  `believe_projection_bf` posterior summaries) from Thalmann & Matticchio
+  (2024) instead of fabricated examples; see `?believe_projection`.
 * **Fixed:** `plot_location_scale()`'s `location`/`sigma` arguments no
   longer default to same-named bare symbols (`location = location`,
   `sigma = sigma`). That self-referential default crashed with a cryptic

@@ -26,6 +26,41 @@ library(patchwork)
 use_theme_mt()
 ```
 
+## The model behind `believe_projection_draws`
+
+This vignette's data comes from the distributional `brms` model
+Thalmann/Matticchio fit to `believe_projection`
+(see `vignette("geoms-and-theme")` for the same data's raw-observation
+plots). Both the judgment mean *and* its spread are modeled as a function of
+condition — the kind of model this package's Bayesian plot builders exist
+for:
+
+```{r real-model, eval = FALSE}
+# not run here - 8 chains x 10,000 iterations is well beyond what a vignette
+# should fit live. The draws used below were extracted from this exact
+# cached model by data-raw/believe-projection-posteriors.R; see
+# ?believe_projection_draws et al. for how.
+mod <- brm(
+  bf(
+    judgment ~ negation * scenario * trigger +
+      (1 + scenario * negation * trigger | id) +
+      (1 + scenario * negation | item),
+    sigma ~ negation * scenario + trigger
+  ),
+  data = d, # the cleaned believe_projection from vignette("geoms-and-theme")
+  family = gaussian(),
+  prior = c(
+    prior(normal(0, .5), class = Intercept, lb = -2, ub = 2),
+    prior(normal(0, .5), class = Intercept, dpar = sigma),
+    prior(normal(0, 1), class = b, lb = -3, ub = 3),
+    prior(normal(0, .25), class = b, dpar = sigma),
+    prior(normal(0, .5), class = sd)
+  ),
+  iter = 10000,
+  chains = 8
+)
+```
+
 ## `plot_ridge_hdi()` / `plot_coef_grid_hdi()`
 
 Two layout wrappers around one shared layer builder, `layer_halfeye_hdi()`
@@ -40,38 +75,14 @@ raw observations, unlike the `_sd` violin geoms in `vignette("geoms-and-theme")`
 - `plot_coef_grid_hdi()`: each category gets its own free-scale panel in a
   grid, for coefficient posteriors that differ wildly in natural magnitude.
 
-Synthetic data below stands in for a Bayesian distributional model's
-posterior: four scenarios crossed with a 2-level factor, faceted by a
-between-item factor, with the middle two scenarios deliberately given wider
-spread than the outer two, to illustrate a location+scale pattern.
+`believe_projection_draws` (see `?believe_projection_draws`) holds exactly
+this shape already: long-format marginal posterior draws for
+`scenario`\*`negation`\*`trigger`, for both the `mu` (judgment) and `sigma`
+(spread) submodels, extracted via `emmeans() |> gather_emmeans_draws()`.
 
 ```{r ridge-data}
-set.seed(42)
-conditions <- expand_grid(
-  scenario = c("true", "false", "undefined", "critical"),
-  negation = c("without", "with"),
-  trigger = c("again", "stop")
-) |>
-  mutate(
-    mu = case_when(
-      scenario == "true" & negation == "without" ~ 1.5,
-      scenario == "false" & negation == "with" ~ 1.5,
-      scenario == "true" & negation == "with" ~ -1.5,
-      scenario == "false" & negation == "without" ~ -1.5,
-      TRUE ~ 0
-    ),
-    # undefined/critical get wider posteriors - the location+scale pattern
-    # plot_ridge_hdi() (paired with a second call on the sigma submodel) is
-    # meant to make visible
-    sigma = if_else(scenario %in% c("undefined", "critical"), .8, .3)
-  )
-
-ridge_draws <- conditions |>
-  rowwise() |>
-  mutate(draws = list(rnorm(600, mu, sigma))) |>
-  ungroup() |>
-  unnest(draws) |>
-  rename(.value = draws) |>
+ridge_draws <- believe_projection_draws |>
+  filter(dpar == "mu") |>
   mutate(cond = paste0(scenario, "-", negation))
 ```
 
@@ -83,7 +94,7 @@ plot_ridge_hdi(
   category = cond,
   facet = trigger,
   facet_nrow = 2,
-  value_limits = c(-2.05, 2.05),
+  value_limits = c(-2.3, 2.3),
   value_breaks = c(-2, -1, 0, 1, 2)
 )
 ```
@@ -97,17 +108,17 @@ a paper).
 
 ```{r ridge-reorder, fig.height = 5}
 p_reorder_on <- plot_ridge_hdi(
-  ridge_draws |> filter(trigger == "again"),
+  ridge_draws |> filter(trigger == "*again*"),
   category = cond,
-  value_limits = c(-2.05, 2.05)
+  value_limits = c(-2.3, 2.3)
 ) +
   labs(x = "Reordered (default)")
 
 p_reorder_off <- plot_ridge_hdi(
-  ridge_draws |> filter(trigger == "again"),
+  ridge_draws |> filter(trigger == "*again*"),
   category = cond,
   category_reorder = FALSE,
-  value_limits = c(-2.05, 2.05)
+  value_limits = c(-2.3, 2.3)
 ) +
   labs(x = "Original factor order")
 
@@ -116,23 +127,18 @@ p_reorder_on + p_reorder_off
 
 ### `value_transform`
 
-For a scale (sigma) submodel typically fit on the log scale — pass
-`value_transform = exp` to back-transform before plotting, matching a
-`aes(y = exp(.value))`-style back-transformation done by hand.
+The `sigma` submodel is fit on the log scale — pass `value_transform = exp`
+to back-transform before plotting, matching an `aes(y = exp(.value))`-style
+back-transformation done by hand. `believe_projection_draws`' `dpar ==
+"sigma"` rows are exactly that submodel's marginal draws.
 
 ```{r ridge-transform, fig.height = 5}
-log_sigma_draws <- conditions |>
-  distinct(scenario, negation, trigger, sigma) |>
-  mutate(log_sigma_mean = log(sigma)) |>
-  rowwise() |>
-  mutate(draws = list(rnorm(600, log_sigma_mean, .15))) |>
-  ungroup() |>
-  unnest(draws) |>
-  rename(.value = draws) |>
+sigma_draws <- believe_projection_draws |>
+  filter(dpar == "sigma") |>
   mutate(cond = paste0(scenario, "-", negation))
 
 plot_ridge_hdi(
-  log_sigma_draws |> filter(trigger == "again"),
+  sigma_draws |> filter(trigger == "*again*"),
   category = cond,
   value_transform = exp,
   ylab = "Posterior marginal SD ±HDI<sub>95</sub> ±ETI<sub>50;90;95</sub>"
@@ -141,41 +147,33 @@ plot_ridge_hdi(
 
 ### `plot_coef_grid_hdi()`
 
-Free-scale small multiples for a set of model coefficients — deliberately
-simulated here with very different magnitudes/spreads, the case a shared
-axis would flatten.
+Free-scale small multiples for a set of model coefficients — the real
+sum-coded fixed effects from both submodels (`believe_projection_coef_draws`,
+see `?believe_projection_coef_draws`) differ wildly enough in natural
+magnitude that a shared axis would flatten the small ones, exactly the case
+this layout is for.
 
 ```{r coef-grid-data}
-coef_specs <- tibble::tribble(
-  ~coef, ~mu, ~sd,
-  "Intercept", 1.0, .35,
-  "Negation", -.4, .25,
-  "false", 1.3, .3,
-  "undef", .3, .5,
-  "critical", .35, .12,
-  "stop", .8, .3,
-  "Negation:false", -.9, .3,
-  "Negation:undef", .8, .55
-) |>
-  mutate(coef = fct_inorder(coef))
-
-coef_draws <- coef_specs |>
-  rowwise() |>
-  mutate(draws = list(rnorm(1200, mu, sd))) |>
-  ungroup() |>
-  unnest(draws) |>
-  rename(.value = draws)
+mu_coef_draws <- believe_projection_coef_draws |> filter(dpar == "mu")
+sigma_coef_draws <- believe_projection_coef_draws |> filter(dpar == "sigma")
 ```
 
-```{r coef-grid-basic, fig.height = 6}
-plot_coef_grid_hdi(coef_draws, category = coef, scale = 1.4)
+```{r coef-grid-basic, fig.height = 8}
+plot_coef_grid_hdi(mu_coef_draws, category = coef, scale = 1.4)
+```
+
+The `sigma` submodel's coefficients (fewer terms - no three-way interaction
+in `sigma ~ negation*scenario + trigger`):
+
+```{r coef-grid-sigma, fig.height = 5}
+plot_coef_grid_hdi(sigma_coef_draws, category = coef, scale = 1.4, ncol = 3)
 ```
 
 `hline` defaults to `0` (a common null-effect reference line for coefficient
 grids); pass a different value or `NULL` to move or omit it.
 
 ```{r coef-grid-no-hline, fig.height = 6}
-plot_coef_grid_hdi(coef_draws, category = coef, scale = 1.4, hline = NULL)
+plot_coef_grid_hdi(mu_coef_draws, category = coef, scale = 1.4, hline = NULL)
 ```
 
 ## `plot_location_scale()`
@@ -247,69 +245,18 @@ plot_location_scale(
 )
 ```
 
-The synthetic draws below stand in for `paired_draws` above - already
-paired by construction, since each row is built directly from one `mu`/`sig`
-pair per condition, so no join is needed here.
+`believe_projection_draws` already has both submodels' draws stacked long
+(a `dpar` column instead of two separate objects) - pivoting `dpar` wide
+recovers exactly the `paired_draws` shape above. This only works because
+`data-raw/believe-projection-posteriors.R` thinned `mu`/`sigma` down to the
+*same* shared set of `.draw` indices rather than independently subsampling
+each - the pairing `plot_location_scale()` depends on is a property of
+which MCMC iteration a draw came from, so keeping mismatched indices per
+submodel would silently produce a fake, unpaired cross.
 
 ```{r location-scale-data}
-set.seed(42)
-loc_scale_specs <- expand_grid(
-  scenario = c("true", "false", "undefined", "critical"),
-  negation = c("without", "with"),
-  trigger = c("again", "stop")
-) |>
-  mutate(
-    mu_base = case_when(
-      scenario == "true" & negation == "without" ~ 1.5,
-      scenario == "false" & negation == "with" ~ 1.5,
-      scenario == "true" & negation == "with" ~ -1.5,
-      scenario == "false" & negation == "without" ~ -1.5,
-      TRUE ~ 0
-    ),
-    # `trigger` plus a bit of per-condition jitter nudges each condition off
-    # its "pure" mu_base - a real dataset practically never has, e.g.,
-    # `undefined`/`critical` land on the exact same mean, so a demo where
-    # every condition sat exactly on mu_base (and every facet was a near-
-    # identical copy of the other) undersold what this plot actually looks
-    # like on real data.
-    mu = mu_base +
-      if_else(trigger == "again", -0.2, 0.3) +
-      rnorm(n(), 0, .25),
-    # same location+scale pattern as the plot_ridge_hdi() demo above -
-    # undefined/critical get wider posteriors than true/false - plus the
-    # same idea as `mu`: trigger and per-condition noise vary the *width*
-    # too, so conditions don't all carry an identical, interchangeable
-    # uncertainty band.
-    sig_base = if_else(scenario %in% c("undefined", "critical"), .8, .3),
-    sig = pmax(
-      .12,
-      sig_base +
-        if_else(negation == "with", .12, -.05) +
-        if_else(trigger == "stop", .08, -.04) +
-        rnorm(n(), 0, .12)
-    ),
-    # the ellipses' own size varies by condition too - not just their
-    # center - via the per-row SDs the draws below are sampled from.
-    loc_draw_sd = pmax(
-      .06,
-      if_else(scenario %in% c("undefined", "critical"), .22, .13) + rnorm(n(), 0, .04)
-    ),
-    sig_draw_sd = pmax(
-      .03,
-      if_else(scenario %in% c("undefined", "critical"), .11, .06) + rnorm(n(), 0, .02)
-    )
-  )
-
-loc_scale_draws <- loc_scale_specs |>
-  rowwise() |>
-  mutate(draws = list(data.frame(
-    .draw = 1:500,
-    location = rnorm(500, mu, loc_draw_sd),
-    sigma = rnorm(500, sig, sig_draw_sd)
-  ))) |>
-  ungroup() |>
-  select(scenario, negation, trigger, draws) |>
-  unnest(draws)
+loc_scale_draws <- believe_projection_draws |>
+  pivot_wider(names_from = dpar, values_from = .value)
 ```
 
 `ellipse_level` defaults to `c(.5, .95)` - a narrow "core" credible ellipse
@@ -322,15 +269,13 @@ opaque core, fainter outer band), the same multi-width idea
 plot_location_scale(
   loc_scale_draws,
   category = scenario,
+  location = mu,
+  sigma = sigma,
   shape = negation,
   facet = trigger,
   bounds = c(-2, 2)
 )
 ```
-
-`true`/`false` sit tucked well inside their own (narrow) local ceiling near
-the scale's edges, and `undefined`/`critical` sit well inside their own
-(much higher) local ceiling near the scale's midpoint.
 
 ## `plot_bf_forest()` / `prepare_bf_contrasts()` / `layer_bf_evidence_scale()`
 
@@ -357,36 +302,33 @@ which order `bayesfactor_rope()`'s reference grid happened to enumerate a
 given pair in either - a pair matched in the opposite order gets relabeled
 *and* sign-flipped to the order you asked for, automatically.
 
+`believe_projection_bf` (see `?believe_projection_bf`) is real
+`bayestestR::bayesfactor_rope()` output — one row per pairwise contrast
+among the 8 `scenario`\*`negation` cells (`trigger` marginalized out, hence
+each raw `contrast` string's trailing `" NA"`), for both submodels. There's
+no SE column at all, which is the normal case for this kind of Bayes Factor
+(unlike a repeated bridge-sampling estimate) and needs nothing special to
+work. `bf_pairs` below picks out the 9 contrasts of interest among the 8
+cells' pairwise combinations, as plain `c(left, right)` pairs.
+
 ```{r bf-forest-data}
-# stands in for `bayestestR::bayesfactor_rope(pairs(ref_grid), ...)`
-# coerced to a data frame - note there's no SE column at all here, which is
-# the normal case for this kind of Bayes Factor (unlike a repeated
-# bridge-sampling estimate) and needs nothing special to work.
-bf_raw <- data.frame(
-  contrast = c(
-    "true with - true without NA",
-    "false with - false without NA",
-    "false with - critical with NA",
-    "false without - critical without NA",
-    "critical with - critical without NA",
-    "undef with - undef without NA",
-    "true with - false with NA" # not requested below - stays excluded
-  ),
-  log_BF = c(8.2, 7.9, 5.3, 4.8, 1.1, -0.4, 0.9)
-)
+mu_bf <- believe_projection_bf |> filter(dpar == "mu")
 
 bf_pairs <- list(
-  c("true with", "true without"),
-  c("false with", "false without"),
-  c("false with", "critical with"),
-  c("false without", "critical without"),
-  c("critical with", "critical without"),
-  c("undef with", "undef without")
+  c("with undef", "without undef"),
+  c("with undef", "with critical"),
+  c("with true", "without true"),
+  c("with false", "without false"),
+  c("with critical", "without critical"),
+  c("with false", "with critical"),
+  c("without false", "without critical"),
+  c("without true", "with false"),
+  c("with true", "without false")
 )
 ```
 
-```{r bf-forest-basic, fig.height = 5}
-plot_bf_forest(bf_raw, contrast = contrast, log_bf = log_BF, pairs = bf_pairs)
+```{r bf-forest-basic, fig.height = 6}
+plot_bf_forest(mu_bf, contrast = contrast, log_bf = log_BF, pairs = bf_pairs)
 ```
 
 The trailing `" NA"` (emmeans' placeholder for a reference-grid variable
@@ -397,7 +339,7 @@ directly, or reuse it outside a plot.
 
 If your data already has one clean, pre-labeled row per contrast (no
 `bayestestR`-style string to split), just omit `pairs` and pass that column
-straight to `contrast` - unchanged from before `pairs` existed.
+straight to `contrast`.
 
 ### `direction_labels`
 
@@ -407,9 +349,9 @@ reader to already know which direction means what. The arrows and labels
 sit right at the top edge of the panel, out of the way of the data, adding
 essentially no extra space to the figure.
 
-```{r bf-forest-arrows, fig.height = 5}
+```{r bf-forest-arrows, fig.height = 6}
 plot_bf_forest(
-  bf_raw,
+  mu_bf,
   contrast = contrast,
   log_bf = log_BF,
   pairs = bf_pairs,
@@ -422,9 +364,9 @@ plot_bf_forest(
 A dual log/linear Bayes Factor axis - opt-in, since a log-only axis is
 perfectly fine on its own.
 
-```{r bf-forest-secaxis, fig.height = 5}
+```{r bf-forest-secaxis, fig.height = 6}
 plot_bf_forest(
-  bf_raw,
+  mu_bf,
   contrast = contrast,
   log_bf = log_BF,
   pairs = bf_pairs,

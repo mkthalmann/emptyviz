@@ -16,12 +16,46 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, message = FALSE}
 library(emptyviz)
 library(ggplot2)
+library(dplyr)
+library(forcats)
 library(gghalves)
 library(patchwork)
 use_theme_mt()
+```
+
+## `believe_projection`
+
+The demos below use `believe_projection`, truth-value judgment data from
+Thalmann & Matticchio (2024) — a sentence-picture verification task testing
+whether presuppositions triggered by *again*/*stop* under a negated belief
+predicate ("Peter isn't certain that Sonja stopped smoking") project
+universally or only relative to the attitude holder. `?believe_projection`
+has the full column reference; see `vignette("bayesian-plots")` for the
+actual distributional model fit to this data.
+
+`sub_exp == "1"` restricts to the main judgment task (dropping training and
+a separate world-knowledge norming block); the same three recodes
+`believe-projection/scripts/belproj-paper.R` applies before modeling —
+rescaling the 0-100 slider to a signed -2/+2 scale, expanding the
+abbreviated `"undef"` scenario label, and markdown-italicizing `trigger` so
+it renders nicely via `theme_mt()`'s markdown-aware axis text — are exactly
+what's reused below and, later, in `vignette("bayesian-plots")`.
+
+```{r believe-projection-clean}
+d <- believe_projection |>
+  filter(sub_exp == "1") |>
+  mutate(
+    judgment = (judgment - 50) / 25,
+    scenario = gsub("undef", "undefined", scenario),
+    scenario = factor(scenario, levels = c("true", "false", "undefined", "critical")),
+    negation = factor(negation, levels = c("pos", "neg")),
+    negation = fct_recode(negation, without = "pos", with = "neg"),
+    trigger = paste0("*", trigger, "*"),
+    trigger = factor(trigger, levels = c("*again*", "*stop*"))
+  )
 ```
 
 ## `theme_mt()`
@@ -82,13 +116,13 @@ p_theme_gray + p_theme_minimal + p_theme_mt
 Compound layers built on `geom_violin()`/`gghalves::geom_half_violin()`: a
 low-alpha "aura" (full density) plus a solid mean &plusmn; 1 SD band on top.
 
+Real truth-value judgments by `scenario` (collapsed across `negation`/
+`trigger`) — floor/ceiling-heavy and asymmetric in a way `rnorm()` samples
+never quite are, which is exactly the case the "aura + SD-band" split is
+meant to make legible.
+
 ```{r violin-sd-comparison, fig.height = 8}
-set.seed(42)
-demo_data <- rbind(
-  data.frame(group = "A", value = rnorm(80, mean = 0, sd = 1)),
-  data.frame(group = "B", value = c(rnorm(70, mean = 1.5, sd = 0.6), rnorm(10, mean = 5, sd = 0.4))), # bimodal-ish, with an outlier cluster
-  data.frame(group = "C", value = rnorm(80, mean = -0.5, sd = 1.8))
-)
+demo_data <- d |> transmute(group = scenario, value = judgment)
 
 violin_plain <- ggplot(demo_data, aes(x = group, y = value, fill = group)) +
   geom_violin(trim = FALSE) +
@@ -140,61 +174,19 @@ style_both + style_fill + style_outline
 ## `geom_split_violin_sd()`
 
 Two `geom_half_violin_sd()` halves back-to-back, one per level of `split` —
-no manual filtering or `side = "l"`/`"r"` calls needed. Synthetic data:
-acceptability ratings by wh-extraction distance, split by grammaticality.
+no manual filtering or `side = "l"`/`"r"` calls needed.
 
 ```{r split-violin-data}
-make_ratings <- function(n, mean, sd) pmin(7, pmax(1, rnorm(n, mean, sd)))
-
-set.seed(42)
-balanced_data <- rbind(
-  data.frame(distance = "Local", grammaticality = "grammatical", rating = make_ratings(45, 6.2, 0.8)),
-  data.frame(distance = "Local", grammaticality = "ungrammatical", rating = make_ratings(45, 5.8, 0.9)),
-  data.frame(distance = "Long-Distance", grammaticality = "grammatical", rating = make_ratings(45, 5.5, 1.0)),
-  data.frame(distance = "Long-Distance", grammaticality = "ungrammatical", rating = make_ratings(45, 3.0, 1.1)),
-  data.frame(distance = "Island", grammaticality = "grammatical", rating = make_ratings(45, 5.0, 1.0)),
-  data.frame(distance = "Island", grammaticality = "ungrammatical", rating = make_ratings(45, 1.8, 0.9))
-)
-balanced_data$distance <- factor(
-  balanced_data$distance,
-  levels = c("Local", "Long-Distance", "Island")
-)
-
-# grammatical trial counts decline with distance (a plausible exclusion
-# pattern - longer/harder items lose more trials to comprehension-check
-# failures), while ungrammatical stays fixed. geom_split_violin_sd()'s two
-# sides are separate Stat computations, so `scale` only normalizes a side's
-# own x-levels against each other - NOT one side against the other. This
-# data is built to show that (within-side, across x) effect honestly, not
-# a cross-side one.
-unbalanced_data <- rbind(
-  data.frame(distance = "Local", grammaticality = "grammatical", rating = make_ratings(90, 6.2, 0.8)),
-  data.frame(distance = "Local", grammaticality = "ungrammatical", rating = make_ratings(20, 5.8, 0.9)),
-  data.frame(distance = "Long-Distance", grammaticality = "grammatical", rating = make_ratings(55, 5.5, 1.0)),
-  data.frame(distance = "Long-Distance", grammaticality = "ungrammatical", rating = make_ratings(20, 3.0, 1.1)),
-  data.frame(distance = "Island", grammaticality = "grammatical", rating = make_ratings(25, 5.0, 1.0)),
-  data.frame(distance = "Island", grammaticality = "ungrammatical", rating = make_ratings(20, 1.8, 0.9))
-)
-unbalanced_data$distance <- factor(
-  unbalanced_data$distance,
-  levels = c("Local", "Long-Distance", "Island")
-)
-
-# Island ungrammatical trials dropped entirely - e.g. excluded post-hoc for
-# a norming problem.
-missing_data <- balanced_data[
-  !(balanced_data$distance == "Island" & balanced_data$grammaticality == "ungrammatical"),
-]
-
-split_mapping <- aes(x = distance, y = rating)
+balanced_data <- d |> filter(trigger == "*again*")
+split_mapping <- aes(x = scenario, y = judgment)
 ```
 
 ### Balanced
 
 ```{r split-violin-balanced, fig.height = 5}
 ggplot(balanced_data, split_mapping) +
-  geom_split_violin_sd(split_mapping, data = balanced_data, split = grammaticality) +
-  labs(x = NULL, y = "Acceptability (1-7)")
+  geom_split_violin_sd(split_mapping, data = balanced_data, split = negation) +
+  labs(x = NULL, y = "Judgment (rescaled -2/+2)")
 ```
 
 ### `flip = TRUE`
@@ -203,36 +195,55 @@ Same data, sides swapped.
 
 ```{r split-violin-flip, fig.height = 5}
 ggplot(balanced_data, split_mapping) +
-  geom_split_violin_sd(split_mapping, data = balanced_data, split = grammaticality, flip = TRUE) +
-  labs(x = NULL, y = "Acceptability (1-7)")
+  geom_split_violin_sd(split_mapping, data = balanced_data, split = negation, flip = TRUE) +
+  labs(x = NULL, y = "Judgment (rescaled -2/+2)")
 ```
 
 ### Missing cell
 
-Excluding Island's ungrammatical trials entirely warns, not errors, and
-still renders a lone half-violin.
+Dropping `critical`/`with` entirely warns, not errors, and still renders a lone half-violin.
 
 ```{r split-violin-missing, fig.height = 5}
+missing_data <- balanced_data |>
+  filter(!(scenario == "critical" & negation == "with"))
+
 ggplot(missing_data, split_mapping) +
-  geom_split_violin_sd(split_mapping, data = missing_data, split = grammaticality) +
-  labs(x = NULL, y = "Acceptability (1-7)")
+  geom_split_violin_sd(split_mapping, data = missing_data, split = negation) +
+  labs(x = NULL, y = "Judgment (rescaled -2/+2)")
 ```
 
 ### `scale = "count"` vs. `"area"`
 
-`scale` only normalizes a side against itself, not against the other side
-(see code comment above) — `"count"` (left, default) lets declining
-grammatical N narrow the violin; `"area"` (right) hides it.
+`scale` only normalizes a side against itself, not against the other side —
+`geom_split_violin_sd()`'s two sides are separate `Stat` computations, so
+`scale` can only compare an x-level against *its own side's* other
+x-levels, never against the other side's counts. The real cells above are
+all ~100 trials, so the effect needs an example: subsampling `with` down
+across `scenario` (holding `without` fixed) engineers the imbalance while
+keeping every plotted judgment a real trial, rather than fabricating
+ratings — `"count"` (left, default) lets the shrinking `with` N narrow that
+side's violin; `"area"` (right) hides it entirely.
 
 ```{r split-violin-scale, fig.height = 5}
+set.seed(42)
+with_fracs <- c(true = 1, false = .7, undefined = .45, critical = .25)
+unbalanced_data <- bind_rows(
+  balanced_data |> filter(negation == "without"),
+  balanced_data |>
+    filter(negation == "with") |>
+    group_by(scenario) |>
+    group_modify(~ slice_sample(.x, prop = with_fracs[[as.character(.y$scenario)]])) |>
+    ungroup()
+)
+
 p_scale_count <- ggplot(unbalanced_data, split_mapping) +
-  geom_split_violin_sd(split_mapping, data = unbalanced_data, split = grammaticality) +
-  labs(x = NULL, y = "Acceptability (1-7)")
+  geom_split_violin_sd(split_mapping, data = unbalanced_data, split = negation) +
+  labs(x = NULL, y = "Judgment (rescaled -2/+2)")
 
 p_scale_area <- ggplot(unbalanced_data, split_mapping) +
   geom_split_violin_sd(
     split_mapping,
-    data = unbalanced_data, split = grammaticality, scale = "area"
+    data = unbalanced_data, split = negation, scale = "area"
   ) +
   labs(x = NULL, y = NULL) +
   guides(fill = "none")
