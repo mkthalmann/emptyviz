@@ -44,7 +44,7 @@ sorted level, right the second) - pass flip = TRUE to swap them.'></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Two half-violins back to back, split by a two-level column</h1>
-      <small class="dont-index">Source: <a href="https://github.com/mkthalmann/emptyviz/blob/v0.1.0/R/geom-violin-sd.R" class="external-link"><code>R/geom-violin-sd.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mkthalmann/emptyviz/blob/main/R/geom-violin-sd.R" class="external-link"><code>R/geom-violin-sd.R</code></a></small>
       <div class="d-none name"><code>geom_split_violin_sd.Rd</code></div>
     </div>
 
@@ -138,6 +138,11 @@ level instead of 2-3 near-duplicate, differently-alpha'd swatches (two
 layers both mapping fill to the same scale with <code>show.legend = TRUE</code>
 would otherwise overlay every contributing layer's key glyph at every
 break).</p>
+<p>The internal fill scale leaves its <code>name</code> as the ggplot2 default
+(<code><a href="https://ggplot2.tidyverse.org/reference/waiver.html" class="external-link">waiver()</a></code>) rather than hardcoding it to the <code>split</code> column name, so
+<code>labs(fill = ...)</code>/<code>guides(fill = guide_legend(title = ...))</code> control
+the legend title the normal ggplot2 way and can merge with <code>color</code>/
+<code>shape</code> legends mapped to the same column.</p>
 <p>Warns (does not silently drop) when an x-level has data on only one side
 of the split, or when a side's cell count falls under the <code>n &gt;= 2</code>
 minimum the underlying SD-band stat already requires - splitting divides

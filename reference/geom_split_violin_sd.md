@@ -101,6 +101,13 @@ layers both mapping fill to the same scale with `show.legend = TRUE`
 would otherwise overlay every contributing layer's key glyph at every
 break).
 
+The internal fill scale leaves its `name` as the ggplot2 default
+([`waiver()`](https://ggplot2.tidyverse.org/reference/waiver.html))
+rather than hardcoding it to the `split` column name, so
+`labs(fill = ...)`/`guides(fill = guide_legend(title = ...))` control
+the legend title the normal ggplot2 way and can merge with `color`/
+`shape` legends mapped to the same column.
+
 Warns (does not silently drop) when an x-level has data on only one side
 of the split, or when a side's cell count falls under the `n >= 2`
 minimum the underlying SD-band stat already requires - splitting divides
