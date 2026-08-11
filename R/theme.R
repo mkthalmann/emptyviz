@@ -54,9 +54,14 @@ dark_mt_colors5 <- c(dark_mt_colors4, "#7b91e0")
 # theme_mt(dark = TRUE) and the color-only overlay in R/dual-render.R so the
 # two can't drift out of sync. Not exported - `dark_mt_colors5` is the
 # public-facing constant; these are text/line tints, not the data palette.
+# grid/axis_line are deliberately two different brightnesses (contrast ~1.2:1
+# and ~2.7:1 against the #151515 page background respectively) - grid lines
+# should stay a barely-there hint, while the axis line is a real boundary
+# and reads as too faint at the same brightness as the grid.
 .dark_ink <- "#e4e4e4"
-.dark_grid <- "#2b2f33"
-.dark_axis_text <- "#c8ccd0"
+.dark_grid <- "#22252a"
+.dark_axis_line <- "#545b63"
+.dark_axis_text <- "#d3d7da"
 .dark_subtitle <- "#c8ccd0"
 .dark_caption <- "#9aa0a6"
 
@@ -110,6 +115,11 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #'   make it transparent (`FALSE`).
 #' @param axis_text_color Color of the axis tick labels. Defaults to a dark
 #'   gray, or a light gray when `dark = TRUE`.
+#' @param axis_line_color Color of the axis line itself (only drawn when
+#'   `show_axis_line` is `TRUE`). Defaults to `grid_color` in light mode
+#'   (as before); in dark mode it defaults to something brighter than
+#'   `grid_color`, since the axis line is a real boundary (drawn thicker
+#'   than the grid) and reads as too faint at the grid's own brightness.
 #' @param dark Build a dark-mode-appropriate variant instead: transparent
 #'   plot/panel background (rather than the translucent white "paper" used
 #'   in light mode), light text/gridline/ink colors, and [dark_mt_colors5]
@@ -117,8 +127,8 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #'   Meant for rendering the same plot a second time for a dark-themed page,
 #'   alongside a `dark = FALSE` (default) render for the light-themed page -
 #'   `theme_mt()`'s output with `dark = FALSE` is unchanged by this argument
-#'   existing at all. `grid_color`/`axis_text_color` still default off of
-#'   `dark` but can be overridden individually either way.
+#'   existing at all. `grid_color`/`axis_text_color`/`axis_line_color` still
+#'   default off of `dark` but can be overridden individually either way.
 #'
 #' @return A `ggplot2` theme object.
 #' @seealso [use_theme_mt()]
@@ -148,7 +158,8 @@ theme_mt <- function(
   dark = FALSE,
   grid_color = if (dark) .dark_grid else "gray85",
   show_axis_line = TRUE,
-  axis_text_color = if (dark) .dark_axis_text else "gray30"
+  axis_text_color = if (dark) .dark_axis_text else "gray30",
+  axis_line_color = if (dark) .dark_axis_line else grid_color
 ) {
   ink <- if (dark) .dark_ink else "black"
   paper <- if (dark) NA else alpha("white", .5)
@@ -157,6 +168,10 @@ theme_mt <- function(
   geom_fill <- if (dark) dark_mt_colors[1] else mt_colors[1]
   geom_paper <- if (dark) alpha("black", 0.3) else alpha("white", 0.3)
   discrete_palette <- if (dark) dark_mt_colors5 else mt_colors5
+  # A small gap between axis tick labels and the axis line/panel, in both
+  # light and dark mode - text sitting flush against the line read as too
+  # cramped.
+  axis_text_gap <- 4
 
   theme_minimal(
     ink = ink,
@@ -167,20 +182,20 @@ theme_mt <- function(
   ) %+replace%
     theme(
       axis.line = element_line(
-        color = if (show_axis_line) grid_color else "transparent",
+        color = if (show_axis_line) axis_line_color else "transparent",
         linewidth = 0.6
       ),
       axis.text.x = element_markdown(
         size = axis_text_size,
         color = axis_text_color,
         family = axis_text_family,
-        margin = margin(t = 0)
+        margin = margin(t = axis_text_gap)
       ),
       axis.text.y = element_markdown(
         size = axis_text_size,
         color = axis_text_color,
         family = axis_text_family,
-        margin = margin(r = 0)
+        margin = margin(r = axis_text_gap)
       ),
       # ggplot2 >= 4.0 resolves axis labels through position-suffixed
       # elements (e.g. axis.text.y.left) rather than axis.text.y/.x
@@ -192,25 +207,25 @@ theme_mt <- function(
         size = axis_text_size,
         color = axis_text_color,
         family = axis_text_family,
-        margin = margin(t = 0)
+        margin = margin(t = axis_text_gap)
       ),
       axis.text.x.top = element_markdown(
         size = axis_text_size,
         color = axis_text_color,
         family = axis_text_family,
-        margin = margin(b = 0)
+        margin = margin(b = axis_text_gap)
       ),
       axis.text.y.left = element_markdown(
         size = axis_text_size,
         color = axis_text_color,
         family = axis_text_family,
-        margin = margin(r = 0)
+        margin = margin(r = axis_text_gap)
       ),
       axis.text.y.right = element_markdown(
         size = axis_text_size,
         color = axis_text_color,
         family = axis_text_family,
-        margin = margin(l = 0)
+        margin = margin(l = axis_text_gap)
       ),
       axis.ticks = element_blank(),
       axis.ticks.x = element_blank(),

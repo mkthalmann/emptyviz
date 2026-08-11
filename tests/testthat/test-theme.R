@@ -53,3 +53,21 @@ test_that("theme_mt(dark = TRUE)'s grid_color/axis_text_color defaults differ fr
   t <- theme_mt(dark = TRUE, axis_text_color = "red")
   expect_equal(t$axis.text.x$colour, "red")
 })
+
+test_that("theme_mt(dark = TRUE)'s axis line is a distinct, brighter color than the grid, but light mode keeps sharing grid_color", {
+  dark <- theme_mt(dark = TRUE)
+  expect_false(identical(dark$axis.line$colour, dark$panel.grid$colour))
+
+  light <- theme_mt()
+  expect_identical(light$axis.line$colour, light$panel.grid$colour)
+
+  t <- theme_mt(dark = TRUE, axis_line_color = "red")
+  expect_equal(t$axis.line$colour, "red")
+})
+
+test_that("axis text has a non-zero margin from the axis, in both light and dark mode", {
+  for (t in list(theme_mt(), theme_mt(dark = TRUE))) {
+    expect_gt(as.numeric(t$axis.text.x$margin[1]), 0) # top
+    expect_gt(as.numeric(t$axis.text.y$margin[2]), 0) # right
+  }
+})
