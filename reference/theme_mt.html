@@ -19,7 +19,7 @@ repeating fill = ... on every layer."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,9 +77,10 @@ repeating <code>fill = ...</code> on every layer.</p>
 <span>  subtitle_size <span class="op">=</span> <span class="va">base_size</span> <span class="op">+</span> <span class="fl">2</span>,</span>
 <span>  caption_size <span class="op">=</span> <span class="va">base_size</span> <span class="op">-</span> <span class="fl">3</span>,</span>
 <span>  axis_title_size <span class="op">=</span> <span class="va">base_size</span> <span class="op">+</span> <span class="fl">2</span>,</span>
-<span>  grid_color <span class="op">=</span> <span class="st">"gray85"</span>,</span>
+<span>  dark <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  grid_color <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="va">dark</span><span class="op">)</span> <span class="va">.dark_grid</span> <span class="kw">else</span> <span class="st">"gray85"</span>,</span>
 <span>  show_axis_line <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  axis_text_color <span class="op">=</span> <span class="st">"gray30"</span></span>
+<span>  axis_text_color <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="va">dark</span><span class="op">)</span> <span class="va">.dark_axis_text</span> <span class="kw">else</span> <span class="st">"gray30"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -101,9 +102,22 @@ Details for the <code>"Roboto Condensed"</code> default's system requirement.</p
 default.</p></dd>
 
 
+<dt id="arg-dark">dark<a class="anchor" aria-label="anchor" href="#arg-dark"></a></dt>
+<dd><p>Build a dark-mode-appropriate variant instead: transparent
+plot/panel background (rather than the translucent white "paper" used
+in light mode), light text/gridline/ink colors, and <a href="dark_mt_colors.html">dark_mt_colors5</a>
+in place of <a href="mt_colors.html">mt_colors5</a> as the discrete palette and geom fill default.
+Meant for rendering the same plot a second time for a dark-themed page,
+alongside a <code>dark = FALSE</code> (default) render for the light-themed page -
+<code>theme_mt()</code>'s output with <code>dark = FALSE</code> is unchanged by this argument
+existing at all. <code>grid_color</code>/<code>axis_text_color</code> still default off of
+<code>dark</code> but can be overridden individually either way.</p></dd>
+
+
 <dt id="arg-grid-color">grid_color<a class="anchor" aria-label="anchor" href="#arg-grid-color"></a></dt>
 <dd><p>Color of the panel grid lines (and the axis line, when
-<code>show_axis_line</code> is <code>TRUE</code>).</p></dd>
+<code>show_axis_line</code> is <code>TRUE</code>). Defaults to a near-invisible light gray, or
+a near-invisible dark gray when <code>dark = TRUE</code>.</p></dd>
 
 
 <dt id="arg-show-axis-line">show_axis_line<a class="anchor" aria-label="anchor" href="#arg-show-axis-line"></a></dt>
@@ -112,7 +126,8 @@ make it transparent (<code>FALSE</code>).</p></dd>
 
 
 <dt id="arg-axis-text-color">axis_text_color<a class="anchor" aria-label="anchor" href="#arg-axis-text-color"></a></dt>
-<dd><p>Color of the axis tick labels.</p></dd>
+<dd><p>Color of the axis tick labels. Defaults to a dark
+gray, or a light gray when <code>dark = TRUE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

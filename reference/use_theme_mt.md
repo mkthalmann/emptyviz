@@ -30,6 +30,16 @@ use_theme_mt(base_size = 10)
 
 `invisible(NULL)`, called for its side effect.
 
+## Details
+
+If `knitr` is installed, this also registers a `knit_print` method for
+`ggplot`/`patchwork` objects that renders a chunk twice - once normally,
+once with a dark-mode color overlay - whenever that chunk sets the
+`dual_render` chunk option to `TRUE` (directly, or via a project-wide
+`knitr: opts_chunk: dual_render: true` default), emitting both images
+wrapped for Quarto's light/dark toggle. Chunks that don't set the option
+are completely unaffected.
+
 ## See also
 
 [`theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/theme_mt.md)

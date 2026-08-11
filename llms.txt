@@ -120,6 +120,12 @@ devtools::check()
 - [`believe_projection_draws`](https://mkthalmann.github.io/emptyviz/reference/believe_projection_draws.md)
   : Posterior marginal draws from the believe-projection model
 
+- [`dark_mt_colors`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
+  [`dark_mt_colors3`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
+  [`dark_mt_colors4`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
+  [`dark_mt_colors5`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
+  : Dark-mode variant of the base palette
+
 - [`geom_half_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_half_violin_sd.md)
   : A half-violin with a mean +/- 1 SD band
 

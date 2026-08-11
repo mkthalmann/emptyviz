@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,14 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="emptyviz-020">emptyviz 0.2.0<a class="anchor" aria-label="anchor" href="#emptyviz-020"></a></h2>
+<ul><li>
+<code><a href="../reference/theme_mt.html">theme_mt()</a></code> gains a <code>dark</code> argument. <code>theme_mt(dark = TRUE)</code> swaps in a dark-mode-appropriate variant: a transparent plot/panel background instead of the translucent white “paper”, light ink/grid/axis-text colors, and [dark_mt_colors5] in place of [mt_colors5] as the discrete palette and geom fill default. <code><a href="../reference/theme_mt.html">theme_mt()</a></code>’s output with <code>dark = FALSE</code> (the default) is unchanged - verified pixel-identical against the previous release.</li>
+<li>New <code>dark_mt_colors</code>/<code>dark_mt_colors3</code>/<code>dark_mt_colors4</code>/<code>dark_mt_colors5</code>, lightened tints of the <code>mt_colors</code> family for use against dark backgrounds.</li>
+<li>
+<code><a href="../reference/use_theme_mt.html">use_theme_mt()</a></code> now also registers (only if <code>knitr</code> is installed) a <code>knit_print</code> method for <code>ggplot</code>/<code>patchwork</code> objects that renders a chunk twice - once normally, once with a dark-mode color overlay - whenever that chunk’s <code>dual_render</code> chunk option is <code>TRUE</code> (settable per chunk, or as a project-wide <code>knitr: opts_chunk: dual_render: true</code> default), emitting both images wrapped for Quarto’s <code>.light-content</code>/<code>.dark-content</code> toggle. Chunks that don’t set the option, and every other output type (tables, console output, base R plots), are unaffected - the plotting code itself never has to change to pick this up, only the chunk’s metadata does.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="emptyviz-010">emptyviz 0.1.0<a class="anchor" aria-label="anchor" href="#emptyviz-010"></a></h2>
 <p>Initial package release, migrated from the <code>theme.R</code> / <code>theme_bayes.R</code> scripts previously copy-pasted into each project.</p>
 <ul><li>
@@ -59,7 +67,8 @@
 <li>
 <strong>Fixed:</strong> <code><a href="../reference/geom_split_violin_sd.html">geom_split_violin_sd()</a></code>’s fill legend no longer ignores <code>labs(fill = ...)</code>/<code>guides(fill = guide_legend(title = ...))</code>. The internal <code><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_fill_manual()</a></code> used to hardcode its <code>name</code> argument to the <code>split</code> column’s name, which permanently pinned the fill guide’s title and kept it from merging with <code>color</code>/<code>shape</code> legends mapped to the same column - producing two separate legends (one correctly retitled, one stuck showing the raw column name) with no way to avoid it short of renaming the column or overriding its label. The scale now leaves <code>name</code> as the ggplot2 default, so it follows normal <code><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs()</a></code>/<code><a href="https://ggplot2.tidyverse.org/reference/guides.html" class="external-link">guides()</a></code> conventions like every other scale.</li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

@@ -31,9 +31,10 @@ theme_mt(
   subtitle_size = base_size + 2,
   caption_size = base_size - 3,
   axis_title_size = base_size + 2,
-  grid_color = "gray85",
+  dark = FALSE,
+  grid_color = if (dark) .dark_grid else "gray85",
   show_axis_line = TRUE,
-  axis_text_color = "gray30"
+  axis_text_color = if (dark) .dark_axis_text else "gray30"
 )
 ```
 
@@ -55,10 +56,26 @@ theme_mt(
   Font sizes for each text element, all derived from `base_size` by
   default.
 
+- dark:
+
+  Build a dark-mode-appropriate variant instead: transparent plot/panel
+  background (rather than the translucent white "paper" used in light
+  mode), light text/gridline/ink colors, and
+  [dark_mt_colors5](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
+  in place of
+  [mt_colors5](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
+  as the discrete palette and geom fill default. Meant for rendering the
+  same plot a second time for a dark-themed page, alongside a
+  `dark = FALSE` (default) render for the light-themed page -
+  `theme_mt()`'s output with `dark = FALSE` is unchanged by this
+  argument existing at all. `grid_color`/`axis_text_color` still default
+  off of `dark` but can be overridden individually either way.
+
 - grid_color:
 
   Color of the panel grid lines (and the axis line, when
-  `show_axis_line` is `TRUE`).
+  `show_axis_line` is `TRUE`). Defaults to a near-invisible light gray,
+  or a near-invisible dark gray when `dark = TRUE`.
 
 - show_axis_line:
 
@@ -67,7 +84,8 @@ theme_mt(
 
 - axis_text_color:
 
-  Color of the axis tick labels.
+  Color of the axis tick labels. Defaults to a dark gray, or a light
+  gray when `dark = TRUE`.
 
 ## Value
 

@@ -19,7 +19,7 @@ on load is a bad default."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,6 +76,16 @@ on load is a bad default.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>invisible(NULL)</code>, called for its side effect.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>If <code>knitr</code> is installed, this also registers a <code>knit_print</code> method for
+<code>ggplot</code>/<code>patchwork</code> objects that renders a chunk twice - once normally,
+once with a dark-mode color overlay - whenever that chunk sets the
+<code>dual_render</code> chunk option to <code>TRUE</code> (directly, or via a project-wide
+<code>knitr: opts_chunk: dual_render: true</code> default), emitting both images
+wrapped for Quarto's light/dark toggle. Chunks that don't set the option
+are completely unaffected.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
