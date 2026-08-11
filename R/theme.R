@@ -355,6 +355,8 @@ theme_mt <- function(
 #' are completely unaffected.
 #'
 #' @param base_size Passed to `theme_mt()`.
+#' @param ... Passed to `theme_mt()` as well - e.g. `base_family` or `dark`,
+#'   for callers that want an activated theme other than the plain default.
 #' @return `invisible(NULL)`, called for its side effect.
 #' @seealso [theme_mt()]
 #' @examples
@@ -362,8 +364,8 @@ theme_mt <- function(
 #' use_theme_mt()
 #' ggplot2::theme_set(old) # not required in a real script/session
 #' @export
-use_theme_mt <- function(base_size = 10) {
-  theme_set(theme_mt(base_size = base_size))
+use_theme_mt <- function(base_size = 10, ...) {
+  theme_set(theme_mt(base_size = base_size, ...))
   update_geom_defaults("density", list(adjust = 5))
   .register_dual_render()
   invisible(NULL)

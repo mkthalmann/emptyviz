@@ -4,10 +4,13 @@
 \alias{use_theme_mt}
 \title{Activate \code{theme_mt()} as the session's default theme}
 \usage{
-use_theme_mt(base_size = 10)
+use_theme_mt(base_size = 10, ...)
 }
 \arguments{
 \item{base_size}{Passed to \code{theme_mt()}.}
+
+\item{...}{Passed to \code{theme_mt()} as well - e.g. \code{base_family} or \code{dark},
+for callers that want an activated theme other than the plain default.}
 }
 \value{
 \code{invisible(NULL)}, called for its side effect.

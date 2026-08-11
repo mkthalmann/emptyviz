@@ -8,6 +8,14 @@ test_that("use_theme_mt() sets theme_mt() as the active theme and restores the p
   expect_equal(active$text$size, 12)
 })
 
+test_that("use_theme_mt() forwards ... to theme_mt()", {
+  old <- theme_get()
+  on.exit(theme_set(old), add = TRUE)
+
+  use_theme_mt(dark = TRUE)
+  expect_identical(theme_get()$palette.colour.discrete, dark_mt_colors5)
+})
+
 test_that("use_theme_mt() sets geom_density()'s default `adjust` to 5", {
   old_adjust <- GeomDensity$default_aes$adjust
   old_theme <- theme_get()
