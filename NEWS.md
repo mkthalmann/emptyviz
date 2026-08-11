@@ -42,3 +42,13 @@ scripts previously copy-pasted into each project.
   explicitly, since a missing font degrades silently (a fallback font, no
   error) rather than failing loudly - exactly the kind of thing that
   breaks the "reproduce this exact plot" promise silently.
+* **Fixed:** `geom_split_violin_sd()`'s fill legend no longer ignores
+  `labs(fill = ...)`/`guides(fill = guide_legend(title = ...))`. The
+  internal `scale_fill_manual()` used to hardcode its `name` argument to
+  the `split` column's name, which permanently pinned the fill guide's title
+  and kept it from merging with `color`/`shape` legends mapped to the
+  same column - producing two separate legends (one correctly retitled,
+  one stuck showing the raw column name) with no way to avoid it short of
+  renaming the column or overriding its label. The scale now leaves
+  `name` as the ggplot2 default, so it follows normal `labs()`/`guides()`
+  conventions like every other scale.

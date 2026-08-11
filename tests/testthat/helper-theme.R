@@ -39,6 +39,38 @@ render_plot <- function(p) {
   invisible(TRUE)
 }
 
+# Counts how many separate legend boxes ggplot2 actually rendered - the
+# ground truth for "did two aesthetics mapped to the same variable merge
+# into one legend, or stay split apart". Each guide-box-* cell in the
+# built gtable is itself a gtable whose rows are named "guides", one per
+# rendered legend; two rows there means two visually separate legends even
+# if their titles happen to look similar.
+n_legend_boxes <- function(p) {
+  gt <- ggplot2::ggplotGrob(p)
+  box_idx <- grep("^guide-box", gt$layout$name)
+  sum(vapply(box_idx, function(i) {
+    g <- gt$grobs[[i]]
+    if (inherits(g, "gtable")) sum(g$layout$name == "guides") else 0L
+  }, integer(1)))
+}
+
+# All text drawn inside the guide-box area (legend titles and key labels
+# together) - used to check which strings actually made it into a
+# legend's title, without depending on ggplot2-internal guide/title grob
+# naming that might shift across versions.
+legend_texts <- function(p) {
+  gt <- ggplot2::ggplotGrob(p)
+  box_idx <- grep("^guide-box", gt$layout$name)
+  find_text <- function(g) {
+    out <- character(0)
+    if (inherits(g, "text")) out <- c(out, as.character(g$label))
+    if (!is.null(g$children)) for (ch in g$children) out <- c(out, find_text(ch))
+    if (inherits(g, "gtable")) for (gr in g$grobs) out <- c(out, find_text(gr))
+    out
+  }
+  unique(unlist(lapply(gt$grobs[box_idx], find_text)))
+}
+
 # Records, for each internal draw group, which `side` gghalves actually
 # applied — the ground truth for side-assignment regression tests.
 #

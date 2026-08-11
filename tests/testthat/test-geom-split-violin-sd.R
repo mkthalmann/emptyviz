@@ -133,6 +133,34 @@ test_that("the legend dummy layer carries exactly one row per level, in left/rig
   expect_equal(res_flip[[8]]$data$split, c("ungrammatical", "grammatical"))
 })
 
+test_that("the internal fill scale's name is left as waiver(), not hardcoded to the split column", {
+  # Regression test: an earlier version passed name = split_name to
+  # scale_fill_manual(), which permanently pins the fill guide's title to
+  # the raw column name - since an explicit (non-waiver) scale$name always
+  # wins over labs(fill = ...)/aes()-derived titles in ggplot2's own guide
+  # title resolution, that made labs(fill = ...) silently no-op for this
+  # geom's legend, and produced a separate "column name"-titled legend
+  # instead of merging with color/shape legends given a matching title.
+  res <- geom_split_violin_sd(aes(x = grp, y = y), data = split_fixture, split = split)
+  expect_s3_class(res[[7]]$name, "waiver")
+})
+
+test_that("labs(fill = ) merges into one legend with color/shape instead of staying split apart", {
+  p <- ggplot(split_fixture, aes(grp, y, color = split, shape = split, fill = split)) +
+    geom_split_violin_sd(aes(x = grp, y = y), data = split_fixture, split = split) +
+    labs(color = "Custom", shape = "Custom", fill = "Custom")
+  expect_equal(n_legend_boxes(p), 1)
+  txt <- legend_texts(p)
+  expect_true("Custom" %in% txt)
+  expect_false("split" %in% txt)
+})
+
+test_that("without a labs() override, the fill legend still defaults to the split column name", {
+  p <- ggplot(split_fixture, aes(grp, y)) +
+    geom_split_violin_sd(aes(x = grp, y = y), data = split_fixture, split = split)
+  expect_true("split" %in% legend_texts(p))
+})
+
 test_that("data = NULL errors clearly instead of failing later inside gghalves", {
   expect_error(
     geom_split_violin_sd(aes(x = grp, y = y), split = split),

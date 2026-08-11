@@ -74,6 +74,12 @@ layers both mapping fill to the same scale with \code{show.legend = TRUE}
 would otherwise overlay every contributing layer's key glyph at every
 break).
 
+The internal fill scale leaves its \code{name} as the ggplot2 default
+(\code{waiver()}) rather than hardcoding it to the \code{split} column name, so
+\code{labs(fill = ...)}/\code{guides(fill = guide_legend(title = ...))} control
+the legend title the normal ggplot2 way and can merge with \code{color}/
+\code{shape} legends mapped to the same column.
+
 Warns (does not silently drop) when an x-level has data on only one side
 of the split, or when a side's cell count falls under the \code{n >= 2}
 minimum the underlying SD-band stat already requires - splitting divides
