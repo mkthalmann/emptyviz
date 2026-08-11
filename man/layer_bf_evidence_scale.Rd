@@ -33,14 +33,14 @@ via \code{Inf} + hjust/vjust to the relevant panel edge rather than a
 data-dependent position.}
 
 \item{weak_fill, weak_color}{Fill/text color for the shaded band and its
-label; default to \code{colors5[3]}.}
+label; default to \code{mt_colors5[3]}.}
 
 \item{direction_labels}{\code{c(positive, negative)} - text naming what a
 positive/negative log-BF supports (e.g. \code{c("supports a real difference", "supports practical equivalence")} for a ROPE comparison).
 \code{NULL} (default) omits the arrows and labels entirely.}
 
 \item{direction_colors}{Length-2 colors for the positive/negative
-arrows/labels; defaults to \code{colors[1:2]}.}
+arrows/labels; defaults to \code{mt_colors[1:2]}.}
 
 \item{range}{\code{c(min, max)} the arrows should span along the BF axis.
 Only used when \code{direction_labels} is given; \code{NULL} falls back to a
@@ -70,4 +70,14 @@ panel edge \code{weak_label} uses (top, for \code{orientation = "x"}; right, for
 vjust/hjust nudges. Inf-anchoring costs no reserved space at all - no
 scale expansion or \code{coord_cartesian(clip = "off")} is needed beyond what
 \code{weak_label} already didn't need.
+}
+\examples{
+library(ggplot2)
+df <- data.frame(x = 1:3, log_bf = c(-2.1, 0.3, 4.8))
+ggplot(df, aes(x, log_bf)) +
+  geom_point() +
+  layer_bf_evidence_scale(
+    orientation = "y",
+    direction_labels = c("supports difference", "supports equivalence")
+  )
 }

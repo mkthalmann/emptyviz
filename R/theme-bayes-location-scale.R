@@ -70,11 +70,22 @@
 #'   for full manual control.
 #' @param point_size Size of the per-condition point.
 #' @param curve_color Color of the sigma_max reference curve; defaults to
-#'   `colors[2]`.
+#'   `mt_colors[2]`.
 #' @param xlab,ylab `NULL` (default) builds a label naming both the
 #'   quantity and the uncertainty measure(s) shown; pass a string to
 #'   override either.
 #' @return A `ggplot` object.
+#' @examples
+#' set.seed(1)
+#' n_draw <- 500
+#' # paired per-draw (location, scale) values - see Details for why the
+#' # pairing (same .draw per condition) matters
+#' paired <- data.frame(
+#'   cond = rep(c("a", "b"), each = n_draw),
+#'   location = c(rnorm(n_draw), rnorm(n_draw, 1)),
+#'   sigma = c(rgamma(n_draw, 10), rgamma(n_draw, 14))
+#' )
+#' plot_location_scale(paired, category = cond, location = location, sigma = sigma)
 #' @export
 plot_location_scale <- function(
   data,
@@ -153,7 +164,7 @@ plot_location_scale <- function(
   facet_quo <- rlang::enquo(facet)
   has_facet <- !rlang::quo_is_null(facet_quo)
 
-  curve_color <- curve_color %||% colors[2]
+  curve_color <- curve_color %||% mt_colors[2]
 
   group_expr <- if (has_shape) {
     rlang::expr(interaction(!!category_sym, !!shape_quo, drop = TRUE))

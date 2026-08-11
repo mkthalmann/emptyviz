@@ -1,6 +1,11 @@
 
 # emptyviz
 
+<!-- badges: start -->
+
+[![R-CMD-check](https://github.com/mkthalmann/emptyviz/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mkthalmann/emptyviz/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 A `ggplot2` theme (`theme_mt()`) plus a set of composable geoms and plot
 builders used across the author’s experimental projects: mean ± 1 SD
 violin/half-violin/split-violin geoms for raw observations, and
@@ -27,15 +32,21 @@ default branch:
 pak::pak("mkthalmann/emptyviz@v0.1.0")
 ```
 
+`theme_mt()` defaults to the `"Roboto Condensed"` font family, which
+this package does not install - it must already be available on the
+system for text to render as intended. Most graphics devices fall back
+to a different font silently rather than erroring, so a missing font
+won’t be obvious; install it, or pass
+`theme_mt(base_family = "")`/another available family, if reproducing a
+plot’s exact appearance matters.
+
 ## Usage
 
 ``` r
 library(emptyviz)
 library(ggplot2)
 
-# Sets theme_mt() as the active ggplot2 theme, and geom_density()'s default
-# adjust to 5 - not automatic on library(emptyviz), unlike the old
-# source("theme.R") workflow this package replaces.
+# sets theme_mt() as the active ggplot2 theme
 use_theme_mt()
 ```
 

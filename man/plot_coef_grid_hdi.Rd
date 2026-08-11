@@ -11,7 +11,7 @@ plot_coef_grid_hdi(
   ncol = 4,
   nrow = NULL,
   hline = 0,
-  hline_color = colors[2],
+  hline_color = mt_colors[2],
   ylab = "Posterior coefficients ±HDI<sub>95</sub> ±ETI<sub>50;90;95</sub>",
   ...
 )
@@ -49,4 +49,8 @@ strip, not an axis, so there's no \code{fct_reorder()} step - pass \code{categor
 already in the order you want the facets to appear (e.g. via
 \code{forcats::fct_inorder()} on however you built the long-format coefficient
 draws).
+}
+\examples{
+mu_coef_draws <- subset(believe_projection_coef_draws, dpar == "mu")
+plot_coef_grid_hdi(mu_coef_draws, category = coef, ncol = 4)
 }

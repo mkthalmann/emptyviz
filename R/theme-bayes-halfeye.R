@@ -1,7 +1,7 @@
 # Visualization helpers for Bayesian distributional models (location + scale
 # submodels fit via brms), built on top of ggdist's halfeye machinery
 # (stat_slab() + stat_pointinterval()) and styled to match theme.R's
-# theme_mt()/`colors` palette.
+# theme_mt()/`mt_colors` palette.
 #
 # Motivated by believe-projection/scripts/belproj-paper.R, which builds the
 # same stat_slab()+stat_pointinterval() "halfeye ridgeline" block four times
@@ -108,10 +108,20 @@ position_dodge_gap <- function(dodge_width, gap, preserve = "single") {
 #' @param n Passed to `stat_slab()`'s `n` (density resolution), if given.
 #' @param point_size Size of the point-interval's point.
 #' @param fill_colors Length-2 fill colors for the two innermost HDI widths;
-#'   defaults to the package's [colors] palette.
+#'   defaults to the package's [mt_colors] palette.
 #' @param interval_color Color of the point-interval; defaults to
-#'   `colors[1]`.
+#'   `mt_colors[1]`.
 #' @return A list of `ggplot2`/`ggdist` layers, scales, and guides.
+#' @examples
+#' library(ggplot2)
+#' set.seed(1)
+#' draws <- data.frame(
+#'   cond = rep(c("a", "b"), each = 500),
+#'   value = c(rnorm(500), rnorm(500, 1))
+#' )
+#' ggplot(draws, aes(x = cond, y = value)) +
+#'   layer_halfeye_hdi() +
+#'   coord_flip()
 #' @export
 layer_halfeye_hdi <- function(
   slab_widths = c(.95, .999),
@@ -127,8 +137,8 @@ layer_halfeye_hdi <- function(
   interval_color = NULL
 ) {
   fill_colors <- fill_colors %||%
-    c(alpha(colors[2], .7), alpha(colors[1], .7))
-  interval_color <- interval_color %||% colors[1]
+    c(alpha(mt_colors[2], .7), alpha(mt_colors[1], .7))
+  interval_color <- interval_color %||% mt_colors[1]
 
   slab_args <- list(
     mapping = aes(fill = after_stat(level)),
@@ -195,6 +205,9 @@ layer_halfeye_hdi <- function(
 #' @param xlab,ylab Axis labels.
 #' @param ... Passed through to [layer_halfeye_hdi()].
 #' @return A `ggplot` object.
+#' @examples
+#' ridge_draws <- subset(believe_projection_draws, dpar == "mu")
+#' plot_ridge_hdi(ridge_draws, category = scenario)
 #' @export
 plot_ridge_hdi <- function(
   data,
@@ -205,7 +218,7 @@ plot_ridge_hdi <- function(
   facet_ncol = NULL,
   facet_scales = "fixed",
   hline = NULL,
-  hline_color = colors[2],
+  hline_color = mt_colors[2],
   value_transform = identity,
   value_limits = NULL,
   value_breaks = waiver(),
@@ -311,6 +324,9 @@ plot_ridge_hdi <- function(
 #' @param ylab Axis label.
 #' @param ... Passed through to [layer_halfeye_hdi()].
 #' @return A `ggplot` object.
+#' @examples
+#' mu_coef_draws <- subset(believe_projection_coef_draws, dpar == "mu")
+#' plot_coef_grid_hdi(mu_coef_draws, category = coef, ncol = 4)
 #' @export
 plot_coef_grid_hdi <- function(
   data,
@@ -319,7 +335,7 @@ plot_coef_grid_hdi <- function(
   ncol = 4,
   nrow = NULL,
   hline = 0,
-  hline_color = colors[2],
+  hline_color = mt_colors[2],
   ylab = "Posterior coefficients \u00b1HDI<sub>95</sub> \u00b1ETI<sub>50;90;95</sub>",
   ...
 ) {

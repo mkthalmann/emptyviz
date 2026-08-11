@@ -13,7 +13,7 @@ plot_ridge_hdi(
   facet_ncol = NULL,
   facet_scales = "fixed",
   hline = NULL,
-  hline_color = colors[2],
+  hline_color = mt_colors[2],
   value_transform = identity,
   value_limits = NULL,
   value_breaks = waiver(),
@@ -68,4 +68,8 @@ being compared.
 \code{category}/\code{value} are unquoted columns, as in the usual ggplot2 idiom.
 \code{value} should be long-format posterior draws (one row per draw per
 category), e.g. from \code{tidybayes::gather_emmeans_draws()}.
+}
+\examples{
+ridge_draws <- subset(believe_projection_draws, dpar == "mu")
+plot_ridge_hdi(ridge_draws, category = scenario)
 }

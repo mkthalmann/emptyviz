@@ -77,8 +77,8 @@ test_that("side is actually threaded through to gghalves as l/r, not just reflec
 
 test_that("outline_color defaults to the resolved fill per side, and can be overridden", {
   res <- geom_split_violin_sd(aes(x = grp, y = y), data = split_fixture, split = split)
-  expect_equal(res[[3]]$aes_params$colour, colors[1]) # left outline
-  expect_equal(res[[6]]$aes_params$colour, colors[2]) # right outline
+  expect_equal(res[[3]]$aes_params$colour, mt_colors[1]) # left outline
+  expect_equal(res[[6]]$aes_params$colour, mt_colors[2]) # right outline
 
   res2 <- geom_split_violin_sd(
     aes(x = grp, y = y),
@@ -88,12 +88,12 @@ test_that("outline_color defaults to the resolved fill per side, and can be over
   expect_equal(res2[[6]]$aes_params$colour, "white")
 })
 
-test_that("fill defaults to the file's `colors` palette and renders as the actual built fill color per side", {
+test_that("fill defaults to the file's `mt_colors` palette and renders as the actual built fill color per side", {
   p <- ggplot(split_fixture, aes(x = grp, y = y)) +
     geom_split_violin_sd(aes(x = grp, y = y), data = split_fixture, split = split)
   b <- ggplot_build(p)
-  expect_true(all(b$data[[1]]$fill == colors[1])) # left aura
-  expect_true(all(b$data[[4]]$fill == colors[2])) # right aura
+  expect_true(all(b$data[[1]]$fill == mt_colors[1])) # left aura
+  expect_true(all(b$data[[4]]$fill == mt_colors[2])) # right aura
 })
 
 test_that("an explicit length-2 fill overrides the default palette", {

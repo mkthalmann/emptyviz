@@ -56,3 +56,14 @@ error or silently vanish - use \code{base_alpha}/\code{sd_alpha}/\code{outline_c
 SD bounds are always the \emph{unweighted} mean/sd of the raw y values, even
 if \code{aes(weight = ...)} is mapped.
 }
+\examples{
+library(ggplot2)
+set.seed(1)
+df <- data.frame(
+  grp = rep(c("a", "b", "c"), each = 40),
+  y = c(rnorm(40), rnorm(40, 1.5, 0.6), rnorm(40, -0.5, 1.8))
+)
+ggplot(df, aes(grp, y, fill = grp)) +
+  geom_violin_sd() +
+  guides(fill = "none")
+}

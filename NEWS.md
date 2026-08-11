@@ -29,3 +29,16 @@ scripts previously copy-pasted into each project.
   `location`/`sigma` and didn't pass those arguments explicitly - which was
   every realistic use case, since posterior draws are never naturally named
   that way. `location`/`sigma` are now required arguments with no default.
+* **Breaking:** `colors`/`colors3`/`colors4`/`colors5`/`colors_many` are
+  renamed to `mt_colors`/`mt_colors3`/`mt_colors4`/`mt_colors5`/
+  `mt_colors_many`. The old names shadowed `grDevices::colors()`, a base R
+  function, once the package was attached - confusing enough (ambiguous
+  `?colors`, noisy autocomplete, a surprising break if calling code ever
+  did `colors <- colors[1:2]` and later called `colors()`) to fix before
+  the API has any real installed base to break.
+* Every exported function now has a runnable `@examples` block.
+* `theme_mt()`'s default `base_family = "Roboto Condensed"` is not
+  installed by this package; its docs and the README now say so
+  explicitly, since a missing font degrades silently (a fallback font, no
+  error) rather than failing loudly - exactly the kind of thing that
+  breaks the "reproduce this exact plot" promise silently.

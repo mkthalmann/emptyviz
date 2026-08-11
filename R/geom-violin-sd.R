@@ -114,6 +114,15 @@ StatHalfYdensitySD <- ggproto(
 #'   when not given.
 #' @param sd_linewidth Line width of the SD-band outline.
 #' @return A list of `ggplot2` layers.
+#' @examples
+#' library(ggplot2)
+#' set.seed(1)
+#' df <- data.frame(
+#'   grp = rep(c("a", "b"), each = 40),
+#'   y = c(rnorm(40), rnorm(40, 1))
+#' )
+#' ggplot(df, aes(grp, y, fill = grp)) +
+#'   geom_half_violin_sd()
 #' @export
 geom_half_violin_sd <- function(
   mapping = NULL,
@@ -251,7 +260,7 @@ geom_half_violin_sd <- function(
 #'   or fewer is an error). Rows with `NA` in this column are dropped with a
 #'   warning.
 #' @param flip Swap which split level renders on the left vs. right.
-#' @param fill Defaults to the package's own two-color [colors] palette (one
+#' @param fill Defaults to the package's own two-color [mt_colors] palette (one
 #'   color per side); pass a length-2 vector to override, one color per
 #'   sorted (or flipped) split level. Any `aes(fill = ...)` in `mapping` is
 #'   ignored - fill is spoken for by `split` here.
@@ -260,6 +269,16 @@ geom_half_violin_sd <- function(
 #' @param outline_color Length-2 or `NULL` (falls back to `fill` per side).
 #' @param scale Passed to the underlying density stat; see Details.
 #' @return A list of `ggplot2` layers, scales, and guides.
+#' @examples
+#' library(ggplot2)
+#' set.seed(1)
+#' df <- data.frame(
+#'   grp = rep(c("a", "b", "c"), each = 40),
+#'   cond = rep(c("x", "y"), 60),
+#'   y = rnorm(120)
+#' )
+#' ggplot(df, aes(grp, y)) +
+#'   geom_split_violin_sd(data = df, split = cond)
 #' @export
 geom_split_violin_sd <- function(
   mapping = NULL,
@@ -385,7 +404,7 @@ geom_split_violin_sd <- function(
   }
   dots_clean <- warn_reserved_dots(dots, "geom_split_violin_sd")
 
-  fill <- fill %||% colors
+  fill <- fill %||% mt_colors
   if (length(fill) != 2) {
     stop(
       "geom_split_violin_sd(): `fill` must be a length-2 vector (one ",
@@ -587,6 +606,16 @@ StatYdensitySD <- ggproto(
 #'
 #' @inheritParams geom_half_violin_sd
 #' @return A list of `ggplot2` layers.
+#' @examples
+#' library(ggplot2)
+#' set.seed(1)
+#' df <- data.frame(
+#'   grp = rep(c("a", "b", "c"), each = 40),
+#'   y = c(rnorm(40), rnorm(40, 1.5, 0.6), rnorm(40, -0.5, 1.8))
+#' )
+#' ggplot(df, aes(grp, y, fill = grp)) +
+#'   geom_violin_sd() +
+#'   guides(fill = "none")
 #' @export
 geom_violin_sd <- function(
   mapping = NULL,

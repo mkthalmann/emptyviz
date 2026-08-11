@@ -21,6 +21,11 @@ after \code{library(emptyviz)} - loading the package does not do this
 automatically, since a package silently mutating global \code{ggplot2} state
 on load is a bad default.
 }
+\examples{
+old <- ggplot2::theme_get() # so the example can restore it afterward
+use_theme_mt()
+ggplot2::theme_set(old) # not required in a real script/session
+}
 \seealso{
 \code{\link[=theme_mt]{theme_mt()}}
 }

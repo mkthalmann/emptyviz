@@ -1,40 +1,45 @@
 #' Base two-color palette
 #'
 #' The package's base discrete palette, and three extensions of it
-#' (`colors3`, `colors4`, `colors5`) with one, two, and three additional
-#' hues appended. `theme_mt()` uses `colors5` as its default discrete
+#' (`mt_colors3`, `mt_colors4`, `mt_colors5`) with one, two, and three additional
+#' hues appended. `theme_mt()` uses `mt_colors5` as its default discrete
 #' palette (`palette.colour.discrete`/`palette.fill.discrete`).
 #'
+#' @examples
+#' mt_colors
+#' mt_colors5
 #' @export
-colors <- c("#066b8a", "#8a064a")
+mt_colors <- c("#066b8a", "#8a064a")
 
-#' @rdname colors
+#' @rdname mt_colors
 #' @export
-colors3 <- c(colors, "#d56f09")
+mt_colors3 <- c(mt_colors, "#d56f09")
 
-#' @rdname colors
+#' @rdname mt_colors
 #' @export
-colors4 <- c(colors3, "#9109d5")
+mt_colors4 <- c(mt_colors3, "#9109d5")
 
-#' @rdname colors
+#' @rdname mt_colors
 #' @export
-colors5 <- c(colors4, "#142f8f")
+mt_colors5 <- c(mt_colors4, "#142f8f")
 
 #' Continuous color ramp between the first two base colors
 #'
-#' A [grDevices::colorRampPalette()] between `colors[1]` and `colors[2]`,
+#' A [grDevices::colorRampPalette()] between `mt_colors[1]` and `mt_colors[2]`,
 #' for continuous scales that want to match the discrete palette's hue.
 #'
 #' @param n Number of colors to generate.
 #' @return A character vector of `n` hex colors.
+#' @examples
+#' mt_colors_many(5)
 #' @export
-colors_many <- colorRampPalette(c(colors[1], colors[2]))
+mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 
 #' A markdown-aware ggplot2 theme
 #'
 #' Extends [ggplot2::theme_minimal()] with markdown/HTML-aware text (via
 #' [ggtext::element_markdown()]) on every text element, a bottom legend, and
-#' the package's discrete color palette ([colors5]) wired into the theme
+#' the package's discrete color palette ([mt_colors5]) wired into the theme
 #' itself. Also sets `geom.*` defaults (a translucent global "paper" aura,
 #' plus fill defaults for `geom_bar()`/`geom_area()`/`geom_col()`/
 #' `geom_ribbon()`/`geom_density()`) so plots look consistent without
@@ -43,9 +48,21 @@ colors_many <- colorRampPalette(c(colors[1], colors[2]))
 #' Call [use_theme_mt()] to make this the session's active theme -
 #' `library(emptyviz)` does not do this automatically.
 #'
+#' `base_family` (and every other `*_family` argument, which default to it)
+#' defaults to `"Roboto Condensed"`, a font this package does not install or
+#' register - it must already be present on the system (and discoverable by
+#' the graphics device in use) for text to render as intended. If it isn't
+#' installed, most graphics devices silently substitute a fallback font
+#' rather than erroring, so a plot can look subtly different across machines
+#' with no warning. Install it (e.g. via a system font manager, or
+#' `sysfonts::font_add_google("Roboto Condensed")` + `showtext::showtext_auto()`
+#' for device-independent rendering), or pass a `base_family` you know is
+#' available, if reproducing a plot's exact appearance matters.
+#'
 #' @param base_size Base font size, in points.
 #' @param base_family,plot_title_family,subtitle_family,strip_text_family,axis_title_family,axis_text_family,caption_family
-#'   Font families for each text element; all default to `base_family`.
+#'   Font families for each text element; all default to `base_family`. See
+#'   Details for the `"Roboto Condensed"` default's system requirement.
 #' @param plot_title_size,axis_text_size,strip_text_size,subtitle_size,caption_size,axis_title_size
 #'   Font sizes for each text element, all derived from `base_size` by
 #'   default.
@@ -57,6 +74,13 @@ colors_many <- colorRampPalette(c(colors[1], colors[2]))
 #'
 #' @return A `ggplot2` theme object.
 #' @seealso [use_theme_mt()]
+#' @examples
+#' library(ggplot2)
+#' # a system-available family sidesteps the "Roboto Condensed" requirement
+#' # described in Details, so this renders identically everywhere
+#' ggplot(mtcars, aes(wt, mpg)) +
+#'   geom_point() +
+#'   theme_mt(base_family = "")
 #' @export
 theme_mt <- function(
   base_size = 19,
@@ -239,18 +263,18 @@ theme_mt <- function(
       # global geom-level "aura" (keeps your previous geom paper look)
       geom = element_geom(paper = alpha("white", 0.3)),
       geom.density = element_geom(
-        fill = alpha(colors[1], .5),
+        fill = alpha(mt_colors[1], .5),
         color = NA
       ),
-      geom.bar = element_geom(fill = colors[1]),
-      geom.area = element_geom(fill = colors[1]),
-      geom.col = element_geom(fill = colors[1]),
-      geom.ribbon = element_geom(fill = colors[1]),
+      geom.bar = element_geom(fill = mt_colors[1]),
+      geom.area = element_geom(fill = mt_colors[1]),
+      geom.col = element_geom(fill = mt_colors[1]),
+      geom.ribbon = element_geom(fill = mt_colors[1]),
       geom.text = element_geom(family = base_family, fontsize = 5),
       geom.label = element_geom(family = base_family, fontsize = 5),
       # theme-level palettes (used by scales internally)
-      palette.colour.discrete = colors5,
-      palette.fill.discrete = colors5
+      palette.colour.discrete = mt_colors5,
+      palette.fill.discrete = mt_colors5
     )
 }
 
@@ -267,6 +291,10 @@ theme_mt <- function(
 #' @param base_size Passed to `theme_mt()`.
 #' @return `invisible(NULL)`, called for its side effect.
 #' @seealso [theme_mt()]
+#' @examples
+#' old <- ggplot2::theme_get() # so the example can restore it afterward
+#' use_theme_mt()
+#' ggplot2::theme_set(old) # not required in a real script/session
 #' @export
 use_theme_mt <- function(base_size = 10) {
   theme_set(theme_mt(base_size = base_size))

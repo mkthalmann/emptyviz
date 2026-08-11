@@ -56,3 +56,11 @@ regardless of how many crossed factors make up each side) into separate
 \code{.left}/\code{.right} columns, and optionally filters + reorders down to just
 the pairs the caller actually wants to show.
 }
+\examples{
+bf <- data.frame(
+  contrast = c("a - b NA", "c - d NA", "b - a NA"),
+  log_BF = c(1.2, -0.3, 0.8)
+)
+prepare_bf_contrasts(bf)
+prepare_bf_contrasts(bf, value = log_BF, pairs = list(c("a", "b")))
+}

@@ -30,7 +30,7 @@ warning.}
 
 \item{flip}{Swap which split level renders on the left vs. right.}
 
-\item{fill}{Defaults to the package's own two-color \link{colors} palette (one
+\item{fill}{Defaults to the package's own two-color \link{mt_colors} palette (one
 color per side); pass a length-2 vector to override, one color per
 sorted (or flipped) split level. Any \code{aes(fill = ...)} in \code{mapping} is
 ignored - fill is spoken for by \code{split} here.}
@@ -78,4 +78,15 @@ Warns (does not silently drop) when an x-level has data on only one side
 of the split, or when a side's cell count falls under the \code{n >= 2}
 minimum the underlying SD-band stat already requires - splitting divides
 already-thin repeated-measures cells a third way.
+}
+\examples{
+library(ggplot2)
+set.seed(1)
+df <- data.frame(
+  grp = rep(c("a", "b", "c"), each = 40),
+  cond = rep(c("x", "y"), 60),
+  y = rnorm(120)
+)
+ggplot(df, aes(grp, y)) +
+  geom_split_violin_sd(data = df, split = cond)
 }

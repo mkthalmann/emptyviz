@@ -56,7 +56,7 @@ keeps \code{pairs}' own order (or \code{data}'s own order, if \code{pairs} wasn'
 used).}
 
 \item{positive_color, negative_color}{Colors for positive/negative
-contrasts; default to \code{colors[1]}/\code{colors[2]}.}
+contrasts; default to \code{mt_colors[1]}/\code{mt_colors[2]}.}
 
 \item{positive_shape, negative_shape}{Point shapes for positive/negative
 contrasts. Color and shape both carry sign, redundantly, so direction
@@ -83,4 +83,16 @@ A \code{ggplot} object.
 One row per contrast, point (+/- optional SE), colored by sign, with
 \code{\link[=layer_bf_evidence_scale]{layer_bf_evidence_scale()}}'s weak-evidence-region annotation bundled in
 by default.
+}
+\examples{
+bf_data <- data.frame(
+  contrast = c("A vs. B", "C vs. D", "E vs. F"),
+  log_bf = c(8.2, 1.1, -0.4)
+)
+plot_bf_forest(
+  bf_data,
+  contrast = contrast,
+  log_bf = log_bf,
+  direction_labels = c("supports difference", "supports equivalence")
+)
 }

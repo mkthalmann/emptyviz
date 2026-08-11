@@ -394,8 +394,8 @@ ggplot(sweep_data, aes(x = prior_sd, y = log_bf)) +
     range = c(-3, 8),
     direction_labels = c("supports difference", "supports equivalence")
   ) +
-  geom_line(color = colors[1]) +
-  geom_point(color = colors[1], size = 3) +
+  geom_line(color = mt_colors[1]) +
+  geom_point(color = mt_colors[1], size = 3) +
   labs(x = "Prior standard deviation", y = "log Bayes factor") +
   # unlike orientation = "x"'s top edge, the default right-side expansion
   # isn't quite wide enough for orientation = "y"'s rotated label + arrow -

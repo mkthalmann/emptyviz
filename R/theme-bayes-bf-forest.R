@@ -22,13 +22,13 @@
 #'   via `Inf` + hjust/vjust to the relevant panel edge rather than a
 #'   data-dependent position.
 #' @param weak_fill,weak_color Fill/text color for the shaded band and its
-#'   label; default to `colors5[3]`.
+#'   label; default to `mt_colors5[3]`.
 #' @param direction_labels `c(positive, negative)` - text naming what a
 #'   positive/negative log-BF supports (e.g. `c("supports a real
 #'   difference", "supports practical equivalence")` for a ROPE comparison).
 #'   `NULL` (default) omits the arrows and labels entirely.
 #' @param direction_colors Length-2 colors for the positive/negative
-#'   arrows/labels; defaults to `colors[1:2]`.
+#'   arrows/labels; defaults to `mt_colors[1:2]`.
 #' @param range `c(min, max)` the arrows should span along the BF axis.
 #'   Only used when `direction_labels` is given; `NULL` falls back to a
 #'   generic `c(-1, 1) * weak_threshold * 3`.
@@ -37,6 +37,15 @@
 #' @param secondary_breaks Breaks for the secondary linear-BF axis.
 #' @param secondary_name Axis title for the secondary linear-BF axis.
 #' @return A list of `ggplot2`/`ggarrow` layers and annotations.
+#' @examples
+#' library(ggplot2)
+#' df <- data.frame(x = 1:3, log_bf = c(-2.1, 0.3, 4.8))
+#' ggplot(df, aes(x, log_bf)) +
+#'   geom_point() +
+#'   layer_bf_evidence_scale(
+#'     orientation = "y",
+#'     direction_labels = c("supports difference", "supports equivalence")
+#'   )
 #' @export
 layer_bf_evidence_scale <- function(
   orientation = c("x", "y"),
@@ -52,9 +61,9 @@ layer_bf_evidence_scale <- function(
   secondary_name = "Bayes factor (BF)"
 ) {
   orientation <- match.arg(orientation)
-  weak_fill <- weak_fill %||% colors5[3]
-  weak_color <- weak_color %||% colors5[3]
-  direction_colors <- direction_colors %||% colors[1:2]
+  weak_fill <- weak_fill %||% mt_colors5[3]
+  weak_color <- weak_color %||% mt_colors5[3]
+  direction_colors <- direction_colors %||% mt_colors[1:2]
 
   layers <- list()
 
@@ -235,6 +244,13 @@ layer_bf_evidence_scale <- function(
 #' @return `data`, with `.left`, `.right`, and `.contrast_label` columns
 #'   added (and, if `pairs` was given, filtered/reordered/relabeled to
 #'   match).
+#' @examples
+#' bf <- data.frame(
+#'   contrast = c("a - b NA", "c - d NA", "b - a NA"),
+#'   log_BF = c(1.2, -0.3, 0.8)
+#' )
+#' prepare_bf_contrasts(bf)
+#' prepare_bf_contrasts(bf, value = log_BF, pairs = list(c("a", "b")))
 #' @export
 prepare_bf_contrasts <- function(
   data,
@@ -363,7 +379,7 @@ prepare_bf_contrasts <- function(
 #'   keeps `pairs`' own order (or `data`'s own order, if `pairs` wasn't
 #'   used).
 #' @param positive_color,negative_color Colors for positive/negative
-#'   contrasts; default to `colors[1]`/`colors[2]`.
+#'   contrasts; default to `mt_colors[1]`/`mt_colors[2]`.
 #' @param positive_shape,negative_shape Point shapes for positive/negative
 #'   contrasts. Color and shape both carry sign, redundantly, so direction
 #'   stays legible under grayscale printing or for red/green-blind readers.
@@ -377,6 +393,17 @@ prepare_bf_contrasts <- function(
 #'   `layer_bf_evidence_scale()` when `evidence_scale = TRUE`.
 #' @param xlab,ylab Axis labels.
 #' @return A `ggplot` object.
+#' @examples
+#' bf_data <- data.frame(
+#'   contrast = c("A vs. B", "C vs. D", "E vs. F"),
+#'   log_bf = c(8.2, 1.1, -0.4)
+#' )
+#' plot_bf_forest(
+#'   bf_data,
+#'   contrast = contrast,
+#'   log_bf = log_bf,
+#'   direction_labels = c("supports difference", "supports equivalence")
+#' )
 #' @export
 plot_bf_forest <- function(
   data,
@@ -416,8 +443,8 @@ plot_bf_forest <- function(
     contrast_sym <- rlang::sym(".contrast_label")
   }
 
-  positive_color <- positive_color %||% colors[1]
-  negative_color <- negative_color %||% colors[2]
+  positive_color <- positive_color %||% mt_colors[1]
+  negative_color <- negative_color %||% mt_colors[2]
 
   plot_data <- data
   plot_data$.log_bf <- rlang::eval_tidy(log_bf_sym, data)

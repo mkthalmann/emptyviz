@@ -66,3 +66,13 @@ vertical-only. Swapping x/y (e.g. \code{aes(x = value, y = group)}) or using
 this is a \code{gghalves} limitation, not something \code{geom_half_violin_sd()}
 can fix.
 }
+\examples{
+library(ggplot2)
+set.seed(1)
+df <- data.frame(
+  grp = rep(c("a", "b"), each = 40),
+  y = c(rnorm(40), rnorm(40, 1))
+)
+ggplot(df, aes(grp, y, fill = grp)) +
+  geom_half_violin_sd()
+}

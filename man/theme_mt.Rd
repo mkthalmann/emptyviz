@@ -27,7 +27,8 @@ theme_mt(
 \arguments{
 \item{base_size}{Base font size, in points.}
 
-\item{base_family, plot_title_family, subtitle_family, strip_text_family, axis_title_family, axis_text_family, caption_family}{Font families for each text element; all default to \code{base_family}.}
+\item{base_family, plot_title_family, subtitle_family, strip_text_family, axis_title_family, axis_text_family, caption_family}{Font families for each text element; all default to \code{base_family}. See
+Details for the \code{"Roboto Condensed"} default's system requirement.}
 
 \item{plot_title_size, axis_text_size, strip_text_size, subtitle_size, caption_size, axis_title_size}{Font sizes for each text element, all derived from \code{base_size} by
 default.}
@@ -46,7 +47,7 @@ A \code{ggplot2} theme object.
 \description{
 Extends \code{\link[ggplot2:theme_minimal]{ggplot2::theme_minimal()}} with markdown/HTML-aware text (via
 \code{\link[ggtext:element_markdown]{ggtext::element_markdown()}}) on every text element, a bottom legend, and
-the package's discrete color palette (\link{colors5}) wired into the theme
+the package's discrete color palette (\link{mt_colors5}) wired into the theme
 itself. Also sets \verb{geom.*} defaults (a translucent global "paper" aura,
 plus fill defaults for \code{geom_bar()}/\code{geom_area()}/\code{geom_col()}/
 \code{geom_ribbon()}/\code{geom_density()}) so plots look consistent without
@@ -55,6 +56,25 @@ repeating \code{fill = ...} on every layer.
 \details{
 Call \code{\link[=use_theme_mt]{use_theme_mt()}} to make this the session's active theme -
 \code{library(emptyviz)} does not do this automatically.
+
+\code{base_family} (and every other \verb{*_family} argument, which default to it)
+defaults to \code{"Roboto Condensed"}, a font this package does not install or
+register - it must already be present on the system (and discoverable by
+the graphics device in use) for text to render as intended. If it isn't
+installed, most graphics devices silently substitute a fallback font
+rather than erroring, so a plot can look subtly different across machines
+with no warning. Install it (e.g. via a system font manager, or
+\code{sysfonts::font_add_google("Roboto Condensed")} + \code{showtext::showtext_auto()}
+for device-independent rendering), or pass a \code{base_family} you know is
+available, if reproducing a plot's exact appearance matters.
+}
+\examples{
+library(ggplot2)
+# a system-available family sidesteps the "Roboto Condensed" requirement
+# described in Details, so this renders identically everywhere
+ggplot(mtcars, aes(wt, mpg)) +
+  geom_point() +
+  theme_mt(base_family = "")
 }
 \seealso{
 \code{\link[=use_theme_mt]{use_theme_mt()}}

@@ -43,10 +43,10 @@ panel height (see Details).}
 \item{point_size}{Size of the point-interval's point.}
 
 \item{fill_colors}{Length-2 fill colors for the two innermost HDI widths;
-defaults to the package's \link{colors} palette.}
+defaults to the package's \link{mt_colors} palette.}
 
 \item{interval_color}{Color of the point-interval; defaults to
-\code{colors[1]}.}
+\code{mt_colors[1]}.}
 }
 \value{
 A list of \code{ggplot2}/\code{ggdist} layers, scales, and guides.
@@ -74,4 +74,15 @@ different category counts per panel). Default \code{.02} (~2\% of panel
 height) looks right both for many-categories-sharing-one-panel layouts
 and one-category-per-panel grids; \code{0} reproduces a touching layout with
 no gap at all.
+}
+\examples{
+library(ggplot2)
+set.seed(1)
+draws <- data.frame(
+  cond = rep(c("a", "b"), each = 500),
+  value = c(rnorm(500), rnorm(500, 1))
+)
+ggplot(draws, aes(x = cond, y = value)) +
+  layer_halfeye_hdi() +
+  coord_flip()
 }

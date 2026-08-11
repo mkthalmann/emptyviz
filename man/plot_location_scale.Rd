@@ -85,7 +85,7 @@ for full manual control.}
 \item{point_size}{Size of the per-condition point.}
 
 \item{curve_color}{Color of the sigma_max reference curve; defaults to
-\code{colors[2]}.}
+\code{mt_colors[2]}.}
 
 \item{xlab, ylab}{\code{NULL} (default) builds a label naming both the
 quantity and the uncertainty measure(s) shown; pass a string to
@@ -123,4 +123,16 @@ Paired (not independently-summarized) draws matter here specifically so
 the ellipse reflects the \emph{joint} uncertainty in a condition's (location,
 scale) pair, not two unrelated marginal intervals mashed into a fake
 cross.
+}
+\examples{
+set.seed(1)
+n_draw <- 500
+# paired per-draw (location, scale) values - see Details for why the
+# pairing (same .draw per condition) matters
+paired <- data.frame(
+  cond = rep(c("a", "b"), each = n_draw),
+  location = c(rnorm(n_draw), rnorm(n_draw, 1)),
+  sigma = c(rgamma(n_draw, 10), rgamma(n_draw, 14))
+)
+plot_location_scale(paired, category = cond, location = location, sigma = sigma)
 }
