@@ -34,7 +34,8 @@ theme_mt(
   dark = FALSE,
   grid_color = if (dark) .dark_grid else "gray85",
   show_axis_line = TRUE,
-  axis_text_color = if (dark) .dark_axis_text else "gray30"
+  axis_text_color = if (dark) .dark_axis_text else "gray30",
+  axis_line_color = if (dark) .dark_axis_line else grid_color
 )
 ```
 
@@ -68,8 +69,9 @@ theme_mt(
   same plot a second time for a dark-themed page, alongside a
   `dark = FALSE` (default) render for the light-themed page -
   `theme_mt()`'s output with `dark = FALSE` is unchanged by this
-  argument existing at all. `grid_color`/`axis_text_color` still default
-  off of `dark` but can be overridden individually either way.
+  argument existing at all.
+  `grid_color`/`axis_text_color`/`axis_line_color` still default off of
+  `dark` but can be overridden individually either way.
 
 - grid_color:
 
@@ -86,6 +88,14 @@ theme_mt(
 
   Color of the axis tick labels. Defaults to a dark gray, or a light
   gray when `dark = TRUE`.
+
+- axis_line_color:
+
+  Color of the axis line itself (only drawn when `show_axis_line` is
+  `TRUE`). Defaults to `grid_color` in light mode (as before); in dark
+  mode it defaults to something brighter than `grid_color`, since the
+  axis line is a real boundary (drawn thicker than the grid) and reads
+  as too faint at the grid's own brightness.
 
 ## Value
 

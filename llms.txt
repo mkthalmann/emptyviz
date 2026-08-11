@@ -94,6 +94,26 @@ for the theme and the three `_sd` violin geoms, and
 for the halfeye/ridge/coefficient-grid, location-scale, and Bayes Factor
 forest plot builders.
 
+## Dark mode
+
+`theme_mt(dark = TRUE)` is a dark-background variant - transparent
+plot/panel background, light text/gridline colors, and `dark_mt_colors5`
+in place of `mt_colors5` as the discrete palette - for a plot rendered
+directly against a dark page.
+[`theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/theme_mt.md)’s
+regular (`dark = FALSE`) output is unaffected by this argument existing.
+
+In a Quarto document,
+[`use_theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/use_theme_mt.md)
+also registers automatic dual light/dark figure rendering: set the
+`dual_render` chunk option to `TRUE` (per chunk, or as a project-wide
+`knitr: opts_chunk: dual_render: true` default) and every
+`ggplot`/`patchwork` figure in that chunk renders twice - once normally,
+once with the dark variant - wrapped for Quarto’s
+`.light-content`/`.dark-content` toggle, so a light/dark theme-switching
+site shows the right one without any client-side re-rendering. Chunks
+that don’t set the option are unaffected.
+
 ## Development
 
 ``` r
