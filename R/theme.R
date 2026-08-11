@@ -23,6 +23,43 @@ mt_colors4 <- c(mt_colors3, "#9109d5")
 #' @export
 mt_colors5 <- c(mt_colors4, "#142f8f")
 
+#' Dark-mode variant of the base palette
+#'
+#' Lightened tints of [mt_colors]/[mt_colors3]/[mt_colors4]/[mt_colors5],
+#' each hue's HSL lightness raised to keep adequate contrast against a
+#' near-black background. Used by `theme_mt(dark = TRUE)` as the discrete
+#' palette and geom fill defaults; exported separately so the same tints can
+#' be reused directly (e.g. in a hand-written `scale_color_manual()`) without
+#' re-deriving them.
+#'
+#' @examples
+#' dark_mt_colors
+#' dark_mt_colors5
+#' @export
+dark_mt_colors <- c("#70ceeb", "#eb70af")
+
+#' @rdname dark_mt_colors
+#' @export
+dark_mt_colors3 <- c(dark_mt_colors, "#ebad70")
+
+#' @rdname dark_mt_colors
+#' @export
+dark_mt_colors4 <- c(dark_mt_colors3, "#c270eb")
+
+#' @rdname dark_mt_colors
+#' @export
+dark_mt_colors5 <- c(dark_mt_colors4, "#7b91e0")
+
+# Non-palette dark-mode colors (ink/grid/text), shared between
+# theme_mt(dark = TRUE) and the color-only overlay in R/dual-render.R so the
+# two can't drift out of sync. Not exported - `dark_mt_colors5` is the
+# public-facing constant; these are text/line tints, not the data palette.
+.dark_ink <- "#e4e4e4"
+.dark_grid <- "#2b2f33"
+.dark_axis_text <- "#c8ccd0"
+.dark_subtitle <- "#c8ccd0"
+.dark_caption <- "#9aa0a6"
+
 #' Continuous color ramp between the first two base colors
 #'
 #' A [grDevices::colorRampPalette()] between `mt_colors[1]` and `mt_colors[2]`,
@@ -67,10 +104,21 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #'   Font sizes for each text element, all derived from `base_size` by
 #'   default.
 #' @param grid_color Color of the panel grid lines (and the axis line, when
-#'   `show_axis_line` is `TRUE`).
+#'   `show_axis_line` is `TRUE`). Defaults to a near-invisible light gray, or
+#'   a near-invisible dark gray when `dark = TRUE`.
 #' @param show_axis_line Whether to draw the axis line at all (`TRUE`) or
 #'   make it transparent (`FALSE`).
-#' @param axis_text_color Color of the axis tick labels.
+#' @param axis_text_color Color of the axis tick labels. Defaults to a dark
+#'   gray, or a light gray when `dark = TRUE`.
+#' @param dark Build a dark-mode-appropriate variant instead: transparent
+#'   plot/panel background (rather than the translucent white "paper" used
+#'   in light mode), light text/gridline/ink colors, and [dark_mt_colors5]
+#'   in place of [mt_colors5] as the discrete palette and geom fill default.
+#'   Meant for rendering the same plot a second time for a dark-themed page,
+#'   alongside a `dark = FALSE` (default) render for the light-themed page -
+#'   `theme_mt()`'s output with `dark = FALSE` is unchanged by this argument
+#'   existing at all. `grid_color`/`axis_text_color` still default off of
+#'   `dark` but can be overridden individually either way.
 #'
 #' @return A `ggplot2` theme object.
 #' @seealso [use_theme_mt()]
@@ -97,12 +145,22 @@ theme_mt <- function(
   subtitle_size = base_size + 2,
   caption_size = base_size - 3,
   axis_title_size = base_size + 2,
-  grid_color = "gray85",
+  dark = FALSE,
+  grid_color = if (dark) .dark_grid else "gray85",
   show_axis_line = TRUE,
-  axis_text_color = "gray30"
+  axis_text_color = if (dark) .dark_axis_text else "gray30"
 ) {
+  ink <- if (dark) .dark_ink else "black"
+  paper <- if (dark) NA else alpha("white", .5)
+  subtitle_color <- if (dark) .dark_subtitle else "gray40"
+  caption_color <- if (dark) .dark_caption else "gray50"
+  geom_fill <- if (dark) dark_mt_colors[1] else mt_colors[1]
+  geom_paper <- if (dark) alpha("black", 0.3) else alpha("white", 0.3)
+  discrete_palette <- if (dark) dark_mt_colors5 else mt_colors5
+
   theme_minimal(
-    paper = alpha("white", .5),
+    ink = ink,
+    paper = paper,
     base_family = base_family,
     header_family = plot_title_family,
     base_size = base_size
@@ -210,7 +268,7 @@ theme_mt <- function(
       plot.margin = margin(.1, .1, .1, .1, "lines"),
       plot.caption = element_markdown(
         hjust = 1,
-        color = "gray50",
+        color = caption_color,
         size = caption_size,
         margin = margin(t = 10),
         family = caption_family,
@@ -220,7 +278,7 @@ theme_mt <- function(
         hjust = 0,
         size = subtitle_size,
         margin = margin(b = 10),
-        color = "gray40",
+        color = subtitle_color,
         family = subtitle_family,
         face = "plain"
       ),
@@ -261,20 +319,20 @@ theme_mt <- function(
         angle = 90
       ),
       # global geom-level "aura" (keeps your previous geom paper look)
-      geom = element_geom(paper = alpha("white", 0.3)),
+      geom = element_geom(paper = geom_paper),
       geom.density = element_geom(
-        fill = alpha(mt_colors[1], .5),
+        fill = alpha(geom_fill, .5),
         color = NA
       ),
-      geom.bar = element_geom(fill = mt_colors[1]),
-      geom.area = element_geom(fill = mt_colors[1]),
-      geom.col = element_geom(fill = mt_colors[1]),
-      geom.ribbon = element_geom(fill = mt_colors[1]),
+      geom.bar = element_geom(fill = geom_fill),
+      geom.area = element_geom(fill = geom_fill),
+      geom.col = element_geom(fill = geom_fill),
+      geom.ribbon = element_geom(fill = geom_fill),
       geom.text = element_geom(family = base_family, fontsize = 5),
       geom.label = element_geom(family = base_family, fontsize = 5),
       # theme-level palettes (used by scales internally)
-      palette.colour.discrete = mt_colors5,
-      palette.fill.discrete = mt_colors5
+      palette.colour.discrete = discrete_palette,
+      palette.fill.discrete = discrete_palette
     )
 }
 
@@ -288,6 +346,14 @@ theme_mt <- function(
 #' automatically, since a package silently mutating global `ggplot2` state
 #' on load is a bad default.
 #'
+#' If `knitr` is installed, this also registers a `knit_print` method for
+#' `ggplot`/`patchwork` objects that renders a chunk twice - once normally,
+#' once with a dark-mode color overlay - whenever that chunk sets the
+#' `dual_render` chunk option to `TRUE` (directly, or via a project-wide
+#' `knitr: opts_chunk: dual_render: true` default), emitting both images
+#' wrapped for Quarto's light/dark toggle. Chunks that don't set the option
+#' are completely unaffected.
+#'
 #' @param base_size Passed to `theme_mt()`.
 #' @return `invisible(NULL)`, called for its side effect.
 #' @seealso [theme_mt()]
@@ -299,5 +365,6 @@ theme_mt <- function(
 use_theme_mt <- function(base_size = 10) {
   theme_set(theme_mt(base_size = base_size))
   update_geom_defaults("density", list(adjust = 5))
+  .register_dual_render()
   invisible(NULL)
 }

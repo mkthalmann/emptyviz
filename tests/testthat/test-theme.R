@@ -25,3 +25,23 @@ test_that("use_theme_mt() returns invisible(NULL)", {
   on.exit(theme_set(old), add = TRUE)
   expect_null(withVisible(use_theme_mt())$value)
 })
+
+test_that("theme_mt(dark = FALSE) is unchanged by the dark argument existing", {
+  t <- theme_mt()
+  expect_identical(t$palette.colour.discrete, mt_colors5)
+  expect_identical(t$palette.fill.discrete, mt_colors5)
+  expect_identical(t$plot.background$fill, alpha("white", .5))
+})
+
+test_that("theme_mt(dark = TRUE) swaps in the dark palette and a transparent background", {
+  t <- theme_mt(dark = TRUE)
+  expect_identical(t$palette.colour.discrete, dark_mt_colors5)
+  expect_identical(t$palette.fill.discrete, dark_mt_colors5)
+  expect_true(is.na(t$plot.background$fill))
+})
+
+test_that("theme_mt(dark = TRUE)'s grid_color/axis_text_color defaults differ from the light defaults but stay overridable", {
+  expect_false(identical(theme_mt(dark = TRUE)$axis.text.x$colour, theme_mt()$axis.text.x$colour))
+  t <- theme_mt(dark = TRUE, axis_text_color = "red")
+  expect_equal(t$axis.text.x$colour, "red")
+})

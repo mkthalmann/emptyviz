@@ -21,6 +21,15 @@ after \code{library(emptyviz)} - loading the package does not do this
 automatically, since a package silently mutating global \code{ggplot2} state
 on load is a bad default.
 }
+\details{
+If \code{knitr} is installed, this also registers a \code{knit_print} method for
+\code{ggplot}/\code{patchwork} objects that renders a chunk twice - once normally,
+once with a dark-mode color overlay - whenever that chunk sets the
+\code{dual_render} chunk option to \code{TRUE} (directly, or via a project-wide
+\code{knitr: opts_chunk: dual_render: true} default), emitting both images
+wrapped for Quarto's light/dark toggle. Chunks that don't set the option
+are completely unaffected.
+}
 \examples{
 old <- ggplot2::theme_get() # so the example can restore it afterward
 use_theme_mt()

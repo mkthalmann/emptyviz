@@ -19,9 +19,10 @@ theme_mt(
   subtitle_size = base_size + 2,
   caption_size = base_size - 3,
   axis_title_size = base_size + 2,
-  grid_color = "gray85",
+  dark = FALSE,
+  grid_color = if (dark) .dark_grid else "gray85",
   show_axis_line = TRUE,
-  axis_text_color = "gray30"
+  axis_text_color = if (dark) .dark_axis_text else "gray30"
 )
 }
 \arguments{
@@ -33,13 +34,25 @@ Details for the \code{"Roboto Condensed"} default's system requirement.}
 \item{plot_title_size, axis_text_size, strip_text_size, subtitle_size, caption_size, axis_title_size}{Font sizes for each text element, all derived from \code{base_size} by
 default.}
 
+\item{dark}{Build a dark-mode-appropriate variant instead: transparent
+plot/panel background (rather than the translucent white "paper" used
+in light mode), light text/gridline/ink colors, and \link{dark_mt_colors5}
+in place of \link{mt_colors5} as the discrete palette and geom fill default.
+Meant for rendering the same plot a second time for a dark-themed page,
+alongside a \code{dark = FALSE} (default) render for the light-themed page -
+\code{theme_mt()}'s output with \code{dark = FALSE} is unchanged by this argument
+existing at all. \code{grid_color}/\code{axis_text_color} still default off of
+\code{dark} but can be overridden individually either way.}
+
 \item{grid_color}{Color of the panel grid lines (and the axis line, when
-\code{show_axis_line} is \code{TRUE}).}
+\code{show_axis_line} is \code{TRUE}). Defaults to a near-invisible light gray, or
+a near-invisible dark gray when \code{dark = TRUE}.}
 
 \item{show_axis_line}{Whether to draw the axis line at all (\code{TRUE}) or
 make it transparent (\code{FALSE}).}
 
-\item{axis_text_color}{Color of the axis tick labels.}
+\item{axis_text_color}{Color of the axis tick labels. Defaults to a dark
+gray, or a light gray when \code{dark = TRUE}.}
 }
 \value{
 A \code{ggplot2} theme object.

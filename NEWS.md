@@ -1,3 +1,23 @@
+# emptyviz 0.2.0
+
+* `theme_mt()` gains a `dark` argument. `theme_mt(dark = TRUE)` swaps in a
+  dark-mode-appropriate variant: a transparent plot/panel background instead
+  of the translucent white "paper", light ink/grid/axis-text colors, and
+  [dark_mt_colors5] in place of [mt_colors5] as the discrete palette and geom
+  fill default. `theme_mt()`'s output with `dark = FALSE` (the default) is
+  unchanged - verified pixel-identical against the previous release.
+* New `dark_mt_colors`/`dark_mt_colors3`/`dark_mt_colors4`/`dark_mt_colors5`,
+  lightened tints of the `mt_colors` family for use against dark backgrounds.
+* `use_theme_mt()` now also registers (only if `knitr` is installed) a
+  `knit_print` method for `ggplot`/`patchwork` objects that renders a chunk
+  twice - once normally, once with a dark-mode color overlay - whenever that
+  chunk's `dual_render` chunk option is `TRUE` (settable per chunk, or as a
+  project-wide `knitr: opts_chunk: dual_render: true` default), emitting
+  both images wrapped for Quarto's `.light-content`/`.dark-content` toggle.
+  Chunks that don't set the option, and every other output type (tables,
+  console output, base R plots), are unaffected - the plotting code itself
+  never has to change to pick this up, only the chunk's metadata does.
+
 # emptyviz 0.1.0
 
 Initial package release, migrated from the `theme.R` / `theme_bayes.R`
