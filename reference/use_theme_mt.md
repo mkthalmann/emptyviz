@@ -16,7 +16,7 @@ mutating global `ggplot2` state on load is a bad default.
 ## Usage
 
 ``` r
-use_theme_mt(base_size = 10)
+use_theme_mt(base_size = 10, ...)
 ```
 
 ## Arguments
@@ -25,6 +25,13 @@ use_theme_mt(base_size = 10)
 
   Passed to
   [`theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/theme_mt.md).
+
+- ...:
+
+  Passed to
+  [`theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/theme_mt.md)
+  as well - e.g. `base_family` or `dark`, for callers that want an
+  activated theme other than the plain default.
 
 ## Value
 
