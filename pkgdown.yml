@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   bayesian-plots: bayesian-plots.html
   geoms-and-theme: geoms-and-theme.html
-last_built: 2026-08-12T14:56Z
+last_built: 2026-08-12T14:58Z
 urls:
   reference: https://mkthalmann.github.io/emptyviz/reference
   article: https://mkthalmann.github.io/emptyviz/articles
