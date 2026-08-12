@@ -99,7 +99,11 @@ SD-band sub-layer(s) to draw.</p></dd>
 
 
 <dt id="arg-base-alpha-sd-alpha">base_alpha, sd_alpha<a class="anchor" aria-label="anchor" href="#arg-base-alpha-sd-alpha"></a></dt>
-<dd><p>Alpha of the aura and SD-band sub-layers.</p></dd>
+<dd><p>Alpha of the aura and SD-band <em>fill</em>
+sub-layers, respectively. The SD-band <em>outline</em> is always drawn at
+full opacity regardless of either - it's the one element meant to
+reliably mark the SD band even when <code>base_alpha</code>/<code>sd_alpha</code> are turned
+down or off entirely.</p></dd>
 
 
 <dt id="arg-outline-color">outline_color<a class="anchor" aria-label="anchor" href="#arg-outline-color"></a></dt>

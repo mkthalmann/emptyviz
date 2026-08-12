@@ -51,7 +51,10 @@ geom_half_violin_sd(
 
 - base_alpha, sd_alpha:
 
-  Alpha of the aura and SD-band sub-layers.
+  Alpha of the aura and SD-band *fill* sub-layers, respectively. The
+  SD-band *outline* is always drawn at full opacity regardless of
+  either - it's the one element meant to reliably mark the SD band even
+  when `base_alpha`/`sd_alpha` are turned down or off entirely.
 
 - outline_color:
 
@@ -100,6 +103,16 @@ is not supported upstream and will silently misbehave (e.g.
 [`position_dodge()`](https://ggplot2.tidyverse.org/reference/position_dodge.html)
 warnings about non-overlapping x intervals); this is a `gghalves`
 limitation, not something `geom_half_violin_sd()` can fix.
+
+x-levels (or, when built through
+[`geom_split_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_split_violin_sd.md),
+one thin side of an x-level) with fewer than 2 raw data points are
+silently dropped by the underlying density stat - the same
+[`stats::sd()`](https://rdrr.io/r/stats/sd.html)-needs-2-points floor
+[`geom_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_violin_sd.md)
+has - and ggplot2's own "Groups with fewer than two datapoints have been
+dropped" warning fires. The remaining groups still render correctly
+around the gap.
 
 Only the aura sub-layer ever contributes a legend key (the SD-band
 sub-layers are always `show.legend = FALSE`), so the legend shows one

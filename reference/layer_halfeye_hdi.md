@@ -31,7 +31,8 @@ layer_halfeye_hdi(
   gap = 0.02,
   n = NULL,
   point_size = 1.5,
-  fill_colors = NULL,
+  fill = NULL,
+  fill_range = c(0.4, 1),
   interval_color = NULL
 )
 ```
@@ -76,12 +77,18 @@ layer_halfeye_hdi(
 
   Size of the point-interval's point.
 
-- fill_colors:
+- fill:
 
-  Length-2 fill colors for the two innermost HDI widths; defaults to the
-  package's
-  [mt_colors](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
-  palette.
+  Base slab color, ramped by HDI width (see `fill_range`); defaults to
+  `mt_colors[1]`.
+
+- fill_range:
+
+  Two-value alpha/lightness range (passed to
+  [`ggdist::scale_fill_ramp_discrete()`](https://mjskay.github.io/ggdist/reference/scale_colour_ramp.html)'s
+  `range`) the slab's HDI widths are shaded across, from the widest
+  (most faded, closer to white) to the narrowest (most saturated, `fill`
+  at full strength). Default `c(.4, 1)`.
 
 - interval_color:
 

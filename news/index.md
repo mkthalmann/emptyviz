@@ -75,6 +75,87 @@ geoms’ API beyond adding one new argument (`trim`); it changes their
   and this is cosmetic rather than incorrect, so it’s left as a known,
   accepted limitation rather than fixed.
 
+A second round of fixes from a broader pass looking for the same
+*classes* of risk elsewhere in the package - hardcoded signatures
+drifting from upstream, literal aesthetic overrides silently breaking
+ggplot2 internals, undocumented reaches into unexported internals,
+missing regression coverage for behavior this file already claims is
+guaranteed.
+
+- **Fixed (crash):**
+  [`geom_half_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_half_violin_sd.md)/[`geom_split_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_split_violin_sd.md)
+  no longer crash at render time
+  (`missing value where TRUE/FALSE needed`) on a “thin” x-category
+  (fewer than 2 raw points on one side). Traced to a `gghalves` 0.1.4
+  bug in `GeomHalfViolin$setup_params()`’s own `side` recycling (against
+  the *count* of groups surviving the density stat’s `n >= 2` drop, not
+  the highest *original* group id still present) - reproduces with
+  plain, unmodified
+  [`gghalves::geom_half_violin()`](https://rdrr.io/pkg/gghalves/man/geom_half_violin.html)
+  too, not something this package’s own stat logic introduced. Worked
+  around via a new internal `GeomHalfViolinSD`.
+- **Breaking (API):**
+  [`layer_halfeye_hdi()`](https://mkthalmann.github.io/emptyviz/reference/layer_halfeye_hdi.md)’s
+  `fill_colors` argument (2 distinct hues) is replaced by `fill` (a
+  single base color) and `fill_range` (a shading range) - the HDI-width
+  shading is now mapped to `fill_ramp` (a dedicated `ggdist` aesthetic
+  for exactly this) instead of `fill` directly. The old approach bundled
+  a plot-global
+  [`scale_fill_manual()`](https://ggplot2.tidyverse.org/reference/scale_manual.html)
+  that silently claimed the entire `fill` aesthetic: adding *any* other
+  fill-mapped layer to a plot built on this (directly, or via
+  [`plot_ridge_hdi()`](https://mkthalmann.github.io/emptyviz/reference/plot_ridge_hdi.md)/[`plot_coef_grid_hdi()`](https://mkthalmann.github.io/emptyviz/reference/plot_coef_grid_hdi.md))
+  crashed with `Insufficient values in manual scale`, confirmed
+  reproducible through the real exported functions. `fill_ramp` has its
+  own aesthetic slot and can’t collide with a caller’s own `fill`
+  mapping.
+- **Fixed:**
+  [`plot_ridge_hdi()`](https://mkthalmann.github.io/emptyviz/reference/plot_ridge_hdi.md)/[`plot_bf_forest()`](https://mkthalmann.github.io/emptyviz/reference/plot_bf_forest.md)
+  gave a cryptic, emptyviz-unattributed error
+  (`` `idx` must contain one integer for each level of `f` ``, from deep
+  inside
+  [`forcats::fct_reorder()`](https://forcats.tidyverse.org/reference/fct_reorder.html))
+  when `value`/ `log_bf` was entirely `NA` with the default
+  `category_reorder`/ `contrast_reorder = TRUE`. Both now raise a clear
+  error naming the actual problem and the
+  `category_reorder`/`contrast_reorder = FALSE` workaround.
+- **Fixed:**
+  [`plot_ridge_hdi()`](https://mkthalmann.github.io/emptyviz/reference/plot_ridge_hdi.md),
+  [`plot_coef_grid_hdi()`](https://mkthalmann.github.io/emptyviz/reference/plot_coef_grid_hdi.md),
+  [`plot_location_scale()`](https://mkthalmann.github.io/emptyviz/reference/plot_location_scale.md),
+  and
+  [`plot_bf_forest()`](https://mkthalmann.github.io/emptyviz/reference/plot_bf_forest.md)
+  leaked R’s raw, internal `argument "category_sym" is missing` (the
+  [`rlang::ensym()`](https://rlang.r-lib.org/reference/defusing-advanced.html)-renamed
+  variable, not the documented parameter name) when a required argument
+  was omitted. All four now raise a clear `"function_name(): \`arg\` is
+  required.”\` error instead.
+- **Hardened:** the `Remotes: erocoar/gghalves` dependency is now pinned
+  to the exact commit this package’s `gghalves`-internals-reaching code
+  was verified against (previously unpinned - a fresh install could
+  silently pull a different `gghalves` than what the code comments
+  claimed compatibility with). `ggdist`/`ggtext`/`ggarrow`/`gghalves`
+  also gain explicit minimum versions in `DESCRIPTION`.
+- **Hardened:** `.dark_mode_overlay()` now warns (instead of silently
+  falling back to the *global* active theme, which can un-blank elements
+  a plot deliberately hid via
+  e.g. [`theme_void()`](https://ggplot2.tidyverse.org/reference/ggtheme.html))
+  if the internal `ggplot2:::plot_theme()` it depends on ever fails -
+  confirmed via a simulated failure that this path had no test coverage
+  before.
+- Docs: clarified that `sd_alpha` only controls the SD-band *fill*
+  sub-layer, not the outline (always drawn at full opacity, by design -
+  it’s the one element meant to reliably mark the SD band regardless of
+  other alpha settings) - the previous wording (“Alpha of the aura and
+  SD-band sub-layers”) implied broader coverage than it actually has. No
+  behavior change.
+- Internal cleanup: the mean ± SD bounds computation, previously
+  near-duplicated between `StatYdensitySD`/`StatHalfYdensitySD`, is now
+  a single shared helper; the package’s other unexported-internals
+  reaches (`ggplot2:::ggproto_formals`, `asNamespace("knitr")`) gain the
+  same “verified against version X” comments already used for the
+  `gghalves` reach; `.claude` is excluded from `R CMD check`.
+
 ## emptyviz 0.2.0
 
 - [`theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/theme_mt.md)

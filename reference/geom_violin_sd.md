@@ -48,7 +48,10 @@ geom_violin_sd(
 
 - base_alpha, sd_alpha:
 
-  Alpha of the aura and SD-band sub-layers.
+  Alpha of the aura and SD-band *fill* sub-layers, respectively. The
+  SD-band *outline* is always drawn at full opacity regardless of
+  either - it's the one element meant to reliably mark the SD band even
+  when `base_alpha`/`sd_alpha` are turned down or off entirely.
 
 - outline_color:
 
