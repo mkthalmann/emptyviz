@@ -27,7 +27,11 @@ geom_violin_sd(
 \item{style}{One of \code{"both"} (default), \code{"fill"}, or \code{"outline"} - which
 SD-band sub-layer(s) to draw.}
 
-\item{base_alpha, sd_alpha}{Alpha of the aura and SD-band sub-layers.}
+\item{base_alpha, sd_alpha}{Alpha of the aura and SD-band \emph{fill}
+sub-layers, respectively. The SD-band \emph{outline} is always drawn at
+full opacity regardless of either - it's the one element meant to
+reliably mark the SD band even when \code{base_alpha}/\code{sd_alpha} are turned
+down or off entirely.}
 
 \item{outline_color}{Color of the SD-band outline; defaults to \code{fill}
 when given as a literal, or otherwise tracks each group's resolved

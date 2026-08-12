@@ -427,6 +427,12 @@ plot_bf_forest <- function(
   xlab = NULL,
   ylab = "Contrast"
 ) {
+  if (missing(contrast)) {
+    stop("plot_bf_forest(): `contrast` is required.", call. = FALSE)
+  }
+  if (missing(log_bf)) {
+    stop("plot_bf_forest(): `log_bf` is required.", call. = FALSE)
+  }
   contrast_sym <- rlang::ensym(contrast)
   log_bf_sym <- rlang::ensym(log_bf)
   se_quo <- rlang::enquo(se)
@@ -454,6 +460,19 @@ plot_bf_forest <- function(
   }
 
   x_expr <- if (contrast_reorder) {
+    # See plot_ridge_hdi()'s identical guard: forcats::fct_reorder() fails
+    # deep inside ggplot2's own aesthetic evaluation with a cryptic,
+    # emptyviz-unattributed error if `log_bf` is entirely NA - checked
+    # eagerly here (plot_data$.log_bf is already materialized above, not
+    # lazy) instead.
+    if (all(is.na(plot_data$.log_bf))) {
+      stop(
+        "plot_bf_forest(): `log_bf` is entirely NA - forcats::fct_reorder() ",
+        "can't reorder contrasts by it. Pass `contrast_reorder = FALSE`, ",
+        "or check your data.",
+        call. = FALSE
+      )
+    }
     rlang::expr(forcats::fct_reorder(!!contrast_sym, .data$.log_bf))
   } else {
     contrast_sym

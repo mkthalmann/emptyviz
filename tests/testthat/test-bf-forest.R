@@ -428,3 +428,23 @@ test_that("plot_bf_forest() works with no `se` column present at all in `data` (
   expect_no_error(ggplot_build(p))
   expect_false(any(sapply(p$layers, function(l) inherits(l$geom, "GeomErrorbar"))))
 })
+
+test_that("plot_bf_forest() requires `contrast`/`log_bf`, with a clear error", {
+  expect_error(plot_bf_forest(data.frame(x = 1)), "`contrast` is required")
+  expect_error(plot_bf_forest(data.frame(x = 1), contrast = x), "`log_bf` is required")
+})
+
+test_that("plot_bf_forest() gives a clear error for all-NA `log_bf` with the default reorder, not forcats' own cryptic one", {
+  # Regression test: forcats::fct_reorder() used to fail deep inside
+  # ggplot2's own aesthetic evaluation with a cryptic, emptyviz-unattributed
+  # error if `log_bf` was entirely NA.
+  d <- data.frame(contrast = c("a - b", "c - d"), log_bf = NA_real_)
+  expect_error(
+    plot_bf_forest(d, contrast = contrast, log_bf = log_bf),
+    "entirely NA"
+  )
+  # the documented escape hatch still works
+  expect_no_error(
+    suppressWarnings(ggplot_build(plot_bf_forest(d, contrast = contrast, log_bf = log_bf, contrast_reorder = FALSE)))
+  )
+})

@@ -71,3 +71,16 @@ test_that("axis text has a non-zero margin from the axis, in both light and dark
     expect_gt(as.numeric(t$axis.text.y$margin[2]), 0) # right
   }
 })
+
+test_that("theme_mt(dark = FALSE)'s complete output matches its recorded snapshot", {
+  # NEWS.md claims theme_mt(dark = FALSE) has stayed "pixel-identical" since
+  # 0.1.0, but every other test here only checks individual fields - a
+  # change to, say, plot.margin or panel.spacing would pass all of them
+  # silently. This pins the FULL theme object (all 153-ish elements),
+  # confirmed deterministic across calls (identical(theme_mt(), theme_mt())
+  # is TRUE - no environment/pointer noise), so any future accidental
+  # change shows up as a snapshot diff instead of nothing at all. Run
+  # `testthat::snapshot_review()`/`snapshot_accept()` if a change here is
+  # deliberate, not a regression.
+  expect_snapshot(print(theme_mt()))
+})

@@ -31,7 +31,11 @@ vector thereof (see Details).}
 \item{style}{One of \code{"both"} (default), \code{"fill"}, or \code{"outline"} - which
 SD-band sub-layer(s) to draw.}
 
-\item{base_alpha, sd_alpha}{Alpha of the aura and SD-band sub-layers.}
+\item{base_alpha, sd_alpha}{Alpha of the aura and SD-band \emph{fill}
+sub-layers, respectively. The SD-band \emph{outline} is always drawn at
+full opacity regardless of either - it's the one element meant to
+reliably mark the SD band even when \code{base_alpha}/\code{sd_alpha} are turned
+down or off entirely.}
 
 \item{outline_color}{Color of the SD-band outline; defaults to \code{fill}
 when given as a literal, or otherwise tracks each group's resolved
@@ -74,6 +78,13 @@ vertical-only. Swapping x/y (e.g. \code{aes(x = value, y = group)}) or using
 (e.g. \code{position_dodge()} warnings about non-overlapping x intervals);
 this is a \code{gghalves} limitation, not something \code{geom_half_violin_sd()}
 can fix.
+
+x-levels (or, when built through \code{\link[=geom_split_violin_sd]{geom_split_violin_sd()}}, one thin side
+of an x-level) with fewer than 2 raw data points are silently dropped by
+the underlying density stat - the same \code{stats::sd()}-needs-2-points floor
+\code{\link[=geom_violin_sd]{geom_violin_sd()}} has - and ggplot2's own "Groups with fewer than two
+datapoints have been dropped" warning fires. The remaining groups still
+render correctly around the gap.
 
 Only the aura sub-layer ever contributes a legend key (the SD-band
 sub-layers are always \code{show.legend = FALSE}), so the legend shows one

@@ -107,8 +107,13 @@ position_dodge_gap <- function(dodge_width, gap, preserve = "single") {
 #'   panel height (see Details).
 #' @param n Passed to `stat_slab()`'s `n` (density resolution), if given.
 #' @param point_size Size of the point-interval's point.
-#' @param fill_colors Length-2 fill colors for the two innermost HDI widths;
-#'   defaults to the package's [mt_colors] palette.
+#' @param fill Base slab color, ramped by HDI width (see `fill_range`);
+#'   defaults to `mt_colors[1]`.
+#' @param fill_range Two-value alpha/lightness range (passed to
+#'   [ggdist::scale_fill_ramp_discrete()]'s `range`) the slab's HDI widths
+#'   are shaded across, from the widest (most faded, closer to white) to
+#'   the narrowest (most saturated, `fill` at full strength). Default
+#'   `c(.4, 1)`.
 #' @param interval_color Color of the point-interval; defaults to
 #'   `mt_colors[1]`.
 #' @return A list of `ggplot2`/`ggdist` layers, scales, and guides.
@@ -133,18 +138,31 @@ layer_halfeye_hdi <- function(
   gap = .02,
   n = NULL,
   point_size = 1.5,
-  fill_colors = NULL,
+  fill = NULL,
+  fill_range = c(.4, 1),
   interval_color = NULL
 ) {
-  fill_colors <- fill_colors %||%
-    c(alpha(mt_colors[2], .7), alpha(mt_colors[1], .7))
+  fill <- fill %||% mt_colors[1]
   interval_color <- interval_color %||% mt_colors[1]
 
+  # HDI-width shading is mapped to `fill_ramp` (a dedicated ggdist
+  # aesthetic for exactly this - ramping a single base color's
+  # alpha/lightness across discrete levels), not `fill` directly. An
+  # earlier version mapped `aes(fill = after_stat(level))` plus a
+  # plot-global `scale_fill_manual()` - since ggplot2 scales are per-
+  # aesthetic and global to the whole plot, that silently claimed the
+  # entire `fill` aesthetic: adding ANY other fill-mapped layer to a plot
+  # built on this (directly, or via plot_ridge_hdi()/plot_coef_grid_hdi())
+  # crashed with "Insufficient values in manual scale" (confirmed
+  # empirically). `fill_ramp` is its own aesthetic slot, so it can't
+  # collide with a caller's own `fill` mapping - verified working
+  # standalone and with an extra fill-mapped layer added.
   slab_args <- list(
-    mapping = aes(fill = after_stat(level)),
+    mapping = aes(fill_ramp = after_stat(level)),
     position = "dodgejust",
     point_interval = ggdist::mean_hdi,
     .width = slab_widths,
+    fill = fill,
     color = "white",
     scale = scale,
     linewidth = .1
@@ -169,8 +187,8 @@ layer_halfeye_hdi <- function(
   list(
     do.call(ggdist::stat_slab, slab_args),
     do.call(ggdist::stat_pointinterval, interval_args),
-    scale_fill_manual(values = fill_colors),
-    guides(fill_ramp = "none", fill = "none", pch = "none", color = "none")
+    ggdist::scale_fill_ramp_discrete(range = fill_range),
+    guides(fill_ramp = "none", pch = "none", color = "none")
   )
 }
 
@@ -227,12 +245,33 @@ plot_ridge_hdi <- function(
   ylab = "Posterior marginal means \u00b1HDI<sub>95</sub> \u00b1ETI<sub>50;90;95</sub>",
   ...
 ) {
+  if (missing(category)) {
+    stop("plot_ridge_hdi(): `category` is required.", call. = FALSE)
+  }
   category_sym <- rlang::ensym(category)
   value_sym <- rlang::ensym(value)
   facet_quo <- rlang::enquo(facet)
   has_facet <- !rlang::quo_is_null(facet_quo)
 
   x_expr <- if (category_reorder) {
+    # forcats::fct_reorder() fails deep inside ggplot2's own aesthetic
+    # evaluation (a cryptic "`idx` must contain one integer for each level
+    # of `f`" from forcats:::lvls_reorder(), not this function) if `value`
+    # is entirely NA - checked eagerly here, rather than left to fail
+    # lazily at build/print time, since forcats' own error gives no hint
+    # this function or its category_reorder argument is involved at all.
+    resolved_value <- tryCatch(
+      value_transform(rlang::eval_tidy(value_sym, data)),
+      error = function(e) NULL
+    )
+    if (!is.null(resolved_value) && all(is.na(resolved_value))) {
+      stop(
+        "plot_ridge_hdi(): `value` (after `value_transform`) is entirely ",
+        "NA - forcats::fct_reorder() can't reorder categories by it. Pass ",
+        "`category_reorder = FALSE`, or check your data.",
+        call. = FALSE
+      )
+    }
     rlang::expr(
       forcats::fct_reorder(
         !!category_sym,
@@ -339,6 +378,9 @@ plot_coef_grid_hdi <- function(
   ylab = "Posterior coefficients \u00b1HDI<sub>95</sub> \u00b1ETI<sub>50;90;95</sub>",
   ...
 ) {
+  if (missing(category)) {
+    stop("plot_coef_grid_hdi(): `category` is required.", call. = FALSE)
+  }
   category_sym <- rlang::ensym(category)
   value_sym <- rlang::ensym(value)
 

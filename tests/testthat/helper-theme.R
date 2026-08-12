@@ -85,15 +85,20 @@ legend_texts <- function(p) {
 # exact key we stashed it under.
 #
 # Traces BOTH gghalves::GeomHalfViolin$draw_group (the aura and SD-fill
-# sub-layers) AND emptyviz:::GeomHalfViolinOutline$draw_group (the SD-band
-# outline sub-layer, a separate ggproto - see R/geom-violin-sd.R's own
-# comment on why the outline needs its own Geom subclass) - tracing only
-# the former would silently stop covering the outline layer's own `side`
-# resolution.
+# sub-layers, which now construct as emptyviz:::GeomHalfViolinSD - a thin
+# subclass overriding only setup_params(), for the thin-cell/side-recycling
+# fix documented on that ggproto - and inherit draw_group() unchanged, so
+# the function object actually executing is still the one bound on
+# GeomHalfViolin itself) AND emptyviz:::GeomHalfViolinOutline$draw_group
+# (the SD-band outline sub-layer, a separate ggproto subclassing
+# GeomHalfViolinSD in turn - see R/geom-violin-sd.R's own comments) -
+# tracing only the former would silently stop covering the outline layer's
+# own `side` resolution.
 #
 # GeomHalfViolinOutline$draw_group itself calls
-# ggproto_parent(GeomHalfViolin, self)$draw_group(...) internally (to do
-# the actual half-violin geometry, after nulling fill) - so without the
+# ggproto_parent(GeomHalfViolinSD, self)$draw_group(...) internally (to do
+# the actual half-violin geometry, after nulling fill), which resolves to
+# that same GeomHalfViolin-bound draw_group() - so without the
 # class(self)[1] guard below, tracing both classes would double-count every
 # outline draw: once at the outline's own entry, once again when it
 # delegates into the (also traced) parent method, since `self` keeps
@@ -118,7 +123,7 @@ capture_applied_sides <- function(p) {
   }
 
   GHV <- environment(gghalves::geom_half_violin)$GeomHalfViolin
-  trace(what = "draw_group", where = GHV, tracer = tracer_for("GeomHalfViolin"), print = FALSE)
+  trace(what = "draw_group", where = GHV, tracer = tracer_for("GeomHalfViolinSD"), print = FALSE)
   on.exit(untrace(what = "draw_group", where = GHV), add = TRUE)
 
   GHVO <- emptyviz:::GeomHalfViolinOutline

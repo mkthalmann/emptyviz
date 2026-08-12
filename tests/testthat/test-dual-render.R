@@ -103,6 +103,41 @@ test_that(".dark_mode_overlay() correctly colors axis text even when the chunk h
   expect_equal(el$colour, emptyviz:::.dark_axis_text) # but color still flips
 })
 
+test_that(".dark_mode_overlay() warns (rather than silently mis-rendering) if ggplot2:::plot_theme() fails", {
+  # Regression test: the tryCatch() around ggplot2:::plot_theme() used to
+  # fall back to theme_get() (the *global* active theme, not necessarily
+  # this plot's own) with no signal at all - meaning a future ggplot2
+  # release that renames/restructures plot_theme() would silently start
+  # un-blanking elements a plot deliberately hid (e.g. via theme_void()),
+  # confirmed by simulating the failure directly, with zero test coverage
+  # before this. It should now warn instead.
+  local_mocked_bindings(plot_theme = function(...) stop("simulated failure"), .package = "ggplot2")
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  expect_warning(emptyviz:::.dark_mode_overlay(p), "plot_theme")
+})
+
+test_that("knit_print_ggplot_dual() called twice for the same chunk label doesn't collide on output filenames", {
+  skip_if_not_installed("knitr")
+  tmp <- tempfile("dual-render-test-")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  fig_path <- file.path(tmp, "figure-html/")
+
+  p1 <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  p2 <- ggplot(mtcars, aes(hp, mpg)) + geom_point()
+  opts <- list(dual_render = TRUE, label = "fig-multi", fig.path = fig_path, fig.width = 4, fig.height = 3, dpi = 72)
+
+  out1 <- emptyviz:::knit_print_ggplot_dual(p1, options = opts)
+  out2 <- emptyviz:::knit_print_ggplot_dual(p2, options = opts)
+
+  expect_true(file.exists(file.path(fig_path, "fig-multi-light-1.png")))
+  expect_true(file.exists(file.path(fig_path, "fig-multi-dark-1.png")))
+  expect_true(file.exists(file.path(fig_path, "fig-multi-light-2.png")))
+  expect_true(file.exists(file.path(fig_path, "fig-multi-dark-2.png")))
+  expect_match(unclass(out1), "fig-multi-light-1.png", fixed = TRUE)
+  expect_match(unclass(out2), "fig-multi-light-2.png", fixed = TRUE)
+})
+
 test_that("use_theme_mt() registers a knit_print method for ggplot objects", {
   skip_if_not_installed("knitr")
   old <- theme_get()

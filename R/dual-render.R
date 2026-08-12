@@ -49,8 +49,29 @@
 # ggplot2:::plot_theme() + calc_element() resolve the full inheritance chain
 # (merged with the active default theme) to get the real effective element,
 # confirmed empirically against both a theme_void() plot and a normal one.
+# Verified against ggplot2 4.0.3; if a future release renames/restructures
+# plot_theme(), the tryCatch below falls back to theme_get() (the *global*
+# active theme, not this specific plot's own resolved one) rather than
+# erroring outright - deliberately, so a dual-render chunk still emits
+# something instead of failing the whole knit - but that fallback can
+# silently un-blank elements a plot deliberately hid (e.g. theme_void()'s
+# panel.grid/axis.line), confirmed by simulating plot_theme()'s failure
+# directly. A warning surfaces that instead of letting it pass silently.
 .dark_mode_overlay <- function(plot) {
-  resolved <- tryCatch(ggplot2:::plot_theme(plot), error = function(e) theme_get())
+  resolved <- tryCatch(
+    ggplot2:::plot_theme(plot),
+    error = function(e) {
+      warning(
+        ".dark_mode_overlay(): ggplot2:::plot_theme() failed (", conditionMessage(e),
+        ") - falling back to the global active theme, which may not reflect ",
+        "this plot's own theme and can un-blank elements (e.g. from ",
+        "theme_void()) it deliberately hid. Likely means this internal ",
+        "ggplot2 function changed shape; see the comment above this function.",
+        call. = FALSE
+      )
+      theme_get()
+    }
+  )
   is_blank <- function(name) inherits(calc_element(name, resolved), "element_blank")
 
   axis_text <- function() element_markdown(colour = .dark_axis_text)
@@ -176,7 +197,13 @@ knit_print_ggplot_dual <- function(x, options, ...) {
 # method function itself lives) - the standard pattern for a package
 # providing a knit_print method for a Suggests-only knitr, since a static
 # NAMESPACE S3method() entry can't reference a generic that might not be
-# installed. A no-op if knitr isn't installed.
+# installed. A no-op if knitr isn't installed. `asNamespace("knitr")` (not
+# `:::`) is used only to get a namespace *environment* to pass as
+# registerS3method()'s `envir` - both are base R, not reaching into any
+# unexported knitr object/internal, so this is far less fragile than the
+# gghalves/ggplot2 internals this package reaches into elsewhere; still
+# worth flagging as "if S3 method registration for Suggests-only packages
+# ever changes recommended shape, revisit this."
 .register_dual_render <- function() {
   if (requireNamespace("knitr", quietly = TRUE)) {
     registerS3method("knit_print", "ggplot", knit_print_ggplot_dual, envir = asNamespace("knitr"))

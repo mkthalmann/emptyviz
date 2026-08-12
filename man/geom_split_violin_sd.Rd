@@ -84,7 +84,11 @@ the legend title the normal ggplot2 way and can merge with \code{color}/
 Warns (does not silently drop) when an x-level has data on only one side
 of the split, or when a side's cell count falls under the \code{n >= 2}
 minimum the underlying SD-band stat already requires - splitting divides
-already-thin repeated-measures cells a third way.
+already-thin repeated-measures cells a third way. Either way, the plot
+still renders correctly around the thin/missing cell - a below-minimum
+side is silently dropped by the underlying density stat (same as
+\code{\link[=geom_half_violin_sd]{geom_half_violin_sd()}}), it doesn't stop the rest of the plot from
+drawing.
 }
 \examples{
 library(ggplot2)

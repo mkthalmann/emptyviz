@@ -12,3 +12,4 @@
 ^docs$
 ^pkgdown$
 ^exploratory-tests\.R$
+^\.claude$

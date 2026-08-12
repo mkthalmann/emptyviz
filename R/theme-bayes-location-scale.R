@@ -110,6 +110,15 @@ plot_location_scale <- function(
   xlab = NULL,
   ylab = NULL
 ) {
+  if (missing(category)) {
+    stop("plot_location_scale(): `category` is required.", call. = FALSE)
+  }
+  if (missing(location)) {
+    stop("plot_location_scale(): `location` is required.", call. = FALSE)
+  }
+  if (missing(sigma)) {
+    stop("plot_location_scale(): `sigma` is required.", call. = FALSE)
+  }
   ellipse_geom <- match.arg(ellipse_geom)
   # sorted ascending for the label text below, but drawn widest-first (see
   # the stat_ellipse() loop below) so the narrowest (highest-alpha) interval

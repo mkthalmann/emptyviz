@@ -121,3 +121,53 @@ test_that("legend key: only the aura sub-layer contributes, matching gghalves::g
     expect_equal(sum(contributes), 1)
   }
 })
+
+# Regression tests for a real crash (traced to a gghalves 0.1.4 bug in
+# GeomHalfViolin$setup_params()'s own `side` recycling, not this package's
+# stat logic - see GeomHalfViolinSD's own comment in R/geom-violin-sd.R):
+# a thin (n < 2) x-level used to crash render with "missing value where
+# TRUE/FALSE needed" once any earlier group got dropped by the density
+# stat's own n >= 2 floor.
+thin_df <- data.frame(
+  grp = c(rep("a", 20), rep("b", 1), rep("c", 20)),
+  y = c(rnorm(20), rnorm(1), rnorm(20))
+)
+
+test_that("a thin (n=1) x-level no longer crashes render, data supplied directly", {
+  p <- ggplot(thin_df, aes(grp, y)) + geom_half_violin_sd()
+  expect_no_error(suppressWarnings(render_plot(p)))
+
+  b <- suppressWarnings(ggplot_build(p))
+  surviving <- unique(b$data[[1]]$group)
+  expect_length(surviving, 2) # "b" (the thin group) is dropped
+})
+
+test_that("a thin (n=1) x-level no longer crashes render, data = NULL / inherit.aes = TRUE", {
+  # mirrors this geom's own roxygen @examples calling convention exactly -
+  # a scenario a data-prefiltering fix could never have covered, since
+  # `data` doesn't exist until ggplot_build() time.
+  p <- ggplot(thin_df, aes(grp, y, fill = grp)) + geom_half_violin_sd()
+  expect_no_error(suppressWarnings(render_plot(p)))
+})
+
+test_that("a thin x-level not last, with a vector side, doesn't shift surviving groups' side assignments", {
+  # the sharpest test of the actual mechanism: gghalves recycles `side`
+  # against the *count* of surviving groups, not the highest *original*
+  # group id - so a thin group anywhere but last risks later groups'
+  # sides shifting once the bug is triggered.
+  thin_df_ordered <- thin_df
+  thin_df_ordered$grp <- factor(thin_df_ordered$grp, levels = c("a", "b", "c"))
+
+  applied <- capture_applied_sides(
+    ggplot(thin_df_ordered, aes(grp, y)) + geom_half_violin_sd(side = c("l", "r", "l"))
+  )
+  applied <- applied[!duplicated(applied$group), ]
+  applied <- applied[order(applied$group), ]
+
+  # group 2 ("b") is the thin, dropped one - only groups 1 ("a") and 3
+  # ("c") should have survived, still with their own originally-requested
+  # sides ("l" and "l"), not shifted to "l"/"r" as if "c" had become the
+  # 2nd surviving group.
+  expect_equal(applied$group, c(1, 3))
+  expect_equal(applied$side, c("l", "l"))
+})

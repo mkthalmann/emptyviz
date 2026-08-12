@@ -195,3 +195,38 @@ test_that("bounds = NULL (default) omits the sigma_max curve", {
   p <- plot_location_scale(location_scale_fixture, category = category, location = location, sigma = sigma)
   expect_false(any(sapply(p$layers, function(l) inherits(l$geom, "GeomLine"))))
 })
+
+test_that("independently-summarized (unpaired) data still builds - the documented misuse case - but the ellipse genuinely differs from paired data", {
+  # Backs the roxygen's own extensive warning (see plot_location_scale()'s
+  # Details) that data must be paired per-draw, not independently
+  # summarized, or the ellipse only reflects two unrelated marginals mashed
+  # together - previously asserted only in prose, with no test confirming
+  # (a) it doesn't error, since that's a real, deliberately-supported case,
+  # and (b) the ellipse actually is different, not silently identical
+  # regardless of pairing.
+  set.seed(42)
+  n <- 300
+  paired <- data.frame(
+    category = "a",
+    location = rnorm(n),
+    sigma = NA_real_
+  )
+  paired$sigma <- 0.6 * paired$location + rnorm(n, 0, .3) # genuine per-draw correlation
+  unpaired <- paired
+  unpaired$sigma <- sample(unpaired$sigma) # break the pairing; same marginal distribution
+
+  p_paired <- plot_location_scale(paired, category = category, location = location, sigma = sigma, ellipse_level = .95)
+  p_unpaired <- plot_location_scale(unpaired, category = category, location = location, sigma = sigma, ellipse_level = .95)
+
+  expect_no_error(ggplot_build(p_paired))
+  expect_no_error(ggplot_build(p_unpaired))
+
+  ellipse_idx <- which(sapply(p_paired$layers, function(l) inherits(l$geom, "GeomPolygon")))
+  b_paired <- ggplot_build(p_paired)$data[[ellipse_idx]]
+  b_unpaired <- ggplot_build(p_unpaired)$data[[ellipse_idx]]
+  # stat_ellipse()'s Cholesky-based parameterization makes the ellipse's
+  # x-coordinates depend only on location's own variance (unchanged by the
+  # shuffle) - y is where the correlation/covariance term (destroyed by
+  # the shuffle) actually shows up, so that's the meaningful comparison.
+  expect_false(isTRUE(all.equal(b_paired$y, b_unpaired$y)))
+})

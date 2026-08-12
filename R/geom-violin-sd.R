@@ -28,6 +28,48 @@ warn_reserved_dots <- function(dots, geom_name) {
   dots[!names(dots) %in% reserved]
 }
 
+# Shared by StatYdensitySD/StatHalfYdensitySD's compute_panel() (below): the
+# mean +/- 1 SD bounds per group, dropping groups with fewer than 2 raw
+# (non-NA) y values - the same n>=2 floor the underlying density stat itself
+# already requires to estimate anything. `data` must already be
+# canonicalized (StatYdensitySD flips it via flip_data() first;
+# StatHalfYdensitySD never needs to - gghalves has no flipped_aes concept),
+# so this helper itself stays orientation-agnostic. Previously duplicated
+# near-verbatim in both compute_panel()s - not pure copy-paste even then
+# (one operated on flip_data()-canonicalized data, one on raw), which made a
+# future "just keep them in sync by hand" edit its own drift risk; factored
+# out once both call sites agreed on "already-canonicalized data in, bounds
+# table out" as the shared contract.
+.sd_bounds <- function(data, na.rm) {
+  data |>
+    group_by(group) |>
+    summarise(
+      n = sum(!is.na(y)),
+      lo = mean(y, na.rm = na.rm) - sd(y, na.rm = na.rm),
+      hi = mean(y, na.rm = na.rm) + sd(y, na.rm = na.rm),
+      .groups = "drop"
+    ) |>
+    filter(n >= 2)
+}
+
+# Truncates a density-stat `result` (already canonicalized, same convention
+# as .sd_bounds()'s own `data` argument) to each group's own mean +/- 1 SD
+# band. `bounds` and `result` are guaranteed consistent here - the
+# underlying density stat (gghalves:::StatHalfYdensity$compute_panel() /
+# ggplot2::StatYdensity$compute_panel()) already drops any group with fewer
+# than 2 points before this ever runs, the identical n>=2 floor
+# .sd_bounds() itself applies - so every group iterated over below is
+# guaranteed present in `bounds`, and lo/hi are never NA in practice.
+.truncate_to_sd_bounds <- function(result, bounds) {
+  lapply(unique(result$group), function(g) {
+    grp <- result[result$group == g, ]
+    lo <- bounds$lo[match(g, bounds$group)]
+    hi <- bounds$hi[match(g, bounds$group)]
+    grp[grp$y >= lo & grp$y <= hi, ]
+  }) |>
+    bind_rows()
+}
+
 # Reaches into gghalves:::StatHalfYdensity, an unexported ggproto of the
 # gghalves package, since gghalves doesn't export a Stat subclassing hook
 # for its half-violin density computation the way ggplot2 does for
@@ -55,7 +97,11 @@ StatHalfYdensitySD <- ggproto(
   # directly - reading gghalves:::StatHalfYdensity's OWN compute_panel
   # formals, not this override's `...`-based one - sidesteps that gap
   # without re-introducing the hardcoded-parameter-list problem the `...`
-  # forwarding below exists to avoid in the first place.
+  # forwarding below exists to avoid in the first place. `ggproto_formals`
+  # is itself an unexported ggplot2 helper (verified present and behaving
+  # this way in ggplot2 4.0.3) - if a future release renames/removes it,
+  # this errors loudly at package-load/first-call time rather than
+  # silently misbehaving, so a break here should be easy to spot.
   parameters = function(self, extra = FALSE) {
     args <- names(ggplot2:::ggproto_formals(gghalves:::StatHalfYdensity$compute_panel))
     args <- setdiff(args, c("self", "data", "scales"))
@@ -73,15 +119,7 @@ StatHalfYdensitySD <- ggproto(
   # would silently fail to reach this stat (a real bug, once found for the
   # ggplot2/StatYdensity side - see StatYdensitySD below).
   compute_panel = function(self, data, scales, na.rm = FALSE, ...) {
-    bounds <- data |>
-      group_by(group) |>
-      summarise(
-        n = sum(!is.na(y)),
-        lo = mean(y, na.rm = na.rm) - sd(y, na.rm = na.rm),
-        hi = mean(y, na.rm = na.rm) + sd(y, na.rm = na.rm),
-        .groups = "drop"
-      ) |>
-      filter(n >= 2)
+    bounds <- .sd_bounds(data, na.rm)
 
     result <- gghalves:::StatHalfYdensity$compute_panel(
       data,
@@ -90,15 +128,7 @@ StatHalfYdensitySD <- ggproto(
       ...
     )
 
-    result <- lapply(unique(result$group), function(g) {
-      grp <- result[result$group == g, ]
-      lo <- bounds$lo[match(g, bounds$group)]
-      hi <- bounds$hi[match(g, bounds$group)]
-      grp[grp$y >= lo & grp$y <= hi, ]
-    }) |>
-      bind_rows()
-
-    result
+    .truncate_to_sd_bounds(result, bounds)
   }
 )
 
@@ -141,12 +171,49 @@ GeomViolinOutline <- ggproto(
   }
 )
 
+# Fixes a crash in gghalves 0.1.4's own GeomHalfViolin$setup_params():
+# `params$side <- rep(params$side, ceiling(length(unique(data$group)) /
+# length(params$side)))` recycles `side` against the *count* of groups
+# surviving the density stat's own n>=2 drop, not against the highest
+# *original* (pre-drop, ggplot2-assigned) group id still present. When
+# stat_half_ydensity() drops an early-numbered thin group (fewer than 2
+# raw points on one side), later groups keep their original higher ids,
+# so draw_group()'s `side[data$group[1]]` indexes past the end of the
+# (too-short) recycled vector -> NA -> `if (NA)` crash ("missing value
+# where TRUE/FALSE needed"). Confirmed to reproduce with plain,
+# unmodified gghalves::geom_half_violin() alone on thin data - not
+# specific to this package's own Stat wrapper, and not specific to a
+# vector `side` (the scalar default reproduces it too). The fix below
+# recycles against max(data$group) instead, so an original id is always
+# in range regardless of which earlier groups got dropped. Verified
+# against gghalves 0.1.4; if a future release restructures
+# setup_params()/draw_group(), this will need revisiting (same caveat as
+# StatHalfYdensitySD above).
+#
+# The "split" branch is gghalves' own unrelated split-violin feature (a
+# literal `split` column in `data`) - geom_split_violin_sd() never uses
+# it (it builds two independent geom_half_violin_sd() calls instead), so
+# it's left verbatim/unfixed here, out of scope.
+GeomHalfViolinSD <- ggproto(
+  "GeomHalfViolinSD",
+  gghalves::GeomHalfViolin,
+  setup_params = function(data, params) {
+    if ("split" %in% colnames(data)) {
+      stopifnot(length(unique(data$split)) == 2)
+      params$side <- rep(c("l", "r"), max(data$group) / 2)
+    } else {
+      params$side <- rep_len(params$side, max(1L, max(data$group)))
+    }
+    params
+  }
+)
+
 GeomHalfViolinOutline <- ggproto(
   "GeomHalfViolinOutline",
-  gghalves::GeomHalfViolin,
+  GeomHalfViolinSD,
   draw_group = function(self, data, side = "l", nudge = 0, ..., draw_quantiles = NULL) {
     data$fill <- NA
-    ggproto_parent(gghalves::GeomHalfViolin, self)$draw_group(
+    ggproto_parent(GeomHalfViolinSD, self)$draw_group(
       data,
       side = side,
       nudge = nudge,
@@ -183,6 +250,13 @@ GeomHalfViolinOutline <- ggproto(
 #' this is a `gghalves` limitation, not something `geom_half_violin_sd()`
 #' can fix.
 #'
+#' x-levels (or, when built through [geom_split_violin_sd()], one thin side
+#' of an x-level) with fewer than 2 raw data points are silently dropped by
+#' the underlying density stat - the same `stats::sd()`-needs-2-points floor
+#' [geom_violin_sd()] has - and ggplot2's own "Groups with fewer than two
+#' datapoints have been dropped" warning fires. The remaining groups still
+#' render correctly around the gap.
+#'
 #' Only the aura sub-layer ever contributes a legend key (the SD-band
 #' sub-layers are always `show.legend = FALSE`), so the legend shows one
 #' clean, full-opacity swatch per group instead of the aura's and SD-fill's
@@ -201,7 +275,11 @@ GeomHalfViolinOutline <- ggproto(
 #'   vector thereof (see Details).
 #' @param style One of `"both"` (default), `"fill"`, or `"outline"` - which
 #'   SD-band sub-layer(s) to draw.
-#' @param base_alpha,sd_alpha Alpha of the aura and SD-band sub-layers.
+#' @param base_alpha,sd_alpha Alpha of the aura and SD-band *fill*
+#'   sub-layers, respectively. The SD-band *outline* is always drawn at
+#'   full opacity regardless of either - it's the one element meant to
+#'   reliably mark the SD band even when `base_alpha`/`sd_alpha` are turned
+#'   down or off entirely.
 #' @param outline_color Color of the SD-band outline; defaults to `fill`
 #'   when given as a literal, or otherwise tracks each group's resolved
 #'   fill automatically (see Details).
@@ -271,6 +349,13 @@ geom_half_violin_sd <- function(
       dots_clean
     )
   )
+  # LayerInstance objects are ordinary mutable objects, and Geom$setup_params()
+  # runs at ggplot_build() time - well after construction - so reassigning
+  # $geom here is equivalent to constructing with geom = GeomHalfViolinSD
+  # directly (verified empirically), far less invasive than reimplementing
+  # geom_half_violin()'s own construction/defaulting logic via a raw
+  # layer() call. See GeomHalfViolinSD's own comment for what this fixes.
+  base_layer$geom <- GeomHalfViolinSD
 
   # Only the aura (this layer) ever carries the legend - see the roxygen
   # Details above and GeomViolinOutline's own comment for why the SD-band
@@ -293,17 +378,21 @@ geom_half_violin_sd <- function(
       dots_clean[setdiff(names(dots_clean), "show.legend")]
     )
   )
+  fill_layer$geom <- GeomHalfViolinSD
 
   # Built directly via layer() rather than geom_half_violin() (which
-  # hardcodes geom = GeomHalfViolin, with no way to swap it) so this
+  # constructs a plain GeomHalfViolin at the layer() call site) so this
   # sub-layer can use GeomHalfViolinOutline instead - see that ggproto's
   # own comment for why: a literal `fill = NA` geom *parameter* (the
   # previous approach here) makes ggplot2 drop `fill` from this layer's own
   # `group` computation entirely, breaking dodge alignment and per-group
-  # outline coloring alike. `position` is threaded through explicitly since
-  # layer() (unlike geom_half_violin()) doesn't default it to "dodge" on
-  # its own; `show.legend` is always FALSE regardless of what's in `...`,
-  # for the same reason as fill_layer above.
+  # outline coloring alike. (base_layer/fill_layer above get the same
+  # GeomHalfViolinSD thin-cell fix via the post-hoc $geom reassignment
+  # instead, since they don't also need a different draw_group().)
+  # `position` is threaded through explicitly since layer() (unlike
+  # geom_half_violin()) doesn't default it to "dodge" on its own;
+  # `show.legend` is always FALSE regardless of what's in `...`, for the
+  # same reason as fill_layer above.
   outline_mapping <- mapping %||% aes()
   if (length(outline_color_args) == 0) {
     # aes()$colour, not a literal quote()/bquote() call, so this is a
@@ -385,7 +474,11 @@ geom_half_violin_sd <- function(
 #' Warns (does not silently drop) when an x-level has data on only one side
 #' of the split, or when a side's cell count falls under the `n >= 2`
 #' minimum the underlying SD-band stat already requires - splitting divides
-#' already-thin repeated-measures cells a third way.
+#' already-thin repeated-measures cells a third way. Either way, the plot
+#' still renders correctly around the thin/missing cell - a below-minimum
+#' side is silently dropped by the underlying density stat (same as
+#' [geom_half_violin_sd()]), it doesn't stop the rest of the plot from
+#' drawing.
 #'
 #' @param mapping,data,...,inherit.aes As in [geom_half_violin_sd()], except
 #'   `data` is required (see Details).
@@ -685,7 +778,10 @@ StatYdensitySD <- ggproto(
   # SD-band sub-layers using this stat would silently start ignoring it).
   # Overriding `parameters()` directly - reading StatYdensity's OWN
   # compute_panel formals, not this override's `...`-based one - sidesteps
-  # that gap.
+  # that gap. `ggproto_formals` is itself an unexported ggplot2 helper
+  # (verified present and behaving this way in ggplot2 4.0.3, same as the
+  # StatHalfYdensitySD usage above) - if a future release renames/removes
+  # it, this errors loudly rather than silently misbehaving.
   parameters = function(self, extra = FALSE) {
     args <- names(ggplot2:::ggproto_formals(StatYdensity$compute_panel))
     args <- setdiff(args, c("self", "data", "scales"))
@@ -719,15 +815,7 @@ StatYdensitySD <- ggproto(
     # around them, or SD bounds silently come out wrong (computed on group
     # ids, not values) for any horizontal/flipped violin.
     canonical_data <- flip_data(data, flipped_aes)
-    grp_bounds <- canonical_data |>
-      group_by(group) |>
-      summarise(
-        n = sum(!is.na(y)),
-        lo = mean(y, na.rm = na.rm) - sd(y, na.rm = na.rm),
-        hi = mean(y, na.rm = na.rm) + sd(y, na.rm = na.rm),
-        .groups = "drop"
-      ) |>
-      filter(n >= 2)
+    grp_bounds <- .sd_bounds(canonical_data, na.rm)
 
     result <- StatYdensity$compute_panel(
       data,
@@ -738,13 +826,7 @@ StatYdensitySD <- ggproto(
     )
 
     canonical_result <- flip_data(result, flipped_aes)
-    canonical_result <- lapply(unique(canonical_result$group), function(g) {
-      grp <- canonical_result[canonical_result$group == g, ]
-      lo <- grp_bounds$lo[match(g, grp_bounds$group)]
-      hi <- grp_bounds$hi[match(g, grp_bounds$group)]
-      grp[grp$y >= lo & grp$y <= hi, ]
-    }) |>
-      bind_rows()
+    canonical_result <- .truncate_to_sd_bounds(canonical_result, grp_bounds)
 
     flip_data(canonical_result, flipped_aes)
   }

@@ -18,11 +18,11 @@ Depends:
 Imports:
     dplyr,
     forcats,
-    gghalves,
-    ggarrow,
-    ggdist,
+    gghalves (>= 0.1.4),
+    ggarrow (>= 0.1.1),
+    ggdist (>= 3.3.3),
     ggplot2 (>= 4.0.0),
-    ggtext,
+    ggtext (>= 0.1.2),
     grDevices,
     grid,
     rlang,
@@ -48,4 +48,4 @@ BugReports: https://github.com/mkthalmann/emptyviz/issues
 Config/roxygen2/version: 8.1.0
 LazyData: true
 Remotes:
-    erocoar/gghalves
+    erocoar/gghalves@e5c3c79e79f13a00795a2a7774794252d1980d86

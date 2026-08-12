@@ -21,18 +21,37 @@ test_that("layer_halfeye_hdi() omits `limits` from the stats unless explicitly g
   expect_equal(layers_explicit[[2]]$stat_params$limits, c(0, 1))
 })
 
-test_that("layer_halfeye_hdi() scale/dodge_width/n/fill_colors/interval_color take effect", {
+test_that("layer_halfeye_hdi() scale/dodge_width/n/fill/fill_range/interval_color take effect", {
   layers <- layer_halfeye_hdi(
     scale = 1.4,
     dodge_width = .2,
     n = 777,
-    fill_colors = c("red", "blue"),
+    fill = "purple",
+    fill_range = c(.1, .9),
     interval_color = "green"
   )
   expect_equal(layers[[1]]$aes_params$scale, 1.4)
+  expect_equal(layers[[1]]$aes_params$fill, "purple")
   expect_equal(layers[[1]]$stat_params$n, 777)
   expect_equal(layers[[2]]$aes_params$colour, "green")
-  expect_equal(layers[[3]]$palette(2), c("red", "blue"))
+  expect_equal(layers[[3]]$palette(2), c(.1, .9))
+})
+
+test_that("layer_halfeye_hdi() no longer claims the whole `fill` aesthetic - an extra fill-mapped layer builds fine", {
+  # Regression test: an earlier version mapped the HDI-width shading to
+  # `fill` directly plus a plot-global scale_fill_manual() (2 colors) -
+  # since ggplot2 scales are per-aesthetic and global to the whole plot,
+  # that silently claimed `fill` for the entire plot, so adding ANY other
+  # fill-mapped layer crashed with "Insufficient values in manual scale."
+  # Now routed through ggdist's own `fill_ramp` aesthetic instead, which
+  # can't collide with a caller's own `fill` mapping.
+  d <- data.frame(cond = rep(c("a", "b"), each = 50), .value = rnorm(100))
+  extra <- data.frame(cond = c("a", "b"), y = c(0, 0), grp = c("x", "y"))
+  p <- ggplot(d, aes(x = cond, y = .value)) +
+    layer_halfeye_hdi(n = 50) +
+    geom_point(data = extra, aes(x = cond, y = y, fill = grp), shape = 21, size = 3, inherit.aes = FALSE) +
+    scale_fill_manual(values = c(x = "red", y = "blue"))
+  expect_no_error(ggplot_build(p))
 })
 
 test_that("layer_halfeye_hdi()'s `gap` shifts the point-interval away from the slab baseline", {
@@ -130,6 +149,25 @@ test_that("plot_ridge_hdi() builds without error and honors category_reorder", {
     labels_unsorted,
     c("critical-with", "false-with", "true-without", "undefined-without")
   )
+})
+
+test_that("plot_ridge_hdi() gives a clear error for all-NA `value` with the default reorder, not forcats' own cryptic one", {
+  # Regression test: forcats::fct_reorder() used to fail deep inside
+  # ggplot2's own aesthetic evaluation ("`idx` must contain one integer for
+  # each level of `f`") with no indication plot_ridge_hdi()/
+  # category_reorder was involved at all.
+  d <- data.frame(cond = c("a", "b", "c"), .value = NA_real_)
+  expect_error(
+    print(plot_ridge_hdi(d, category = cond)),
+    "entirely NA"
+  )
+  # the documented escape hatch still works
+  expect_no_error(suppressWarnings(ggplot_build(plot_ridge_hdi(d, category = cond, category_reorder = FALSE))))
+})
+
+test_that("plot_ridge_hdi()/plot_coef_grid_hdi()/plot_location_scale() require `category`, with a clear error", {
+  expect_error(plot_ridge_hdi(data.frame(x = 1)), "`category` is required")
+  expect_error(plot_coef_grid_hdi(data.frame(x = 1)), "`category` is required")
 })
 
 test_that("plot_ridge_hdi() adds a facet only when `facet` is supplied", {
