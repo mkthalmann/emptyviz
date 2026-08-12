@@ -1,5 +1,80 @@
 # Changelog
 
+## emptyviz (development version)
+
+Parity fixes for
+[`geom_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_violin_sd.md)/[`geom_half_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_half_violin_sd.md)/
+[`geom_split_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_split_violin_sd.md),
+found while comparing their output side by side against plain
+[`geom_violin()`](https://ggplot2.tidyverse.org/reference/geom_violin.html)/[`gghalves::geom_half_violin()`](https://rdrr.io/pkg/gghalves/man/geom_half_violin.html)
+on zero-variance and skewed/bimodal data. None of this changes the
+geoms’ API beyond adding one new argument (`trim`); it changes their
+*default rendered output*.
+
+- **Breaking (visual):** `trim` now defaults to `TRUE`, matching
+  [`geom_violin()`](https://ggplot2.tidyverse.org/reference/geom_violin.html)’s/[`gghalves::geom_half_violin()`](https://rdrr.io/pkg/gghalves/man/geom_half_violin.html)’s
+  own default, instead of being hardcoded to `FALSE` with no way to
+  override it. The old hardcoded `FALSE` made the low-alpha “aura”
+  sub-layer render a spuriously wide, tapered shape that could extend
+  well past the actual data - worst on zero-variance groups (a constant
+  value could render spanning several units in either direction, because
+  [`stats::bw.nrd0()`](https://rdrr.io/r/stats/bandwidth.html)’s
+  bandwidth fallback for constant data scales with the value’s own
+  magnitude, not its spread) and on skewed/bimodal data. `trim = FALSE`
+  is still available for that softer, tapered look.
+- **Fixed (visual, most user-visible):** the SD-band outline sub-layer’s
+  color no longer falls back to one flat default for every group when
+  `fill` is mapped via `aes(fill = ...)` rather than passed as a literal
+  argument - it now tracks each group’s resolved fill automatically.
+  This affected
+  [`geom_half_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_half_violin_sd.md)’s
+  own `@examples` block, since `aes(fill = ...)` is the idiomatic way to
+  use these geoms.
+- **Fixed:** the same outline sub-layer also silently broke dodge
+  positioning whenever `fill` was dodge-mapped (e.g. two sub-groups
+  sharing one x-category) - it collapsed to one outline spanning both
+  dodge slots instead of two correctly-positioned ones. Both this and
+  the color issue traced back to the same cause: a literal `fill = NA`
+  geom parameter, which makes ggplot2 drop `fill` from that layer’s own
+  aesthetic-derived grouping entirely. Fixed by nulling the fill at draw
+  time instead (a new internal
+  `GeomViolinOutline`/`GeomHalfViolinOutline`), after grouping and
+  dodging have already run correctly off the real fill values.
+- **Fixed:** the legend key for all three geoms no longer shows a
+  washed-out double-overlay of the aura’s and SD-fill’s low-alpha
+  swatches (or, for `style = "outline"`, nothing but the faint aura).
+  Only the aura sub-layer contributes a key now, rendered at full
+  opacity via a bundled
+  [`guides()`](https://ggplot2.tidyverse.org/reference/guides.html)
+  call - a single clean swatch, matching plain
+  [`geom_violin()`](https://ggplot2.tidyverse.org/reference/geom_violin.html).
+- **Fixed:**
+  `geom_violin_sd(drop = FALSE)`/`geom_violin_sd(quantiles = ...)`
+  ([`stat_ydensity()`](https://ggplot2.tidyverse.org/reference/geom_violin.html)
+  parameters added to ggplot2 after these geoms were first written) no
+  longer silently warn “Ignoring unknown parameters” and get dropped on
+  the SD-band sub-layers specifically, while working fine on the aura.
+  `StatYdensitySD`/`StatHalfYdensitySD` now forward arbitrary stat
+  parameters to their parent stat instead of re-declaring a fixed list,
+  so this class of gap shouldn’t recur as ggplot2/gghalves add
+  parameters in the future; a new `test-stat-parity.R` pins the two
+  stats’ accepted parameter lists against their parents’ as a regression
+  guard.
+- **Fixed:** passing `stat = ...` to
+  [`geom_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_violin_sd.md)/[`geom_half_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_half_violin_sd.md)
+  no longer crashes with an opaque “formal argument matched by multiple
+  actual arguments” error - it now warns and is ignored, the same as the
+  other reserved arguments (`alpha`/`color`/`colour`/`linewidth`).
+- Not fixed, by design: each of these geoms’ 2-3 sub-layers
+  independently validates/warns on the same underlying data, so a
+  warning that would fire once for plain
+  [`geom_violin()`](https://ggplot2.tidyverse.org/reference/geom_violin.html)
+  (e.g. removed non-finite values, or an unknown parameter) fires 2-3
+  times here - once per sub-layer. Safely deduplicating warnings across
+  independently-built `ggplot2` layers has no clean hook to hang off of,
+  and this is cosmetic rather than incorrect, so it’s left as a known,
+  accepted limitation rather than fixed.
+
 ## emptyviz 0.2.0
 
 - [`theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/theme_mt.md)

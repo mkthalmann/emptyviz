@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/mkthalmann/emptyviz/blob/v0.2.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/mkthalmann/emptyviz/blob/main/DESCRIPTION)
 
 Thalmann M (2026). *emptyviz: Markdown-Aware ggplot2 Theme and Plot
 Helpers for Frequentist and Bayesian Analyses*. R package version 0.2.0,

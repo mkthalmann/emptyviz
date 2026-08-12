@@ -22,6 +22,7 @@ geom_half_violin_sd(
   sd_alpha = 0.25,
   outline_color = NULL,
   sd_linewidth = 0.3,
+  trim = TRUE,
   inherit.aes = TRUE
 )
 ```
@@ -54,22 +55,36 @@ geom_half_violin_sd(
 
 - outline_color:
 
-  Color of the SD-band outline; defaults to `fill` when not given.
+  Color of the SD-band outline; defaults to `fill` when given as a
+  literal, or otherwise tracks each group's resolved fill automatically
+  (see Details).
 
 - sd_linewidth:
 
   Line width of the SD-band outline.
 
+- trim:
+
+  Trim each violin to the range of the observed data (`TRUE`, the
+  default, matching
+  [`gghalves::geom_half_violin()`](https://rdrr.io/pkg/gghalves/man/geom_half_violin.html)'s
+  own default) or let the density estimate extend past it for a softer,
+  tapered edge (`FALSE`).
+
 ## Value
 
-A list of `ggplot2` layers.
+A list of `ggplot2` layers and a
+[`guides()`](https://ggplot2.tidyverse.org/reference/guides.html) call
+(tuned to keep the legend key at full opacity - see Details).
 
 ## Details
 
-`alpha`/`color`/`colour`/`linewidth`/`trim` passed via `...` are
+`alpha`/`color`/`colour`/`linewidth`/`stat` passed via `...` are
 reserved (used internally by the aura/fill/outline sub-layers) and will
 warn, not error or silently vanish - use
-`base_alpha`/`sd_alpha`/`outline_color`/ `sd_linewidth` instead.
+`base_alpha`/`sd_alpha`/`outline_color`/ `sd_linewidth` instead (there's
+no equivalent substitute for `stat` - swapping it out isn't meaningful
+for this geom's own identity).
 
 `side` follows gghalves' own convention: a scalar applies to every
 group, a vector is indexed by sorted factor-level order of the discrete
@@ -85,6 +100,17 @@ is not supported upstream and will silently misbehave (e.g.
 [`position_dodge()`](https://ggplot2.tidyverse.org/reference/position_dodge.html)
 warnings about non-overlapping x intervals); this is a `gghalves`
 limitation, not something `geom_half_violin_sd()` can fix.
+
+Only the aura sub-layer ever contributes a legend key (the SD-band
+sub-layers are always `show.legend = FALSE`), so the legend shows one
+clean, full-opacity swatch per group instead of the aura's and SD-fill's
+low-alpha keys overlaid on top of each other.
+
+When `outline_color` isn't given and `fill` isn't passed as a literal
+(i.e. it's mapped via `aes(fill = ...)`, locally or inherited from the
+plot), the SD-band outline's colour tracks each group's resolved fill
+automatically - it no longer falls back to one flat default color for
+every group.
 
 ## Examples
 

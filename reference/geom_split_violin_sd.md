@@ -26,6 +26,7 @@ geom_split_violin_sd(
   outline_color = NULL,
   sd_linewidth = 0.3,
   scale = "count",
+  trim = TRUE,
   inherit.aes = TRUE
 )
 ```
@@ -56,7 +57,7 @@ geom_split_violin_sd(
   color per sorted (or flipped) split level. Any `aes(fill = ...)` in
   `mapping` is ignored - fill is spoken for by `split` here.
 
-- style, base_alpha, sd_alpha, sd_linewidth:
+- style, base_alpha, sd_alpha, sd_linewidth, trim:
 
   As in
   [`geom_half_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_half_violin_sd.md).
