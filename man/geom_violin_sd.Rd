@@ -14,6 +14,7 @@ geom_violin_sd(
   sd_alpha = 0.25,
   outline_color = NULL,
   sd_linewidth = 0.3,
+  trim = TRUE,
   inherit.aes = TRUE
 )
 }
@@ -29,12 +30,19 @@ SD-band sub-layer(s) to draw.}
 \item{base_alpha, sd_alpha}{Alpha of the aura and SD-band sub-layers.}
 
 \item{outline_color}{Color of the SD-band outline; defaults to \code{fill}
-when not given.}
+when given as a literal, or otherwise tracks each group's resolved
+fill automatically (see Details).}
 
 \item{sd_linewidth}{Line width of the SD-band outline.}
+
+\item{trim}{Trim each violin to the range of the observed data (\code{TRUE},
+the default, matching \code{\link[gghalves:geom_half_violin]{gghalves::geom_half_violin()}}'s own default) or
+let the density estimate extend past it for a softer, tapered edge
+(\code{FALSE}).}
 }
 \value{
-A list of \code{ggplot2} layers.
+A list of \code{ggplot2} layers and a \code{guides()} call (tuned to keep
+the legend key at full opacity - see Details).
 }
 \description{
 A violin split into a low-alpha "aura" (the full density, drawn first)
@@ -48,13 +56,19 @@ by \code{style}). Same calling convention as \code{\link[ggplot2:geom_violin]{gg
 }
 }
 \details{
-\code{alpha}/\code{color}/\code{colour}/\code{linewidth}/\code{trim} passed via \code{...} are reserved
+\code{alpha}/\code{color}/\code{colour}/\code{linewidth}/\code{stat} passed via \code{...} are reserved
 (used internally by the aura/fill/outline sub-layers) and will warn, not
 error or silently vanish - use \code{base_alpha}/\code{sd_alpha}/\code{outline_color}/
-\code{sd_linewidth} instead.
+\code{sd_linewidth} instead (there's no equivalent substitute for \code{stat} -
+swapping it out isn't meaningful for this geom's own identity).
 
 SD bounds are always the \emph{unweighted} mean/sd of the raw y values, even
 if \code{aes(weight = ...)} is mapped.
+
+As with \code{\link[=geom_half_violin_sd]{geom_half_violin_sd()}}: only the aura sub-layer ever
+contributes a legend key, and the SD-band outline's colour tracks each
+group's resolved fill automatically when \code{outline_color}/\code{fill} aren't
+given as literals.
 }
 \examples{
 library(ggplot2)

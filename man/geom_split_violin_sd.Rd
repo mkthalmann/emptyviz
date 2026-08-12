@@ -17,6 +17,7 @@ geom_split_violin_sd(
   outline_color = NULL,
   sd_linewidth = 0.3,
   scale = "count",
+  trim = TRUE,
   inherit.aes = TRUE
 )
 }
@@ -35,7 +36,7 @@ color per side); pass a length-2 vector to override, one color per
 sorted (or flipped) split level. Any \code{aes(fill = ...)} in \code{mapping} is
 ignored - fill is spoken for by \code{split} here.}
 
-\item{style, base_alpha, sd_alpha, sd_linewidth}{As in
+\item{style, base_alpha, sd_alpha, sd_linewidth, trim}{As in
 \code{\link[=geom_half_violin_sd]{geom_half_violin_sd()}}.}
 
 \item{outline_color}{Length-2 or \code{NULL} (falls back to \code{fill} per side).}

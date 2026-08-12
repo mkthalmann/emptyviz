@@ -1,11 +1,19 @@
 # include a way to visualize SDs in the half-violin plots I like so much; based on the results in @zhang2023inferentialuncertainty;@hofmann2025anaphoric; see also @hoekstra2014confidenceintervals
 
-# alpha/color/colour/fill/linewidth/trim are always set internally by the
-# three sub-layers (base "aura", SD fill, SD outline) of geom_violin_sd() /
-# geom_half_violin_sd(); warn instead of silently dropping or erroring
-# (duplicate-argument) if the caller also passes them via `...`.
+# alpha/color/colour/fill/linewidth are always set internally by the three
+# sub-layers (base "aura", SD fill, SD outline) of geom_violin_sd() /
+# geom_half_violin_sd(); `stat` is hardcoded on the SD-fill/SD-outline
+# sub-layers specifically. Warn instead of silently dropping or erroring
+# (duplicate-argument) if the caller also passes them via `...`. (`trim` was
+# reserved/hardcoded here too until it became a real parameter - see
+# geom_violin_sd()/geom_half_violin_sd()'s own `trim` argument instead.)
+#
+# Each sub-layer independently validates/warns on the same underlying data,
+# so a caller who triggers one of these (or an na.rm-removed-rows warning)
+# will see it repeated 2-3 times, once per sub-layer - not a new bug if you
+# see a warning here more than once.
 warn_reserved_dots <- function(dots, geom_name) {
-  reserved <- c("alpha", "color", "colour", "linewidth", "trim")
+  reserved <- c("alpha", "color", "colour", "linewidth", "stat")
   ignored <- intersect(names(dots), reserved)
   if (length(ignored) > 0) {
     warning(
@@ -13,7 +21,7 @@ warn_reserved_dots <- function(dots, geom_name) {
       "() ignores ",
       paste(sprintf("`%s`", ignored), collapse = ", "),
       " passed via `...` (these are controlled by base_alpha/sd_alpha/",
-      "outline_color/sd_linewidth, and trim is always FALSE).",
+      "outline_color/sd_linewidth, or hardcoded to the SD-band stat).",
       call. = FALSE
     )
   }
@@ -30,18 +38,41 @@ StatHalfYdensitySD <- ggproto(
   "StatHalfYdensitySD",
   gghalves:::StatHalfYdensity,
 
-  compute_panel = function(
-    self,
-    data,
-    scales,
-    width = NULL,
-    bw = "nrd0",
-    adjust = 1,
-    kernel = "gaussian",
-    trim = FALSE,
-    scale = "area",
-    na.rm = FALSE
-  ) {
+  # ggplot2's own `Stat$parameters()` (which layer construction uses to
+  # decide whether a `...` argument is "known" or should warn "Ignoring
+  # unknown parameters") normally introspects `compute_panel`'s own
+  # formals - or, when `compute_panel` uses a bare `...` (as below),
+  # falls back to `compute_group`'s formals instead. That fallback isn't
+  # enough here: `scale` is an inherently panel-level concept (a group's
+  # width relative to every *other* group sharing its panel), so it's
+  # never one of `compute_group`'s formals for ANY density stat, ggplot2's
+  # own StatYdensity included - the fallback would silently make `scale`
+  # look "unknown" for this stat specifically, even though it's still
+  # correctly forwarded to the parent below (confirmed empirically: the
+  # aura sub-layer, built on plain stat_ydensity()/half_ydensity(), keeps
+  # honoring `scale` throughout; only the SD-band sub-layers using this
+  # stat would silently start ignoring it). Overriding `parameters()`
+  # directly - reading gghalves:::StatHalfYdensity's OWN compute_panel
+  # formals, not this override's `...`-based one - sidesteps that gap
+  # without re-introducing the hardcoded-parameter-list problem the `...`
+  # forwarding below exists to avoid in the first place.
+  parameters = function(self, extra = FALSE) {
+    args <- names(ggplot2:::ggproto_formals(gghalves:::StatHalfYdensity$compute_panel))
+    args <- setdiff(args, c("self", "data", "scales"))
+    if (extra) args <- union(args, self$extra_params)
+    args
+  },
+
+  # `na.rm` is pulled out as its own formal (used directly in the bounds
+  # computation below, not just forwarded); everything else - width, bw,
+  # adjust, kernel, trim, scale, and any parameter gghalves' own
+  # StatHalfYdensity adds in a future release - flows through `...`
+  # untouched. This is deliberate, not laziness: an earlier version of this
+  # function re-declared a fixed formal list matching StatHalfYdensity's
+  # signature at the time, which meant any parameter added upstream later
+  # would silently fail to reach this stat (a real bug, once found for the
+  # ggplot2/StatYdensity side - see StatYdensitySD below).
+  compute_panel = function(self, data, scales, na.rm = FALSE, ...) {
     bounds <- data |>
       group_by(group) |>
       summarise(
@@ -55,13 +86,8 @@ StatHalfYdensitySD <- ggproto(
     result <- gghalves:::StatHalfYdensity$compute_panel(
       data,
       scales,
-      width = width,
-      bw = bw,
-      adjust = adjust,
-      kernel = kernel,
-      trim = trim,
-      scale = scale,
-      na.rm = na.rm
+      na.rm = na.rm,
+      ...
     )
 
     result <- lapply(unique(result$group), function(g) {
@@ -76,6 +102,60 @@ StatHalfYdensitySD <- ggproto(
   }
 )
 
+# Draws a violin-family geom's SD-band OUTLINE sub-layer with no fill, while
+# keeping `fill` a genuinely resolved aesthetic (mapped or inherited) right
+# up until the moment of drawing - unlike passing a literal `fill = NA`
+# geom *parameter* (the original approach here), which empirically
+# (confirmed via ggplot_build() comparisons) makes ggplot2 drop `fill` from
+# that layer's own aesthetic-derived `group` computation entirely, silently
+# collapsing dodge groups and breaking per-group outline coloring. Deferring
+# the NA-out to draw time, after grouping/dodging have already run
+# correctly off the real fill values, avoids that:
+#   - grouping/dodging are computed identically to the aura/SD-fill
+#     sub-layers (which never touch `fill` this way), so the outline stays
+#     aligned with them even when multiple fill-mapped groups share one x.
+#   - `aes(colour = after_scale(fill))` (added by the geom_*_sd() wrapper
+#     when no explicit outline_color/fill override is given) can read the
+#     real resolved fill value at that same late stage, so the border
+#     tracks each group's color instead of falling back to a flat default.
+#
+# The formal parameter list below deliberately matches the parent method's
+# own signature exactly (rather than collapsing into a bare `...`), because
+# ggplot2's `Geom$draw_layer()` filters the params it forwards down to
+# `draw_group()` against `self$parameters()`, which - for geoms, unlike
+# stats - is read directly off `draw_group`'s own formals with no
+# `compute_group`-style fallback; a `...`-only signature here would make
+# gghalves' `side`/`nudge` (and ggplot2's `quantile_gp`/`flipped_aes`) look
+# unrecognized and get silently dropped.
+GeomViolinOutline <- ggproto(
+  "GeomViolinOutline",
+  GeomViolin,
+  draw_group = function(self, data, ..., quantile_gp = list(), flipped_aes = FALSE) {
+    data$fill <- NA
+    ggproto_parent(GeomViolin, self)$draw_group(
+      data,
+      ...,
+      quantile_gp = quantile_gp,
+      flipped_aes = flipped_aes
+    )
+  }
+)
+
+GeomHalfViolinOutline <- ggproto(
+  "GeomHalfViolinOutline",
+  gghalves::GeomHalfViolin,
+  draw_group = function(self, data, side = "l", nudge = 0, ..., draw_quantiles = NULL) {
+    data$fill <- NA
+    ggproto_parent(gghalves::GeomHalfViolin, self)$draw_group(
+      data,
+      side = side,
+      nudge = nudge,
+      ...,
+      draw_quantiles = draw_quantiles
+    )
+  }
+)
+
 #' A half-violin with a mean +/- 1 SD band
 #'
 #' A half-violin split into a low-alpha "aura" (the full density, drawn
@@ -85,10 +165,11 @@ StatHalfYdensitySD <- ggproto(
 #' `inherit.aes`-aware) - the only additions are `fill`/`style`/
 #' `base_alpha`/`sd_alpha`/`outline_color`/`sd_linewidth`.
 #'
-#' `alpha`/`color`/`colour`/`linewidth`/`trim` passed via `...` are reserved
+#' `alpha`/`color`/`colour`/`linewidth`/`stat` passed via `...` are reserved
 #' (used internally by the aura/fill/outline sub-layers) and will warn, not
 #' error or silently vanish - use `base_alpha`/`sd_alpha`/`outline_color`/
-#' `sd_linewidth` instead.
+#' `sd_linewidth` instead (there's no equivalent substitute for `stat` -
+#' swapping it out isn't meaningful for this geom's own identity).
 #'
 #' `side` follows gghalves' own convention: a scalar applies to every group,
 #' a vector is indexed by sorted factor-level order of the discrete axis
@@ -102,6 +183,17 @@ StatHalfYdensitySD <- ggproto(
 #' this is a `gghalves` limitation, not something `geom_half_violin_sd()`
 #' can fix.
 #'
+#' Only the aura sub-layer ever contributes a legend key (the SD-band
+#' sub-layers are always `show.legend = FALSE`), so the legend shows one
+#' clean, full-opacity swatch per group instead of the aura's and SD-fill's
+#' low-alpha keys overlaid on top of each other.
+#'
+#' When `outline_color` isn't given and `fill` isn't passed as a literal
+#' (i.e. it's mapped via `aes(fill = ...)`, locally or inherited from the
+#' plot), the SD-band outline's colour tracks each group's resolved fill
+#' automatically - it no longer falls back to one flat default color for
+#' every group.
+#'
 #' @param mapping,data,...,inherit.aes As in [gghalves::geom_half_violin()].
 #' @param fill A constant fill for all violins; omit it to map fill via
 #'   `mapping` instead (`aes(fill = ...)`) the normal ggplot2 way.
@@ -111,9 +203,15 @@ StatHalfYdensitySD <- ggproto(
 #'   SD-band sub-layer(s) to draw.
 #' @param base_alpha,sd_alpha Alpha of the aura and SD-band sub-layers.
 #' @param outline_color Color of the SD-band outline; defaults to `fill`
-#'   when not given.
+#'   when given as a literal, or otherwise tracks each group's resolved
+#'   fill automatically (see Details).
 #' @param sd_linewidth Line width of the SD-band outline.
-#' @return A list of `ggplot2` layers.
+#' @param trim Trim each violin to the range of the observed data (`TRUE`,
+#'   the default, matching [gghalves::geom_half_violin()]'s own default) or
+#'   let the density estimate extend past it for a softer, tapered edge
+#'   (`FALSE`).
+#' @return A list of `ggplot2` layers and a `guides()` call (tuned to keep
+#'   the legend key at full opacity - see Details).
 #' @examples
 #' library(ggplot2)
 #' set.seed(1)
@@ -135,6 +233,7 @@ geom_half_violin_sd <- function(
   sd_alpha = 0.25,
   outline_color = NULL,
   sd_linewidth = 0.3,
+  trim = TRUE,
   inherit.aes = TRUE
 ) {
   style <- match.arg(style)
@@ -165,7 +264,7 @@ geom_half_violin_sd <- function(
         inherit.aes = inherit.aes,
         alpha = base_alpha,
         color = "transparent",
-        trim = FALSE,
+        trim = trim,
         side = side
       ),
       fill_args,
@@ -173,6 +272,9 @@ geom_half_violin_sd <- function(
     )
   )
 
+  # Only the aura (this layer) ever carries the legend - see the roxygen
+  # Details above and GeomViolinOutline's own comment for why the SD-band
+  # sub-layers below are always show.legend = FALSE instead.
   fill_layer <- do.call(
     geom_half_violin,
     c(
@@ -183,31 +285,48 @@ geom_half_violin_sd <- function(
         inherit.aes = inherit.aes,
         alpha = sd_alpha,
         color = "transparent",
-        trim = FALSE,
-        side = side
+        trim = trim,
+        side = side,
+        show.legend = FALSE
       ),
       fill_args,
-      dots_clean
+      dots_clean[setdiff(names(dots_clean), "show.legend")]
     )
   )
 
-  outline_layer <- do.call(
-    geom_half_violin,
-    c(
-      list(
-        data = data,
-        mapping = mapping,
-        stat = StatHalfYdensitySD,
-        inherit.aes = inherit.aes,
-        alpha = 1,
-        fill = NA,
-        linewidth = sd_linewidth,
-        trim = FALSE,
-        side = side
-      ),
-      outline_color_args,
-      dots_clean
-    )
+  # Built directly via layer() rather than geom_half_violin() (which
+  # hardcodes geom = GeomHalfViolin, with no way to swap it) so this
+  # sub-layer can use GeomHalfViolinOutline instead - see that ggproto's
+  # own comment for why: a literal `fill = NA` geom *parameter* (the
+  # previous approach here) makes ggplot2 drop `fill` from this layer's own
+  # `group` computation entirely, breaking dodge alignment and per-group
+  # outline coloring alike. `position` is threaded through explicitly since
+  # layer() (unlike geom_half_violin()) doesn't default it to "dodge" on
+  # its own; `show.legend` is always FALSE regardless of what's in `...`,
+  # for the same reason as fill_layer above.
+  outline_mapping <- mapping %||% aes()
+  if (length(outline_color_args) == 0) {
+    # aes()$colour, not a literal quote()/bquote() call, so this is a
+    # properly quosured expression exactly like aes() itself would produce -
+    # see geom_split_violin_sd()'s own mapping-splicing code below for the
+    # same "why not modifyList()" reasoning.
+    outline_mapping$colour <- aes(colour = after_scale(fill))$colour
+  }
+  outline_position <- dots_clean$position %||% "dodge"
+  dots_for_outline <- dots_clean[!names(dots_clean) %in% c("position", "show.legend")]
+  outline_params <- utils::modifyList(
+    list(alpha = 1, linewidth = sd_linewidth, trim = trim, side = side, nudge = 0),
+    c(outline_color_args, dots_for_outline)
+  )
+  outline_layer <- layer(
+    data = data,
+    mapping = outline_mapping,
+    stat = StatHalfYdensitySD,
+    geom = GeomHalfViolinOutline,
+    position = outline_position,
+    show.legend = FALSE,
+    inherit.aes = inherit.aes,
+    params = outline_params
   )
 
   sd_layers <- switch(
@@ -217,7 +336,15 @@ geom_half_violin_sd <- function(
     both = list(fill_layer, outline_layer)
   )
 
-  c(list(base_layer), sd_layers)
+  c(
+    list(base_layer),
+    sd_layers,
+    # Crisp, full-opacity legend swatch (matching the aura's actual color,
+    # just not its low in-panel alpha) even though the aura itself renders
+    # translucent - a no-op guides() call when fill isn't mapped to
+    # anything at all.
+    list(guides(fill = guide_legend(override.aes = list(alpha = 1))))
+  )
 }
 
 #' Two half-violins back to back, split by a two-level column
@@ -270,7 +397,7 @@ geom_half_violin_sd <- function(
 #'   color per side); pass a length-2 vector to override, one color per
 #'   sorted (or flipped) split level. Any `aes(fill = ...)` in `mapping` is
 #'   ignored - fill is spoken for by `split` here.
-#' @param style,base_alpha,sd_alpha,sd_linewidth As in
+#' @param style,base_alpha,sd_alpha,sd_linewidth,trim As in
 #'   [geom_half_violin_sd()].
 #' @param outline_color Length-2 or `NULL` (falls back to `fill` per side).
 #' @param scale Passed to the underlying density stat; see Details.
@@ -299,6 +426,7 @@ geom_split_violin_sd <- function(
   outline_color = NULL,
   sd_linewidth = 0.3,
   scale = "count",
+  trim = TRUE,
   inherit.aes = TRUE
 ) {
   style <- match.arg(style)
@@ -466,6 +594,7 @@ geom_split_violin_sd <- function(
         sd_alpha = sd_alpha,
         sd_linewidth = sd_linewidth,
         scale = scale,
+        trim = trim,
         inherit.aes = inherit.aes,
         show.legend = FALSE
       ),
@@ -486,6 +615,7 @@ geom_split_violin_sd <- function(
         sd_alpha = sd_alpha,
         sd_linewidth = sd_linewidth,
         scale = scale,
+        trim = trim,
         inherit.aes = inherit.aes,
         show.legend = FALSE
       ),
@@ -516,6 +646,17 @@ geom_split_violin_sd <- function(
     )
   )
 
+  # geom_half_violin_sd() now returns its own guides() call alongside its
+  # layers (see its own Details on the legend key fix), tuned for ITS
+  # legend design (a single show.legend = NA aura layer with a full-opacity
+  # override). That doesn't apply here - every real violin sub-layer above
+  # is show.legend = FALSE, and the legend is instead carried entirely by
+  # legend_layer/legend_guide below - so drop anything left_layers/
+  # right_layers contributed that isn't an actual geom layer, rather than
+  # stacking a second, conflicting fill guide on top of legend_guide's own.
+  left_layers <- Filter(function(x) inherits(x, "LayerInstance"), left_layers)
+  right_layers <- Filter(function(x) inherits(x, "LayerInstance"), right_layers)
+
   c(left_layers, right_layers, list(split_scale, legend_layer, legend_guide))
 }
 
@@ -529,20 +670,44 @@ StatYdensitySD <- ggproto(
   "StatYdensitySD",
   StatYdensity,
 
-  compute_panel = function(
-    self,
-    data,
-    scales,
-    width = NULL,
-    bw = "nrd0",
-    adjust = 1,
-    kernel = "gaussian",
-    trim = FALSE,
-    scale = "area",
-    na.rm = FALSE,
-    flipped_aes = FALSE,
-    bounds = c(-Inf, Inf) # absorb ggplot2's `bounds` param silently
-  ) {
+  # ggplot2's own `Stat$parameters()` (which layer construction uses to
+  # decide whether a `...` argument is "known" or should warn "Ignoring
+  # unknown parameters") normally introspects `compute_panel`'s own
+  # formals - or, when `compute_panel` uses a bare `...` (as below), falls
+  # back to `compute_group`'s formals instead. That fallback isn't enough
+  # here: `scale` is an inherently panel-level concept (a group's width
+  # relative to every *other* group sharing its panel), so it's never one
+  # of `compute_group`'s formals for StatYdensity itself either - the
+  # fallback would silently make `scale` look "unknown" for this stat
+  # specifically (confirmed empirically), even though it's still correctly
+  # forwarded to the parent below (the aura sub-layer, built on plain
+  # stat_ydensity(), keeps honoring `scale` throughout regardless; only the
+  # SD-band sub-layers using this stat would silently start ignoring it).
+  # Overriding `parameters()` directly - reading StatYdensity's OWN
+  # compute_panel formals, not this override's `...`-based one - sidesteps
+  # that gap.
+  parameters = function(self, extra = FALSE) {
+    args <- names(ggplot2:::ggproto_formals(StatYdensity$compute_panel))
+    args <- setdiff(args, c("self", "data", "scales"))
+    if (extra) args <- union(args, self$extra_params)
+    args
+  },
+
+  # `na.rm`/`flipped_aes` are pulled out as their own formals (both used
+  # directly in the bounds computation below, not just forwarded);
+  # everything else - width, bw, adjust, kernel, trim, scale, bounds, and
+  # any parameter ggplot2 adds to stat_ydensity() in a future release -
+  # flows through `...` untouched, rather than being re-declared here.
+  # This isn't just style: an earlier version of this function *did*
+  # re-declare a fixed formal list (matching StatYdensity's signature at
+  # the time), and by the time this was checked, ggplot2 had since added
+  # `drop` and `quantiles` to StatYdensity$compute_panel() - both were
+  # silently unsupported here (`geom_violin_sd(drop = FALSE)` warned
+  # "Ignoring unknown parameters" from this stat while the aura layer,
+  # using plain stat_ydensity(), honored it fine). `...`-forwarding fixes
+  # that and stays correct going forward, backed by the `parameters()`
+  # override above.
+  compute_panel = function(self, data, scales, na.rm = FALSE, flipped_aes = FALSE, ...) {
     # ggplot2::StatYdensity$compute_panel() itself does data <-
     # flip_data(data, flipped_aes) as its first step, so that "y" is always
     # the continuous variable internally, then flips the *output* back to
@@ -567,15 +732,9 @@ StatYdensitySD <- ggproto(
     result <- StatYdensity$compute_panel(
       data,
       scales,
-      width = width,
-      bw = bw,
-      adjust = adjust,
-      kernel = kernel,
-      trim = trim,
-      scale = scale,
       na.rm = na.rm,
       flipped_aes = flipped_aes,
-      bounds = bounds # pass it through to the parent
+      ...
     )
 
     canonical_result <- flip_data(result, flipped_aes)
@@ -601,16 +760,23 @@ StatYdensitySD <- ggproto(
 #' - the only additions are `fill`/`style`/`base_alpha`/`sd_alpha`/
 #' `outline_color`/`sd_linewidth`.
 #'
-#' `alpha`/`color`/`colour`/`linewidth`/`trim` passed via `...` are reserved
+#' `alpha`/`color`/`colour`/`linewidth`/`stat` passed via `...` are reserved
 #' (used internally by the aura/fill/outline sub-layers) and will warn, not
 #' error or silently vanish - use `base_alpha`/`sd_alpha`/`outline_color`/
-#' `sd_linewidth` instead.
+#' `sd_linewidth` instead (there's no equivalent substitute for `stat` -
+#' swapping it out isn't meaningful for this geom's own identity).
 #'
 #' SD bounds are always the *unweighted* mean/sd of the raw y values, even
 #' if `aes(weight = ...)` is mapped.
 #'
+#' As with [geom_half_violin_sd()]: only the aura sub-layer ever
+#' contributes a legend key, and the SD-band outline's colour tracks each
+#' group's resolved fill automatically when `outline_color`/`fill` aren't
+#' given as literals.
+#'
 #' @inheritParams geom_half_violin_sd
-#' @return A list of `ggplot2` layers.
+#' @return A list of `ggplot2` layers and a `guides()` call (tuned to keep
+#'   the legend key at full opacity - see Details).
 #' @examples
 #' library(ggplot2)
 #' set.seed(1)
@@ -632,6 +798,7 @@ geom_violin_sd <- function(
   sd_alpha = 0.25,
   outline_color = NULL, # NULL means "inherit from fill or mapping"
   sd_linewidth = 0.3,
+  trim = TRUE,
   inherit.aes = TRUE
 ) {
   style <- match.arg(style)
@@ -652,13 +819,16 @@ geom_violin_sd <- function(
         inherit.aes = inherit.aes,
         alpha = base_alpha,
         color = "transparent",
-        trim = FALSE
+        trim = trim
       ),
       fill_args,
       dots_clean
     )
   )
 
+  # Only the aura (this layer) ever carries the legend - see the roxygen
+  # Details above and GeomViolinOutline's own comment for why the SD-band
+  # sub-layers below are always show.legend = FALSE instead.
   fill_layer <- do.call(
     geom_violin,
     c(
@@ -669,10 +839,11 @@ geom_violin_sd <- function(
         inherit.aes = inherit.aes,
         alpha = sd_alpha,
         color = "transparent",
-        trim = FALSE
+        trim = trim,
+        show.legend = FALSE
       ),
       fill_args,
-      dots_clean
+      dots_clean[setdiff(names(dots_clean), "show.legend")]
     )
   )
 
@@ -682,22 +853,39 @@ geom_violin_sd <- function(
     list()
   }
 
-  outline_layer <- do.call(
-    geom_violin,
-    c(
-      list(
-        data = data,
-        mapping = mapping,
-        stat = StatYdensitySD,
-        inherit.aes = inherit.aes,
-        alpha = 1,
-        fill = NA,
-        linewidth = sd_linewidth,
-        trim = FALSE
-      ),
-      outline_color_args,
-      dots_clean
-    )
+  # Built directly via layer() rather than geom_violin() (which hardcodes
+  # geom = GeomViolin, with no way to swap it) so this sub-layer can use
+  # GeomViolinOutline instead - see that ggproto's own comment for why: a
+  # literal `fill = NA` geom *parameter* (the previous approach here) makes
+  # ggplot2 drop `fill` from this layer's own `group` computation entirely,
+  # breaking dodge alignment and per-group outline coloring alike.
+  # `position` is threaded through explicitly since layer() (unlike
+  # geom_violin()) doesn't default it to "dodge" on its own; `show.legend`
+  # is always FALSE regardless of what's in `...`, for the same reason as
+  # fill_layer above.
+  outline_mapping <- mapping %||% aes()
+  if (length(outline_color_args) == 0) {
+    # aes()$colour, not a literal quote()/bquote() call, so this is a
+    # properly quosured expression exactly like aes() itself would produce -
+    # see geom_split_violin_sd()'s own mapping-splicing code below for the
+    # same "why not modifyList()" reasoning.
+    outline_mapping$colour <- aes(colour = after_scale(fill))$colour
+  }
+  outline_position <- dots_clean$position %||% "dodge"
+  dots_for_outline <- dots_clean[!names(dots_clean) %in% c("position", "show.legend")]
+  outline_params <- utils::modifyList(
+    list(alpha = 1, linewidth = sd_linewidth, trim = trim),
+    c(outline_color_args, dots_for_outline)
+  )
+  outline_layer <- layer(
+    data = data,
+    mapping = outline_mapping,
+    stat = StatYdensitySD,
+    geom = GeomViolinOutline,
+    position = outline_position,
+    show.legend = FALSE,
+    inherit.aes = inherit.aes,
+    params = outline_params
   )
 
   sd_layers <- switch(
@@ -707,5 +895,13 @@ geom_violin_sd <- function(
     both = list(fill_layer, outline_layer)
   )
 
-  c(list(base_layer), sd_layers)
+  c(
+    list(base_layer),
+    sd_layers,
+    # Crisp, full-opacity legend swatch (matching the aura's actual color,
+    # just not its low in-panel alpha) even though the aura itself renders
+    # translucent - a no-op guides() call when fill isn't mapped to
+    # anything at all.
+    list(guides(fill = guide_legend(override.aes = list(alpha = 1))))
+  )
 }

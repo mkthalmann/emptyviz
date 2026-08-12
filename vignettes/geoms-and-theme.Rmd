@@ -125,7 +125,7 @@ meant to make legible.
 demo_data <- d |> transmute(group = scenario, value = judgment)
 
 violin_plain <- ggplot(demo_data, aes(x = group, y = value, fill = group)) +
-  geom_violin(trim = FALSE) +
+  geom_violin() +
   labs(x = NULL, y = NULL) +
   guides(fill = "none")
 
@@ -135,7 +135,7 @@ violin_sd <- ggplot(demo_data, aes(x = group, y = value, fill = group)) +
   guides(fill = "none")
 
 half_violin_plain <- ggplot(demo_data, aes(x = group, y = value, fill = group)) +
-  geom_half_violin(side = "r", trim = FALSE) +
+  geom_half_violin(side = "r") +
   labs(x = NULL, y = NULL) +
   guides(fill = "none")
 

@@ -83,26 +83,47 @@ legend_texts <- function(p) {
 # `assign()`/`get()`/`globalenv()` are base functions, resolvable from any
 # package namespace regardless of lexical scoping, and we always know the
 # exact key we stashed it under.
+#
+# Traces BOTH gghalves::GeomHalfViolin$draw_group (the aura and SD-fill
+# sub-layers) AND emptyviz:::GeomHalfViolinOutline$draw_group (the SD-band
+# outline sub-layer, a separate ggproto - see R/geom-violin-sd.R's own
+# comment on why the outline needs its own Geom subclass) - tracing only
+# the former would silently stop covering the outline layer's own `side`
+# resolution.
+#
+# GeomHalfViolinOutline$draw_group itself calls
+# ggproto_parent(GeomHalfViolin, self)$draw_group(...) internally (to do
+# the actual half-violin geometry, after nulling fill) - so without the
+# class(self)[1] guard below, tracing both classes would double-count every
+# outline draw: once at the outline's own entry, once again when it
+# delegates into the (also traced) parent method, since `self` keeps
+# referring to the original GeomHalfViolinOutline instance throughout, even
+# while executing inherited parent code.
 capture_applied_sides <- function(p) {
   key <- paste0(".sd_capture_", as.integer(Sys.time()), "_", sample.int(1e6, 1))
   assign(key, list(), envir = globalenv())
   on.exit(rm(list = key, envir = globalenv()))
 
+  tracer_for <- function(expected_class) {
+    bquote({
+      if (identical(class(self)[1], .(expected_class))) {
+        .rows <- get(.(key), envir = globalenv())
+        .rows[[length(.rows) + 1]] <- list(
+          group = data$group[1],
+          side = side[data$group[1]]
+        )
+        assign(.(key), .rows, envir = globalenv())
+      }
+    })
+  }
+
   GHV <- environment(gghalves::geom_half_violin)$GeomHalfViolin
-  trace(
-    what = "draw_group",
-    where = GHV,
-    tracer = bquote({
-      .rows <- get(.(key), envir = globalenv())
-      .rows[[length(.rows) + 1]] <- list(
-        group = data$group[1],
-        side = side[data$group[1]]
-      )
-      assign(.(key), .rows, envir = globalenv())
-    }),
-    print = FALSE
-  )
+  trace(what = "draw_group", where = GHV, tracer = tracer_for("GeomHalfViolin"), print = FALSE)
   on.exit(untrace(what = "draw_group", where = GHV), add = TRUE)
+
+  GHVO <- emptyviz:::GeomHalfViolinOutline
+  trace(what = "draw_group", where = GHVO, tracer = tracer_for("GeomHalfViolinOutline"), print = FALSE)
+  on.exit(untrace(what = "draw_group", where = GHVO), add = TRUE)
 
   render_plot(p)
   dplyr::bind_rows(lapply(get(key, envir = globalenv()), as.data.frame))

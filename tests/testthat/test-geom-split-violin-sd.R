@@ -212,15 +212,24 @@ test_that("side/show.legend passed via ... are ignored with a warning, not a dup
   )
 })
 
-test_that("alpha/color/linewidth/trim passed via ... still warn, same as the sibling geoms", {
+test_that("alpha/color/linewidth still warn via ..., same as the sibling geoms", {
   expect_warning(
     geom_split_violin_sd(aes(x = grp, y = y), data = split_fixture, split = split, alpha = 0.9),
     "alpha"
   )
-  expect_warning(
-    geom_split_violin_sd(aes(x = grp, y = y), data = split_fixture, split = split, trim = TRUE),
-    "trim"
+})
+
+test_that("trim is a real parameter here too - no warning, forwarded to both sides", {
+  expect_no_warning(
+    res <- geom_split_violin_sd(aes(x = grp, y = y), data = split_fixture, split = split, trim = FALSE)
   )
+  violin_layers <- Filter(function(l) inherits(l, "LayerInstance"), res)
+  violin_layers <- violin_layers[1:6] # the 6 real violin sub-layers, not the dummy legend layer
+  expect_true(all(vapply(
+    violin_layers,
+    function(l) isFALSE(l$geom_params$trim %||% l$stat_params$trim),
+    logical(1)
+  )))
 })
 
 test_that("non-reserved stat/geom params (scale, bw, adjust, kernel, na.rm) pass through without warning", {
