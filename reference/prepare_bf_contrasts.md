@@ -62,6 +62,14 @@ prepare_bf_contrasts(
   direct match; `.left`/`.right`/`.contrast_label` are then set to the
   *requested* order regardless of which way `data` actually had it.
 
+  Two entries can therefore resolve to the *same* row of `data` - either
+  as an outright repeat, or as the two directions of one contrast
+  (`c("a", "b")` and `c("b", "a")`, the second relabeled and
+  sign-flipped). Both are allowed and warn: each becomes its own output
+  row, so a forest plot built from the result shows one estimate as
+  several, which reads as several independent ones. Drop the duplicate
+  if that wasn't the intent.
+
 ## Value
 
 `data`, with `.left`, `.right`, and `.contrast_label` columns added

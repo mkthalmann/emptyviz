@@ -63,7 +63,7 @@ repeating <code>fill = ...</code> on every layer.</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">theme_mt</span><span class="op">(</span></span>
-<span>  base_size <span class="op">=</span> <span class="fl">19</span>,</span>
+<span>  base_size <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  base_family <span class="op">=</span> <span class="st">"Roboto Condensed"</span>,</span>
 <span>  plot_title_family <span class="op">=</span> <span class="va">base_family</span>,</span>
 <span>  subtitle_family <span class="op">=</span> <span class="va">base_family</span>,</span>
@@ -90,7 +90,11 @@ repeating <code>fill = ...</code> on every layer.</p>
 
 
 <dl><dt id="arg-base-size">base_size<a class="anchor" aria-label="anchor" href="#arg-base-size"></a></dt>
-<dd><p>Base font size, in points.</p></dd>
+<dd><p>Base font size, in points. Every other size argument
+derives from it by default. <code><a href="use_theme_mt.html">use_theme_mt()</a></code> passes the same default
+through, so a plot themed directly with <code>theme_mt()</code> and one themed via
+the session default look the same - they used to disagree by nearly 2x
+(19 here, 10 there), with neither docstring mentioning the other.</p></dd>
 
 
 <dt id="arg-base-family-plot-title-family-subtitle-family-strip-text-family-axis-title-family-axis-text-family-caption-family">base_family, plot_title_family, subtitle_family, strip_text_family, axis_title_family, axis_text_family, caption_family<a class="anchor" aria-label="anchor" href="#arg-base-family-plot-title-family-subtitle-family-strip-text-family-axis-title-family-axis-text-family-caption-family"></a></dt>
@@ -147,6 +151,31 @@ than the grid) and reads as too faint at the grid's own brightness.</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Call <code><a href="use_theme_mt.html">use_theme_mt()</a></code> to make this the session's active theme -
 <code><a href="https://github.com/mkthalmann/emptyviz" class="external-link">library(emptyviz)</a></code> does not do this automatically.</p>
+<p><code>dark = TRUE</code> is tuned for a page background of about <code>#151515</code>. It sets
+<code>paper = NA</code> and a transparent <code>plot.background</code>, deliberately - the
+figure then sits directly on whatever the host page uses, which is what
+makes a Quarto light/dark toggle work without re-rendering. The
+consequence is that the <em>real</em> background is the host's, not this
+theme's, and every contrast decision in dark mode is made against
+<code>#151515</code>: the grid line at 1.19:1, the axis line at 3.14:1, the ink at
+14.4:1. Nothing validates the assumption, and a host theme at, say,
+<code>#2b2b2b</code> or <code>#1e1e2e</code> shifts all three - far enough that the
+near-invisible grid could invert against a light-ish "dark" background.
+If your site's dark background differs much from <code>#151515</code>, either match
+it or pass <code>grid_color</code>/<code>axis_text_color</code>/<code>axis_line_color</code> explicitly.</p>
+<p>The discrete palette separates categories by <strong>hue</strong>, with very little
+lightness difference between them: every pair in <a href="mt_colors.html">mt_colors5</a> falls below
+the 3:1 WCAG 1.4.11 contrast threshold for distinguishable graphical
+objects, and eight of the ten pairs below 2:1 (teal <code>#066b8a</code> and purple
+<code>#9109d5</code> sit at 1.09:1 - effectively the same shade of gray). Each color
+has adequate contrast against a white background, so text and outlines
+are fine; the limitation is strictly category-vs-category. Under
+grayscale printing, a monochrome projector, or reduced color
+discrimination, categories can merge. Beyond about three categories, give
+the plot a redundant non-color channel - <code>shape</code>, <code>linetype</code>, or direct
+labels - rather than relying on hue alone. <code><a href="plot_location_scale.html">plot_location_scale()</a></code> does
+this by default (see its <code>category_shape</code>/<code>category_linetype</code>), and
+<code><a href="plot_bf_forest.html">plot_bf_forest()</a></code>'s <code>positive_shape</code>/<code>negative_shape</code> are the same idea.</p>
 <p><code>base_family</code> (and every other <code>*_family</code> argument, which default to it)
 defaults to <code>"Roboto Condensed"</code>, a font this package does not install or
 register - it must already be present on the system (and discoverable by

@@ -17,7 +17,7 @@ so plots look consistent without repeating `fill = ...` on every layer.
 
 ``` r
 theme_mt(
-  base_size = 19,
+  base_size = 10,
   base_family = "Roboto Condensed",
   plot_title_family = base_family,
   subtitle_family = base_family,
@@ -43,7 +43,13 @@ theme_mt(
 
 - base_size:
 
-  Base font size, in points.
+  Base font size, in points. Every other size argument derives from it
+  by default.
+  [`use_theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/use_theme_mt.md)
+  passes the same default through, so a plot themed directly with
+  `theme_mt()` and one themed via the session default look the same -
+  they used to disagree by nearly 2x (19 here, 10 there), with neither
+  docstring mentioning the other.
 
 - base_family, plot_title_family, subtitle_family, strip_text_family,
   axis_title_family, axis_text_family, caption_family:
@@ -108,6 +114,36 @@ Call
 to make this the session's active theme -
 [`library(emptyviz)`](https://github.com/mkthalmann/emptyviz) does not
 do this automatically.
+
+`dark = TRUE` is tuned for a page background of about `#151515`. It sets
+`paper = NA` and a transparent `plot.background`, deliberately - the
+figure then sits directly on whatever the host page uses, which is what
+makes a Quarto light/dark toggle work without re-rendering. The
+consequence is that the *real* background is the host's, not this
+theme's, and every contrast decision in dark mode is made against
+`#151515`: the grid line at 1.19:1, the axis line at 3.14:1, the ink at
+14.4:1. Nothing validates the assumption, and a host theme at, say,
+`#2b2b2b` or `#1e1e2e` shifts all three - far enough that the
+near-invisible grid could invert against a light-ish "dark" background.
+If your site's dark background differs much from `#151515`, either match
+it or pass `grid_color`/`axis_text_color`/`axis_line_color` explicitly.
+
+The discrete palette separates categories by **hue**, with very little
+lightness difference between them: every pair in
+[mt_colors5](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
+falls below the 3:1 WCAG 1.4.11 contrast threshold for distinguishable
+graphical objects, and eight of the ten pairs below 2:1 (teal `#066b8a`
+and purple `#9109d5` sit at 1.09:1 - effectively the same shade of
+gray). Each color has adequate contrast against a white background, so
+text and outlines are fine; the limitation is strictly
+category-vs-category. Under grayscale printing, a monochrome projector,
+or reduced color discrimination, categories can merge. Beyond about
+three categories, give the plot a redundant non-color channel - `shape`,
+`linetype`, or direct labels - rather than relying on hue alone.
+[`plot_location_scale()`](https://mkthalmann.github.io/emptyviz/reference/plot_location_scale.md)
+does this by default (see its `category_shape`/`category_linetype`), and
+[`plot_bf_forest()`](https://mkthalmann.github.io/emptyviz/reference/plot_bf_forest.md)'s
+`positive_shape`/`negative_shape` are the same idea.
 
 `base_family` (and every other `*_family` argument, which default to it)
 defaults to `"Roboto Condensed"`, a font this package does not install

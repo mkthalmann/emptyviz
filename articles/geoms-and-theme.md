@@ -108,7 +108,17 @@ p_theme_mt <- build_theme_compare_plot() + theme_mt(base_size = 12) + value_labe
 p_theme_gray + p_theme_minimal + p_theme_mt
 ```
 
-![](geoms-and-theme_files/figure-html/theme-compare-1.png)
+![The same bar chart drawn three times side by side, under theme_gray(),
+theme_minimal() and theme_mt(). Each panel shows mean acceptability
+ratings for four conditions - Baseline 6.1, Weak Trigger 4.8, Strong
+Trigger 2.3, Control 6.5 - with a small standard-error bar and the value
+printed above each bar. Only the theme_mt() panel renders the markdown
+and HTML entities in its title, subtitle and axis titles; the other two
+show the literal markup (&plusmn;, &ndash; and asterisks) as text.
+theme_mt() also drops the grey panel background, bolds the title, keeps
+only horizontal gridlines, and uses the package palette instead of
+ggplot2's default
+hues.](geoms-and-theme_files/figure-html/theme-compare-1.png)
 
 ## `geom_violin_sd()` / `geom_half_violin_sd()`
 
@@ -149,7 +159,18 @@ half_violin_sd <- ggplot(demo_data, aes(x = group, y = value, fill = group)) +
 (violin_plain + violin_sd) / (half_violin_plain + half_violin_sd)
 ```
 
-![](geoms-and-theme_files/figure-html/violin-sd-comparison-1.png)
+![A two-by-two grid of violin plots of truth-value judgments, on a -2 to
++2 scale, for the four scenarios true, false, undefined and critical.
+The top row shows full violins, the bottom row right-side half violins;
+the left column is the plain geom (geom_violin() and
+gghalves::geom_half_violin()), the right column this package's SD-band
+version. Every distribution is floor- and ceiling-heavy: mass piled at
+both ends of the scale with a narrow waist between. The plain violins
+render that as one flat silhouette, while the \_sd versions overlay a
+solid, outlined mean plus-or-minus-one-SD band on a pale full-density
+aura, so how much of each scenario's spread falls inside one SD is
+readable
+directly.](geoms-and-theme_files/figure-html/violin-sd-comparison-1.png)
 
 ### `style = "both"` / `"fill"` / `"outline"`
 
@@ -176,7 +197,13 @@ style_outline <- ggplot(demo_data, aes(x = group, y = value, fill = group)) +
 style_both + style_fill + style_outline
 ```
 
-![](geoms-and-theme_files/figure-html/violin-sd-style-1.png)
+![The same four scenario violins drawn three times to compare the style
+argument. Left, style = both (the default): the SD band is a solid fill
+with an outline around it. Middle, style = fill: the same solid band
+with no outline. Right, style = outline: only the outlined band, with
+the pale full-density aura showing through where the fill used to be.
+The underlying distributions are identical across all
+three.](geoms-and-theme_files/figure-html/violin-sd-style-1.png)
 
 ## `geom_split_violin_sd()`
 
@@ -200,7 +227,14 @@ ggplot(balanced_data, split_mapping) +
   labs(x = NULL, y = "Judgment (rescaled -2/+2)")
 ```
 
-![](geoms-and-theme_files/figure-html/split-violin-balanced-1.png)
+![Back-to-back split violins of judgments, on a -2 to +2 scale, for the
+four scenarios. At each scenario the teal half for negation = without is
+drawn on the left and the crimson half for negation = with on the right.
+For true, the without half piles up at the top of the scale and the with
+half at the bottom; false reverses that; undefined puts both halves near
+the floor with a long tail upward; critical has without at the floor and
+with spread much
+higher.](geoms-and-theme_files/figure-html/split-violin-balanced-1.png)
 
 ### `flip = TRUE`
 
@@ -213,7 +247,11 @@ ggplot(balanced_data, split_mapping) +
   labs(x = NULL, y = "Judgment (rescaled -2/+2)")
 ```
 
-![](geoms-and-theme_files/figure-html/split-violin-flip-1.png)
+![The same split violins as the previous figure with flip = TRUE, so
+each scenario's with half is now drawn on the left and its without half
+on the right. Every shape is mirrored across its scenario's centre line;
+the distributions themselves are unchanged, and the legend order swaps
+to match.](geoms-and-theme_files/figure-html/split-violin-flip-1.png)
 
 ### Missing cell
 
@@ -232,7 +270,12 @@ ggplot(missing_data, split_mapping) +
 #> one side entirely)
 ```
 
-![](geoms-and-theme_files/figure-html/split-violin-missing-1.png)
+![The same split violins with the critical/with cell dropped from the
+data. The first three scenarios are unchanged. Critical now renders as a
+lone left-side half violin - the teal without half, its mass at the
+floor of the scale - with nothing drawn on the right, rather than the
+whole x position
+failing.](geoms-and-theme_files/figure-html/split-violin-missing-1.png)
 
 ### `scale = "count"` vs. `"area"`
 
@@ -276,4 +319,11 @@ p_scale_area <- ggplot(unbalanced_data, split_mapping) +
 p_scale_count + p_scale_area
 ```
 
-![](geoms-and-theme_files/figure-html/split-violin-scale-1.png)
+![Two panels of the same back-to-back split violins, with the with side
+subsampled to progressively smaller fractions across scenarios (all of
+true, then 70, 45 and 25 percent for false, undefined and critical).
+Left, scale = count (the default): each half's width is proportional to
+its own side's counts, so the shrinking with side narrows across the
+panel. Right, scale = area: every half is normalised to the same area,
+so the widths no longer carry that sample-size information at
+all.](geoms-and-theme_files/figure-html/split-violin-scale-1.png)

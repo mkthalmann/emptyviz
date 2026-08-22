@@ -71,6 +71,8 @@ that location.</p>
 <span>  <span class="va">location</span>,</span>
 <span>  <span class="va">sigma</span>,</span>
 <span>  shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  category_shape <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  category_linetype <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  facet <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  facet_nrow <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  facet_ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -116,14 +118,32 @@ argument promise of the same name. Always pass both explicitly.</p></dd>
 
 
 <dt id="arg-shape">shape<a class="anchor" aria-label="anchor" href="#arg-shape"></a></dt>
-<dd><p>Optional unquoted column for a second crossed factor (e.g.
-negation) - mapped to the point glyph only (ellipses have no shape
-aesthetic); grouping becomes the interaction of <code>category</code> and <code>shape</code>
-when both are given.</p></dd>
+<dd><p>Optional unquoted column (or expression) for a second
+crossed factor (e.g. negation) - mapped to the point glyph only
+(ellipses have no shape aesthetic); grouping becomes the interaction of
+<code>category</code> and <code>shape</code> when both are given. Supplying this overrides the
+<code>category_shape</code> default described below.</p></dd>
+
+
+<dt id="arg-category-shape">category_shape<a class="anchor" aria-label="anchor" href="#arg-category-shape"></a></dt>
+<dd><p>Whether to map <code>category</code> to the point glyph as
+well as to color when no <code>shape</code> column is given (default <code>TRUE</code>).
+Color, fill and shape then all encode the same variable and merge into
+a single legend. The point of the redundancy is that this plot's whole
+job is telling conditions apart, and the discrete palette separates
+them by hue with very little lightness difference - so hue alone is not
+enough under grayscale printing, a monochrome projector, or reduced
+color discrimination. Set <code>FALSE</code> for color-only points.</p></dd>
+
+
+<dt id="arg-category-linetype">category_linetype<a class="anchor" aria-label="anchor" href="#arg-category-linetype"></a></dt>
+<dd><p>Whether to map <code>category</code> to the ellipse outline
+style as well (default <code>TRUE</code>). Only applies when <code>ellipse_geom = "path"</code> - the default <code>"polygon"</code> draws no outline at all, so there is
+nothing for a linetype to affect.</p></dd>
 
 
 <dt id="arg-facet">facet<a class="anchor" aria-label="anchor" href="#arg-facet"></a></dt>
-<dd><p>Optional unquoted column to facet by.</p></dd>
+<dd><p>Optional unquoted column (or expression) to facet by.</p></dd>
 
 
 <dt id="arg-facet-nrow-facet-ncol-facet-scales">facet_nrow, facet_ncol, facet_scales<a class="anchor" aria-label="anchor" href="#arg-facet-nrow-facet-ncol-facet-scales"></a></dt>
@@ -133,7 +153,9 @@ when both are given.</p></dd>
 
 <dt id="arg-bounds">bounds<a class="anchor" aria-label="anchor" href="#arg-bounds"></a></dt>
 <dd><p><code>c(lower, upper)</code> - if given, draws the sigma_max reference
-curve; <code>NULL</code> (default) omits it for a plain joint location-scale plot.</p></dd>
+curve; <code>NULL</code> (default) omits it for a plain joint location-scale plot.
+Must be two finite numbers with <code>lower &lt; upper</code>; anything else errors
+rather than silently producing an all-<code>NaN</code> (i.e. invisible) curve.</p></dd>
 
 
 <dt id="arg-bounds-n">bounds_n<a class="anchor" aria-label="anchor" href="#arg-bounds-n"></a></dt>

@@ -96,7 +96,7 @@
 <span>    x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="cn">NULL</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/guides.html" class="external-link">guides</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-violin-example-1.png" alt="" width="100%"></p>
+<p><img src="reference/figures/README-violin-example-1.png" alt="Three violin shapes, one per synthetic group A, B and C. Each pairs a pale full-density aura with a darker, outlined band covering that group's mean plus or minus one standard deviation, the outline in the group's own colour. A is centred near 0 with its band spanning about -1 to 1; B is centred near 1.4 and much tighter, its aura spiking above 3; C is centred near -0.5 and by far the widest, its band spanning -2.2 to 1.1 and its aura reaching down to -4." width="100%"></p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bf_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  contrast <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A vs. B"</span>, <span class="st">"C vs. D"</span>, <span class="st">"E vs. F"</span><span class="op">)</span>,</span>
@@ -109,7 +109,7 @@
 <span>  log_bf <span class="op">=</span> <span class="va">log_bf</span>,</span>
 <span>  direction_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"supports difference"</span>, <span class="st">"supports equivalence"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-bf-example-1.png" alt="" width="100%"></p>
+<p><img src="reference/figures/README-bf-example-1.png" alt="A log Bayes factor forest plot with one row per contrast. A vs. B sits at about 8, far to the right of the shaded weak-evidence region around zero; C vs. D at about 1, right at that region's edge; and E vs. F at about -0.4, inside it and drawn as a triangle rather than a circle to mark its negative sign. Arrows across the top of the panel read 'supports equivalence' pointing left and 'supports difference' pointing right." width="100%"></p>
 <p>See <code><a href="articles/geoms-and-theme.html">vignette("geoms-and-theme")</a></code> for the theme and the three <code>_sd</code> violin geoms, and <code><a href="articles/bayesian-plots.html">vignette("bayesian-plots")</a></code> for the halfeye/ridge/coefficient-grid, location-scale, and Bayes Factor forest plot builders.</p>
 </div>
 <div class="section level2">

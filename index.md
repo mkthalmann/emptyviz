@@ -68,7 +68,14 @@ ggplot(demo_data, aes(x = group, y = value, fill = group)) +
   guides(fill = "none")
 ```
 
-![](reference/figures/README-violin-example-1.png)
+![Three violin shapes, one per synthetic group A, B and C. Each pairs a
+pale full-density aura with a darker, outlined band covering that
+group's mean plus or minus one standard deviation, the outline in the
+group's own colour. A is centred near 0 with its band spanning about -1
+to 1; B is centred near 1.4 and much tighter, its aura spiking above 3;
+C is centred near -0.5 and by far the widest, its band spanning -2.2 to
+1.1 and its aura reaching down to
+-4.](reference/figures/README-violin-example-1.png)
 
 ``` r
 
@@ -85,7 +92,13 @@ plot_bf_forest(
 )
 ```
 
-![](reference/figures/README-bf-example-1.png)
+![A log Bayes factor forest plot with one row per contrast. A vs. B sits
+at about 8, far to the right of the shaded weak-evidence region around
+zero; C vs. D at about 1, right at that region's edge; and E vs. F at
+about -0.4, inside it and drawn as a triangle rather than a circle to
+mark its negative sign. Arrows across the top of the panel read
+'supports equivalence' pointing left and 'supports difference' pointing
+right.](reference/figures/README-bf-example-1.png)
 
 See
 [`vignette("geoms-and-theme")`](https://mkthalmann.github.io/emptyviz/articles/geoms-and-theme.md)

@@ -106,7 +106,14 @@ pair isn't found. <code>NULL</code> (default) keeps every row, unfiltered and in
 <p>A pair's order does NOT have to match bayestestR's own <code>"&lt;left&gt; - &lt;right&gt;"</code> order for that contrast - a pair that only matches once
 <code>.left</code>/<code>.right</code> are swapped is accepted the same as a direct match;
 <code>.left</code>/<code>.right</code>/<code>.contrast_label</code> are then set to the <em>requested</em>
-order regardless of which way <code>data</code> actually had it.</p></dd>
+order regardless of which way <code>data</code> actually had it.</p>
+<p>Two entries can therefore resolve to the <em>same</em> row of <code>data</code> - either
+as an outright repeat, or as the two directions of one contrast
+(<code>c("a", "b")</code> and <code>c("b", "a")</code>, the second relabeled and
+sign-flipped). Both are allowed and warn: each becomes its own output
+row, so a forest plot built from the result shows one estimate as
+several, which reads as several independent ones. Drop the duplicate if
+that wasn't the intent.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -156,7 +156,7 @@ submodels, extracted via
 <span>  value_limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2.3</span>, <span class="fl">2.3</span><span class="op">)</span>,</span>
 <span>  value_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>, <span class="op">-</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/ridge-basic-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/ridge-basic-1.png" class="r-plt" alt="A ridgeline of posterior marginal means for the eight scenario-by-negation conditions, faceted into a stop panel on top and an again panel below. Each row is a density curve with a point-interval underneath it, and rows are sorted by mean. Both panels show the same ordering: critical-without, false-without and true-with sit around -1.5 at the low end, undef-with and undef-without cluster near -0.5 in the middle, and critical-with, false-with and true-without run from about 0.7 up to 2. The again panel's densities are slightly narrower and its extremes slightly further apart than the stop panel's." width="960"></p>
 </div>
 <div class="section level3">
 <h3 id="category_reorder">
@@ -183,7 +183,7 @@ order instead — useful when the order itself is meaningful
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Original factor order"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">p_reorder_on</span> <span class="op">+</span> <span class="va">p_reorder_off</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/ridge-reorder-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/ridge-reorder-1.png" class="r-plt" alt="The same eight posterior densities drawn twice. Left, labelled Reordered (default): rows run monotonically from the lowest mean at the top to the highest at the bottom, so the densities form a clean staircase. Right, labelled Original factor order: the identical densities in the category column's own factor order, which interleaves high and low conditions and leaves the rows scattered across the axis with no visual trend." width="960"></p>
 </div>
 <div class="section level3">
 <h3 id="value_transform">
@@ -206,7 +206,7 @@ draws.</p>
 <span>  value_transform <span class="op">=</span> <span class="va">exp</span>,</span>
 <span>  ylab <span class="op">=</span> <span class="st">"Posterior marginal SD ±HDI&lt;sub&gt;95&lt;/sub&gt; ±ETI&lt;sub&gt;50;90;95&lt;/sub&gt;"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/ridge-transform-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/ridge-transform-1.png" class="r-plt" alt="A ridgeline of posterior marginal standard deviations for the eight conditions, back-transformed from the log scale with value_transform = exp, so the axis runs in raw SD units from about 0.5 to 1.4. The three without-negation conditions with the tightest judgments - critical-without, true-without and false-without - sit lowest, around 0.55 to 0.7 and with narrow densities; undef-with, critical-with and undef-without sit highest, above 1.0 and with visibly wider densities." width="960"></p>
 </div>
 <div class="section level3">
 <h3 id="plot_coef_grid_hdi">
@@ -223,19 +223,19 @@ exactly the case this layout is for.</p>
 <span><span class="va">sigma_coef_draws</span> <span class="op">&lt;-</span> <span class="va">believe_projection_coef_draws</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">dpar</span> <span class="op">==</span> <span class="st">"sigma"</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_coef_grid_hdi.html">plot_coef_grid_hdi</a></span><span class="op">(</span><span class="va">mu_coef_draws</span>, category <span class="op">=</span> <span class="va">coef</span>, scale <span class="op">=</span> <span class="fl">1.4</span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/coef-grid-basic-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/coef-grid-basic-1.png" class="r-plt" alt="A four-by-four grid of small posterior density panels, one per fixed effect of the mu submodel, each with its own free x scale and a dashed reference line at zero. Because the axes are free, coefficients of very different magnitude are all legible: Negation:false spans roughly 0.5 to 1.5 while Negation:stop spans only about -0.15 to 0.10. Several panels - critical, the Intercept, Negation, Negation:critical, Negation:false and Negation:undef - sit clearly to one side of zero with the reference line outside or at the edge of the interval; others, such as false:stop, critical:stop and Negation:undef:stop, straddle it." width="960"></p>
 <p>The <code>sigma</code> submodel’s coefficients (fewer terms - no
 three-way interaction in
 <code>sigma ~ negation*scenario + trigger</code>):</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_coef_grid_hdi.html">plot_coef_grid_hdi</a></span><span class="op">(</span><span class="va">sigma_coef_draws</span>, category <span class="op">=</span> <span class="va">coef</span>, scale <span class="op">=</span> <span class="fl">1.4</span>, ncol <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/coef-grid-sigma-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/coef-grid-sigma-1.png" class="r-plt" alt="The same free-scale grid layout for the sigma submodel's nine coefficients, arranged three per row. Negation, Negation:critical and undef sit well away from the dashed zero line on the positive side; Negation:undef sits well away on the negative side; critical, false and the Intercept sit just below zero, and Negation:false and stop straddle it." width="960"></p>
 <p><code>hline</code> defaults to <code>0</code> (a common null-effect
 reference line for coefficient grids); pass a different value or
 <code>NULL</code> to move or omit it.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_coef_grid_hdi.html">plot_coef_grid_hdi</a></span><span class="op">(</span><span class="va">mu_coef_draws</span>, category <span class="op">=</span> <span class="va">coef</span>, scale <span class="op">=</span> <span class="fl">1.4</span>, hline <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/coef-grid-no-hline-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/coef-grid-no-hline-1.png" class="r-plt" alt="The same sixteen mu-submodel coefficient panels as above with hline = NULL, so the dashed zero reference line is gone from every panel. Each panel's x range now covers only its own posterior, so several densities fill the full panel width and zero is no longer marked anywhere." width="960"></p>
 </div>
 </div>
 <div class="section level2">
@@ -336,7 +336,7 @@ condition.</p>
 <span>  facet <span class="op">=</span> <span class="va">trigger</span>,</span>
 <span>  bounds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/location-scale-basic-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/location-scale-basic-1.png" class="r-plt" alt="A joint location-scale plot, faceted into a stop panel and an again panel. Posterior marginal mean runs along the x axis from -2 to 2 and posterior marginal standard deviation up the y axis; each condition is one point inside a darker 50 percent and a fainter 95 percent credible ellipse. Colour distinguishes the four scenarios and marker shape the two negation levels (circle for with, triangle for without). A dashed arc across the top is the sigma_max ceiling curve - the largest spread the bounded -2 to 2 response scale allows at each mean. Every condition sits well below that arc, with the mid-scale undef and critical conditions highest and the extreme-mean conditions such as true-without and critical-without lowest." width="960"></p>
 </div>
 </div>
 <div class="section level2">
@@ -400,7 +400,7 @@ pairs.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_bf_forest.html">plot_bf_forest</a></span><span class="op">(</span><span class="va">mu_bf</span>, contrast <span class="op">=</span> <span class="va">contrast</span>, log_bf <span class="op">=</span> <span class="va">log_BF</span>, pairs <span class="op">=</span> <span class="va">bf_pairs</span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/bf-forest-basic-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/bf-forest-basic-1.png" class="r-plt" alt="A log Bayes factor forest plot with nine contrast rows, sorted from largest to smallest. The three with-versus-without contrasts for true, critical and false sit far right at roughly 32, 27 and 25; three more (with undef vs with critical, with false vs with critical, with true vs without false) sit between about 4 and 8; and the last three - without true vs with false, without false vs without critical, with undef vs without undef - sit just left of zero at about -2 to -3, drawn as triangles rather than circles to mark their negative sign. A narrow shaded band around zero marks the weak-evidence region; only those three negative contrasts come close to it, and none falls inside." width="960"></p>
 <p>The trailing <code>" NA"</code> (emmeans’ placeholder for a
 reference-grid variable marginalized out via
 e.g. <code>at = list(trigger = NA)</code>) is stripped automatically;
@@ -429,7 +429,7 @@ adding essentially no extra space to the figure.</p>
 <span>  pairs <span class="op">=</span> <span class="va">bf_pairs</span>,</span>
 <span>  direction_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"supports difference"</span>, <span class="st">"supports equivalence"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/bf-forest-arrows-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/bf-forest-arrows-1.png" class="r-plt" alt="The same nine-contrast forest plot with direction_labels turned on. Two arrows now run along the top edge of the panel, one pointing left labelled supports equivalence and one pointing right labelled supports difference, each in the colour used for that sign's points. The x range widens to about -40 to 40 to make room, and the data itself is unchanged." width="960"></p>
 </div>
 <div class="section level3">
 <h3 id="secondary_axis">
@@ -446,7 +446,7 @@ is perfectly fine on its own.</p>
 <span>  direction_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"supports difference"</span>, <span class="st">"supports equivalence"</span><span class="op">)</span>,</span>
 <span>  secondary_axis <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/bf-forest-secaxis-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/bf-forest-secaxis-1.png" class="r-plt" alt="The same forest plot with secondary_axis = TRUE. A second axis labelled Bayes factor (BF) runs along the top, giving the linear BF values 1, 2, 5, 15, 50 and 150 at their log positions - which bunches them together just right of zero, since the log axis reaches past 30. The primary log Bayes factor axis, the direction arrows and the data are otherwise unchanged." width="960"></p>
 </div>
 <div class="section level3">
 <h3 id="layer_bf_evidence_scaleorientation-y">
@@ -477,7 +477,7 @@ panel instead of the top.</p>
 <span>  <span class="co"># layer_bf_evidence_scale() should impose on every plot itself.</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">coord_cartesian</a></span><span class="op">(</span>clip <span class="op">=</span> <span class="st">"off"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.margin <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">margin</a></span><span class="op">(</span><span class="fl">5.5</span>, <span class="fl">55</span>, <span class="fl">5.5</span>, <span class="fl">5.5</span>, <span class="st">"pt"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/bf-evidence-scale-y-1.png" class="r-plt" alt="" width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/bf-evidence-scale-y-1.png" class="r-plt" alt="A line-and-point plot of log Bayes factor against prior standard deviation, showing a smooth monotonic decline from about 6.2 at a prior SD of 0.1 to about -1.5 at 1.5. The same evidence-scale annotation is rotated for a y-axis log-BF: the shaded weak-evidence band is now a horizontal stripe around zero that the curve crosses at a prior SD of roughly 1.0, and the two direction arrows hug the right edge of the panel, pointing up for supports difference and down for supports equivalence." width="960"></p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -19,6 +19,8 @@ plot_location_scale(
   location,
   sigma,
   shape = NULL,
+  category_shape = TRUE,
+  category_linetype = TRUE,
   facet = NULL,
   facet_nrow = NULL,
   facet_ncol = NULL,
@@ -65,14 +67,33 @@ plot_location_scale(
 
 - shape:
 
-  Optional unquoted column for a second crossed factor (e.g. negation) -
-  mapped to the point glyph only (ellipses have no shape aesthetic);
-  grouping becomes the interaction of `category` and `shape` when both
-  are given.
+  Optional unquoted column (or expression) for a second crossed factor
+  (e.g. negation) - mapped to the point glyph only (ellipses have no
+  shape aesthetic); grouping becomes the interaction of `category` and
+  `shape` when both are given. Supplying this overrides the
+  `category_shape` default described below.
+
+- category_shape:
+
+  Whether to map `category` to the point glyph as well as to color when
+  no `shape` column is given (default `TRUE`). Color, fill and shape
+  then all encode the same variable and merge into a single legend. The
+  point of the redundancy is that this plot's whole job is telling
+  conditions apart, and the discrete palette separates them by hue with
+  very little lightness difference - so hue alone is not enough under
+  grayscale printing, a monochrome projector, or reduced color
+  discrimination. Set `FALSE` for color-only points.
+
+- category_linetype:
+
+  Whether to map `category` to the ellipse outline style as well
+  (default `TRUE`). Only applies when `ellipse_geom = "path"` - the
+  default `"polygon"` draws no outline at all, so there is nothing for a
+  linetype to affect.
 
 - facet:
 
-  Optional unquoted column to facet by.
+  Optional unquoted column (or expression) to facet by.
 
 - facet_nrow, facet_ncol, facet_scales:
 
@@ -83,7 +104,9 @@ plot_location_scale(
 - bounds:
 
   `c(lower, upper)` - if given, draws the sigma_max reference curve;
-  `NULL` (default) omits it for a plain joint location-scale plot.
+  `NULL` (default) omits it for a plain joint location-scale plot. Must
+  be two finite numbers with `lower < upper`; anything else errors
+  rather than silently producing an all-`NaN` (i.e. invisible) curve.
 
 - bounds_n:
 
