@@ -16,15 +16,20 @@ for callers that want an activated theme other than the plain default.}
 \code{invisible(NULL)}, called for its side effect.
 }
 \description{
-Calls \code{\link[ggplot2:theme_set]{ggplot2::theme_set()}} with \code{theme_mt(base_size = base_size)} and
-sets \code{geom_density()}'s default \code{adjust} to 5 (a heavier smoothing
-bandwidth than ggplot2's own default, matching how \code{geom_density()} is
-used throughout this package's plots). Call this once per session/script
-after \code{library(emptyviz)} - loading the package does not do this
-automatically, since a package silently mutating global \code{ggplot2} state
-on load is a bad default.
+Calls \code{\link[ggplot2:theme_set]{ggplot2::theme_set()}} with \code{theme_mt(base_size = base_size)}. Call
+this once per session/script after \code{library(emptyviz)} - loading the
+package does not do this automatically, since a package silently mutating
+global \code{ggplot2} state on load is a bad default.
 }
 \details{
+This used to also call \code{update_geom_defaults("density", list(adjust = 5))},
+documented as a heavier smoothing bandwidth. It never worked: \code{adjust} is a
+\code{\link[ggplot2:stat_density]{ggplot2::stat_density()}} parameter, not a geom aesthetic, so the call only
+wrote a phantom \code{adjust} entry into \code{GeomDensity$default_aes} where nothing
+reads it, session-wide and with no way to undo it short of restarting R.
+Bandwidth was ggplot2's default throughout. Pass \code{adjust} to
+\code{geom_density()}/\code{stat_density()} directly if you want heavier smoothing.
+
 If \code{knitr} is installed, this also registers a \code{knit_print} method for
 \code{ggplot}/\code{patchwork} objects that renders a chunk twice - once normally,
 once with a dark-mode color overlay - whenever that chunk sets the

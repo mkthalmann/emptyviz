@@ -40,6 +40,66 @@ violin-geom parity fixes below.
   `README.md` also refreshed `man/figures/README-violin-example-1.png`, which
   was stale: its SD-band outlines predate the fix that made them track each
   group's resolved fill.
+* **Breaking (visual):** `plot_location_scale()` now maps `category` to the
+  point glyph as well as to colour when no `shape` column is given, and to
+  the ellipse outline style when `ellipse_geom = "path"`. The plot's whole
+  job is telling conditions apart, and it previously encoded them by hue
+  alone - with a palette whose pairs all fall below the 3:1 WCAG 1.4.11
+  threshold, so overlapping ellipses were undecodable in grayscale or for
+  readers with reduced colour discrimination. Colour, fill, shape and
+  linetype name the same variable and merge into one legend. Opt out with
+  `category_shape = FALSE` / `category_linetype = FALSE`. The palettes
+  themselves are unchanged.
+* **Breaking (visual, dark mode only):** `.dark_axis_line` lightened from
+  `#545b63` to `#5f666e`. The axis line is documented as a real boundary -
+  a meaningful graphical object - and measured 2.655:1 against the
+  `#151515` page background the dark constants are tuned for, just under
+  WCAG 1.4.11's 3:1 floor. It now measures 3.14:1. The grid line stays at
+  1.19:1 deliberately: it is decorative.
+* **Removed:** `use_theme_mt()` no longer calls
+  `update_geom_defaults("density", list(adjust = 5))`. It never worked -
+  `adjust` is a stat parameter, not a geom aesthetic, so the call only
+  injected a phantom `adjust` entry into `GeomDensity$default_aes`,
+  session-wide and unremovable short of restarting R, while bandwidth
+  stayed at ggplot2's default. Pass `adjust` to `geom_density()` directly
+  for heavier smoothing.
+* **Fixed:** `layer_halfeye_hdi()` no longer suppresses the caller's colour
+  legend. It returned `guides(color = "none")`, and `guides()` is
+  plot-global rather than layer-scoped, so composing this bundle into a plot
+  silently killed the colour key of every other layer in it. The bundle
+  never maps `color` (it sets `interval_color` as a literal parameter), so
+  there was nothing to suppress; `fill_ramp` and `pch` are genuinely its own
+  and stay hidden.
+* **Fixed:** `plot_bf_forest()` errors on a `log_bf` column with no finite
+  values instead of building a plot with `±Inf` arrow geometry. The NA guard
+  used to live inside the `contrast_reorder` branch, so
+  `contrast_reorder = FALSE` - which the guard's own message recommended -
+  bypassed it. The evidence-scale extent now also ignores infinite values
+  rather than only `NA`, so a single infinite Bayes Factor no longer
+  stretches the arrows to infinity.
+* **Fixed:** `plot_location_scale()` validates `bounds`. Reversed bounds
+  produced an all-`NaN` sigma_max curve that built with no error and no
+  warning - the reference curve simply wasn't drawn - and a scalar surfaced
+  as `seq()`'s error naming an argument the caller never passed.
+* **Fixed:** `plot_location_scale()`'s `shape` and `facet` accept an inline
+  expression, not just a bare column name, matching every other tidyeval
+  argument in the package. `shape` also keeps the caller's environment, so a
+  local variable resolves against the caller rather than the data frame.
+* **Fixed:** `plot_location_scale()` warns, naming the condition, when a
+  group has fewer than the 4 paired draws `stat_ellipse()` needs. Previously
+  the only signal was ggplot2's own "Too few points to calculate an ellipse"
+  - repeated once per ellipse layer and naming neither the condition nor
+  this function.
+* **Fixed:** dual-render figure counters reset per render. Keyed by chunk
+  label and never cleared, their lifetime was the whole R session, so every
+  re-render (`quarto preview`, the Knit button, `build_vignettes()`) wrote a
+  fresh pair of PNGs under a new name - nothing overwritten, nothing cleaned
+  up, and each render's HTML pointing at different files.
+* **Docs:** `theme_mt()` now documents that the discrete palette separates
+  categories by hue with almost no lightness difference, and recommends a
+  redundant non-colour channel beyond about three categories. The palette
+  constants also gained test coverage (they had none), pinning their values
+  and recording where their pairwise contrast actually stands.
 
 Parity fixes for `geom_violin_sd()`/`geom_half_violin_sd()`/
 `geom_split_violin_sd()`, found while comparing their output side by side

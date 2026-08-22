@@ -434,18 +434,19 @@ test_that("plot_bf_forest() requires `contrast`/`log_bf`, with a clear error", {
   expect_error(plot_bf_forest(data.frame(x = 1), contrast = x), "`log_bf` is required")
 })
 
-test_that("plot_bf_forest() gives a clear error for all-NA `log_bf` with the default reorder, not forcats' own cryptic one", {
+test_that("plot_bf_forest() gives a clear error for all-NA `log_bf`, not forcats' own cryptic one", {
   # Regression test: forcats::fct_reorder() used to fail deep inside
   # ggplot2's own aesthetic evaluation with a cryptic, emptyviz-unattributed
-  # error if `log_bf` was entirely NA.
+  # error if `log_bf` was entirely NA. The message that fires now is the
+  # unconditional "no finite values" one rather than the reorder guard's,
+  # deliberately: with nothing plottable in the column, telling the user to
+  # pass `contrast_reorder = FALSE` would be advice that doesn't help. The
+  # reorder guard still owns the partial case (see the tests below), which
+  # is the common one.
   d <- data.frame(contrast = c("a - b", "c - d"), log_bf = NA_real_)
   expect_error(
     plot_bf_forest(d, contrast = contrast, log_bf = log_bf),
-    "entirely NA"
-  )
-  # the documented escape hatch still works
-  expect_no_error(
-    suppressWarnings(ggplot_build(plot_bf_forest(d, contrast = contrast, log_bf = log_bf, contrast_reorder = FALSE)))
+    "no finite values"
   )
 })
 
@@ -488,4 +489,47 @@ test_that("plot_bf_forest() names every offending contrast, and builds when none
 
   ok <- data.frame(contrast = c("A vs B", "C vs D"), log_bf = c(1.2, -0.4))
   expect_no_error(ggplot_build(plot_bf_forest(ok, contrast = contrast, log_bf = log_bf)))
+})
+
+test_that("plot_bf_forest() errors on an all-non-finite `log_bf` even with contrast_reorder = FALSE", {
+  # The NA guard used to live inside the `if (contrast_reorder)` branch, so
+  # contrast_reorder = FALSE - which the guard's own error message
+  # recommended as the remedy - bypassed it. Execution then reached
+  # max(..., na.rm = TRUE) with nothing left to compare: abs_extent became
+  # -Inf, arrow_range became c(-Inf, Inf), and the plot "built successfully"
+  # with meaningless arrow geometry, the only signal a base-R warning naming
+  # max() rather than this package.
+  d <- data.frame(contrast = c("a - b", "c - d"), log_bf = NA_real_)
+  expect_error(
+    plot_bf_forest(d, contrast = contrast, log_bf = log_bf, contrast_reorder = FALSE),
+    "no finite values"
+  )
+  # ...and with the evidence scale off too, since the column is unplottable
+  # either way
+  expect_error(
+    plot_bf_forest(
+      d,
+      contrast = contrast, log_bf = log_bf,
+      contrast_reorder = FALSE, evidence_scale = FALSE
+    ),
+    "no finite values"
+  )
+
+  # a column that still has something finite in it keeps working, and the
+  # reorder escape hatch with it
+  partial <- data.frame(contrast = c("a - b", "c - d"), log_bf = c(2.1, NA))
+  expect_no_error(suppressWarnings(ggplot_build(
+    plot_bf_forest(partial, contrast = contrast, log_bf = log_bf, contrast_reorder = FALSE)
+  )))
+})
+
+test_that("plot_bf_forest()'s arrow range ignores infinite log_bf values", {
+  # abs_extent used na.rm = TRUE, which drops NA but keeps Inf - so a single
+  # infinite Bayes Factor (an ordinary enough result) stretched the evidence
+  # arrows to an infinite range.
+  d <- data.frame(contrast = c("a - b", "c - d"), log_bf = c(Inf, 2))
+  b <- suppressWarnings(ggplot_build(
+    plot_bf_forest(d, contrast = contrast, log_bf = log_bf)
+  ))
+  expect_true(all(is.finite(b$layout$panel_params[[1]]$x.range)))
 })

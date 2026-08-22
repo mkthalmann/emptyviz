@@ -188,7 +188,16 @@ layer_halfeye_hdi <- function(
     do.call(ggdist::stat_slab, slab_args),
     do.call(ggdist::stat_pointinterval, interval_args),
     ggdist::scale_fill_ramp_discrete(range = fill_range),
-    guides(fill_ramp = "none", pch = "none", color = "none")
+    # `fill_ramp` and `pch` are this bundle's own aesthetics - it maps them
+    # itself and their keys would be noise - so suppressing them is scoped to
+    # what this layer actually owns. `color` is NOT: it's set here as a
+    # literal parameter (`interval_color`), never mapped, so it contributes no
+    # key of its own and needs no suppression. Since guides() is plot-global
+    # rather than layer-scoped, listing it here silently killed the colour
+    # legend of every OTHER layer in a plot this bundle was composed into -
+    # the same class of bug the fill/fill_ramp comment above documents
+    # fixing, which was applied to `fill` and missed for `color`.
+    guides(fill_ramp = "none", pch = "none")
   )
 }
 

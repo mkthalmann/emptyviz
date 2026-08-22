@@ -292,3 +292,61 @@ test_that("knit_print_ggplot_dual() recycles vector fig.alt across plots in one 
   expect_match(first, 'alt="First figure."', fixed = TRUE)
   expect_match(second, 'alt="Second figure."', fixed = TRUE)
 })
+
+test_that("repeat renders in one session reuse the same figure filenames instead of accumulating new ones", {
+  skip_if_not_installed("knitr")
+  tmp <- tempfile("dual-render-reset-")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  fig_path <- file.path(tmp, "figure-html/")
+
+  old <- theme_get()
+  on.exit(theme_set(old), add = TRUE)
+
+  # Regression test: .dual_render_counters was keyed by chunk label and
+  # never cleared, so its lifetime was the R session rather than one render.
+  # Repeated renders are the normal workflow (quarto preview, the Knit
+  # button, build_vignettes()), and each one wrote a fresh pair of PNGs
+  # under a new name - nothing overwritten, nothing cleaned up, and each
+  # render's HTML pointing at different files.
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  opts <- list(
+    dual_render = TRUE, label = "fig-x", fig.path = fig_path,
+    fig.width = 4, fig.height = 3, dpi = 72, fig.alt = "A scatter plot."
+  )
+
+  emitted <- vapply(1:3, function(i) {
+    use_theme_mt() # what a document's setup chunk does, once per render
+    unclass(emptyviz:::knit_print_ggplot_dual(p, options = opts))
+  }, character(1))
+
+  expect_equal(length(unique(emitted)), 1L)
+  expect_match(emitted[[1]], "fig-x-light-1.png", fixed = TRUE)
+  expect_equal(sort(list.files(fig_path)), c("fig-x-dark-1.png", "fig-x-light-1.png"))
+})
+
+test_that("multiple plots within one chunk still get distinct filenames", {
+  skip_if_not_installed("knitr")
+  tmp <- tempfile("dual-render-multi2-")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  fig_path <- file.path(tmp, "figure-html/")
+
+  old <- theme_get()
+  on.exit(theme_set(old), add = TRUE)
+  use_theme_mt()
+
+  # the counter's actual purpose, which the per-render reset must not break
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  opts <- list(
+    dual_render = TRUE, label = "fig-two", fig.path = fig_path,
+    fig.width = 4, fig.height = 3, dpi = 72, fig.alt = "A scatter plot."
+  )
+  emptyviz:::knit_print_ggplot_dual(p, options = opts)
+  emptyviz:::knit_print_ggplot_dual(p, options = opts)
+
+  expect_equal(
+    sort(list.files(fig_path)),
+    c("fig-two-dark-1.png", "fig-two-dark-2.png", "fig-two-light-1.png", "fig-two-light-2.png")
+  )
+})

@@ -54,13 +54,20 @@ dark_mt_colors5 <- c(dark_mt_colors4, "#7b91e0")
 # theme_mt(dark = TRUE) and the color-only overlay in R/dual-render.R so the
 # two can't drift out of sync. Not exported - `dark_mt_colors5` is the
 # public-facing constant; these are text/line tints, not the data palette.
-# grid/axis_line are deliberately two different brightnesses (contrast ~1.2:1
-# and ~2.7:1 against the #151515 page background respectively) - grid lines
-# should stay a barely-there hint, while the axis line is a real boundary
-# and reads as too faint at the same brightness as the grid.
+# grid/axis_line are deliberately two different brightnesses (measured
+# contrast 1.19:1 and 3.14:1 against the #151515 page background
+# respectively) - grid lines should stay a barely-there hint, while the axis
+# line is a real boundary and reads as too faint at the same brightness as
+# the grid.
+#
+# The axis line's 3.14:1 is not a round number by accident: WCAG 1.4.11 sets
+# 3:1 as the floor for a meaningful (non-decorative) graphical object, and
+# "a real boundary" is exactly that. It used to be #545b63, which measures
+# 2.655:1 - just under. The grid is left at 1.19:1 on purpose: it IS
+# decorative, and raising it would fight the design intent.
 .dark_ink <- "#e4e4e4"
 .dark_grid <- "#22252a"
-.dark_axis_line <- "#545b63"
+.dark_axis_line <- "#5f666e"
 .dark_axis_text <- "#d3d7da"
 .dark_subtitle <- "#c8ccd0"
 .dark_caption <- "#9aa0a6"
@@ -89,6 +96,20 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #'
 #' Call [use_theme_mt()] to make this the session's active theme -
 #' `library(emptyviz)` does not do this automatically.
+#'
+#' The discrete palette separates categories by **hue**, with very little
+#' lightness difference between them: every pair in [mt_colors5] falls below
+#' the 3:1 WCAG 1.4.11 contrast threshold for distinguishable graphical
+#' objects, and eight of the ten pairs below 2:1 (teal `#066b8a` and purple
+#' `#9109d5` sit at 1.09:1 - effectively the same shade of gray). Each color
+#' has adequate contrast against a white background, so text and outlines
+#' are fine; the limitation is strictly category-vs-category. Under
+#' grayscale printing, a monochrome projector, or reduced color
+#' discrimination, categories can merge. Beyond about three categories, give
+#' the plot a redundant non-color channel - `shape`, `linetype`, or direct
+#' labels - rather than relying on hue alone. [plot_location_scale()] does
+#' this by default (see its `category_shape`/`category_linetype`), and
+#' [plot_bf_forest()]'s `positive_shape`/`negative_shape` are the same idea.
 #'
 #' `base_family` (and every other `*_family` argument, which default to it)
 #' defaults to `"Roboto Condensed"`, a font this package does not install or
@@ -361,13 +382,18 @@ theme_mt <- function(
 
 #' Activate `theme_mt()` as the session's default theme
 #'
-#' Calls [ggplot2::theme_set()] with `theme_mt(base_size = base_size)` and
-#' sets `geom_density()`'s default `adjust` to 5 (a heavier smoothing
-#' bandwidth than ggplot2's own default, matching how `geom_density()` is
-#' used throughout this package's plots). Call this once per session/script
-#' after `library(emptyviz)` - loading the package does not do this
-#' automatically, since a package silently mutating global `ggplot2` state
-#' on load is a bad default.
+#' Calls [ggplot2::theme_set()] with `theme_mt(base_size = base_size)`. Call
+#' this once per session/script after `library(emptyviz)` - loading the
+#' package does not do this automatically, since a package silently mutating
+#' global `ggplot2` state on load is a bad default.
+#'
+#' This used to also call `update_geom_defaults("density", list(adjust = 5))`,
+#' documented as a heavier smoothing bandwidth. It never worked: `adjust` is a
+#' [ggplot2::stat_density()] parameter, not a geom aesthetic, so the call only
+#' wrote a phantom `adjust` entry into `GeomDensity$default_aes` where nothing
+#' reads it, session-wide and with no way to undo it short of restarting R.
+#' Bandwidth was ggplot2's default throughout. Pass `adjust` to
+#' `geom_density()`/`stat_density()` directly if you want heavier smoothing.
 #'
 #' If `knitr` is installed, this also registers a `knit_print` method for
 #' `ggplot`/`patchwork` objects that renders a chunk twice - once normally,
@@ -389,7 +415,6 @@ theme_mt <- function(
 #' @export
 use_theme_mt <- function(base_size = 10, ...) {
   theme_set(theme_mt(base_size = base_size, ...))
-  update_geom_defaults("density", list(adjust = 5))
   .register_dual_render()
   invisible(NULL)
 }

@@ -459,6 +459,21 @@ plot_bf_forest <- function(
     plot_data$.se <- rlang::eval_tidy(se_quo, data)
   }
 
+  # Unconditional, unlike the reorder guard below: `contrast_reorder = FALSE`
+  # is the documented escape hatch from *ordering* by log_bf, not a way to
+  # plot a column that has nothing plottable in it. With the check living
+  # only inside the reorder branch, following that advice on all-NA data
+  # reached max(..., na.rm = TRUE) with nothing to compare, so `abs_extent`
+  # became -Inf, `arrow_range` became c(-Inf, Inf), and the plot "built"
+  # with meaningless arrow geometry - the only signal a base-R warning
+  # naming max(), not this package.
+  if (!any(is.finite(plot_data$.log_bf))) {
+    stop(
+      "plot_bf_forest(): `log_bf` has no finite values - nothing to plot.",
+      call. = FALSE
+    )
+  }
+
   x_expr <- if (contrast_reorder) {
     # See plot_ridge_hdi()'s identical guard, and .check_reorder_values()
     # itself for what fct_reorder() actually chokes on: any contrast with no
@@ -499,11 +514,16 @@ plot_bf_forest <- function(
     geom_blank()
 
   if (evidence_scale) {
-    abs_extent <- max(
-      abs(plot_data$.log_bf - (if (has_se) plot_data$.se else 0)),
-      abs(plot_data$.log_bf + (if (has_se) plot_data$.se else 0)),
-      na.rm = TRUE
+    # Filtered rather than na.rm-ed: na.rm drops NA but keeps Inf, so a
+    # single infinite log_bf (a perfectly ordinary Bayes Factor result) would
+    # still stretch the arrow range to infinity. The all-non-finite case is
+    # already ruled out by the guard above, so this can't be empty.
+    extent_values <- c(
+      plot_data$.log_bf - (if (has_se) plot_data$.se else 0),
+      plot_data$.log_bf + (if (has_se) plot_data$.se else 0)
     )
+    extent_values <- extent_values[is.finite(extent_values)]
+    abs_extent <- if (length(extent_values) > 0) max(abs(extent_values)) else 0
     arrow_range <- c(-1, 1) * max(abs_extent, weak_threshold) * 1.15
 
     p <- p +

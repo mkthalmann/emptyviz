@@ -10,6 +10,8 @@ plot_location_scale(
   location,
   sigma,
   shape = NULL,
+  category_shape = TRUE,
+  category_linetype = TRUE,
   facet = NULL,
   facet_nrow = NULL,
   facet_ncol = NULL,
@@ -44,18 +46,34 @@ called \code{location}/\code{sigma} - and crash with a cryptic R-level
 up the unmatched symbol falls through to the function's own unforced
 argument promise of the same name. Always pass both explicitly.}
 
-\item{shape}{Optional unquoted column for a second crossed factor (e.g.
-negation) - mapped to the point glyph only (ellipses have no shape
-aesthetic); grouping becomes the interaction of \code{category} and \code{shape}
-when both are given.}
+\item{shape}{Optional unquoted column (or expression) for a second
+crossed factor (e.g. negation) - mapped to the point glyph only
+(ellipses have no shape aesthetic); grouping becomes the interaction of
+\code{category} and \code{shape} when both are given. Supplying this overrides the
+\code{category_shape} default described below.}
 
-\item{facet}{Optional unquoted column to facet by.}
+\item{category_shape}{Whether to map \code{category} to the point glyph as
+well as to color when no \code{shape} column is given (default \code{TRUE}).
+Color, fill and shape then all encode the same variable and merge into
+a single legend. The point of the redundancy is that this plot's whole
+job is telling conditions apart, and the discrete palette separates
+them by hue with very little lightness difference - so hue alone is not
+enough under grayscale printing, a monochrome projector, or reduced
+color discrimination. Set \code{FALSE} for color-only points.}
+
+\item{category_linetype}{Whether to map \code{category} to the ellipse outline
+style as well (default \code{TRUE}). Only applies when \code{ellipse_geom = "path"} - the default \code{"polygon"} draws no outline at all, so there is
+nothing for a linetype to affect.}
+
+\item{facet}{Optional unquoted column (or expression) to facet by.}
 
 \item{facet_nrow, facet_ncol, facet_scales}{Passed to \code{facet_wrap()} when
 \code{facet} is given.}
 
 \item{bounds}{\code{c(lower, upper)} - if given, draws the sigma_max reference
-curve; \code{NULL} (default) omits it for a plain joint location-scale plot.}
+curve; \code{NULL} (default) omits it for a plain joint location-scale plot.
+Must be two finite numbers with \code{lower < upper}; anything else errors
+rather than silently producing an all-\code{NaN} (i.e. invisible) curve.}
 
 \item{bounds_n}{Number of points used to draw the sigma_max curve.}
 

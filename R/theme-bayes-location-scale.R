@@ -1,3 +1,9 @@
+# Discrete shape palette used when plot_location_scale() maps `category` to
+# the point glyph itself and there are more categories than ggplot2's own
+# default shape scale can handle (6). Solid glyphs first, then open and
+# cross forms; see the call site for why this is needed at all.
+.mt_shapes <- c(16, 17, 15, 18, 8, 4, 3, 7, 10, 12, 13, 9)
+
 #' Joint (location, scale) scatter with credible ellipses
 #'
 #' Joint (location, scale) plot: one point + bivariate credible ellipse per
@@ -40,15 +46,30 @@
 #'   "recursive default argument reference" error otherwise, since looking
 #'   up the unmatched symbol falls through to the function's own unforced
 #'   argument promise of the same name. Always pass both explicitly.
-#' @param shape Optional unquoted column for a second crossed factor (e.g.
-#'   negation) - mapped to the point glyph only (ellipses have no shape
-#'   aesthetic); grouping becomes the interaction of `category` and `shape`
-#'   when both are given.
-#' @param facet Optional unquoted column to facet by.
+#' @param shape Optional unquoted column (or expression) for a second
+#'   crossed factor (e.g. negation) - mapped to the point glyph only
+#'   (ellipses have no shape aesthetic); grouping becomes the interaction of
+#'   `category` and `shape` when both are given. Supplying this overrides the
+#'   `category_shape` default described below.
+#' @param category_shape Whether to map `category` to the point glyph as
+#'   well as to color when no `shape` column is given (default `TRUE`).
+#'   Color, fill and shape then all encode the same variable and merge into
+#'   a single legend. The point of the redundancy is that this plot's whole
+#'   job is telling conditions apart, and the discrete palette separates
+#'   them by hue with very little lightness difference - so hue alone is not
+#'   enough under grayscale printing, a monochrome projector, or reduced
+#'   color discrimination. Set `FALSE` for color-only points.
+#' @param category_linetype Whether to map `category` to the ellipse outline
+#'   style as well (default `TRUE`). Only applies when `ellipse_geom =
+#'   "path"` - the default `"polygon"` draws no outline at all, so there is
+#'   nothing for a linetype to affect.
+#' @param facet Optional unquoted column (or expression) to facet by.
 #' @param facet_nrow,facet_ncol,facet_scales Passed to `facet_wrap()` when
 #'   `facet` is given.
 #' @param bounds `c(lower, upper)` - if given, draws the sigma_max reference
 #'   curve; `NULL` (default) omits it for a plain joint location-scale plot.
+#'   Must be two finite numbers with `lower < upper`; anything else errors
+#'   rather than silently producing an all-`NaN` (i.e. invisible) curve.
 #' @param bounds_n Number of points used to draw the sigma_max curve.
 #' @param location_transform,sigma_transform Applied once, before
 #'   aggregation/plotting (e.g. `exp` for a sigma submodel estimated on the
@@ -93,6 +114,8 @@ plot_location_scale <- function(
   location,
   sigma,
   shape = NULL,
+  category_shape = TRUE,
+  category_linetype = TRUE,
   facet = NULL,
   facet_nrow = NULL,
   facet_ncol = NULL,
@@ -120,6 +143,23 @@ plot_location_scale <- function(
     stop("plot_location_scale(): `sigma` is required.", call. = FALSE)
   }
   ellipse_geom <- match.arg(ellipse_geom)
+  # `bounds` used to flow straight into seq() and sqrt() unchecked. Reversed
+  # bounds (c(100, 0)) made sqrt() of a negative product, i.e. an all-NaN
+  # curve that built with no error and no warning - the reference curve just
+  # wasn't there, with nothing to tell the reader why. A scalar produced
+  # seq()'s "'to' must be a finite number", naming an argument the caller
+  # never passed. The sigma_max curve is a ceiling reference a reader draws
+  # real conclusions from, so silently omitting it is worse than erroring.
+  if (!is.null(bounds)) {
+    if (!is.numeric(bounds) || length(bounds) != 2 ||
+          any(!is.finite(bounds)) || bounds[1] >= bounds[2]) {
+      stop(
+        "plot_location_scale(): `bounds` must be c(lower, upper), two ",
+        "finite numbers with lower < upper.",
+        call. = FALSE
+      )
+    }
+  }
   # sorted ascending for the label text below, but drawn widest-first (see
   # the stat_ellipse() loop below) so the narrowest (highest-alpha) interval
   # ends up on top, nested visually inside the wider ones rather than any
@@ -175,15 +215,33 @@ plot_location_scale <- function(
 
   curve_color <- curve_color %||% mt_colors[2]
 
-  group_expr <- if (has_shape) {
-    rlang::expr(interaction(!!category_sym, !!shape_quo, drop = TRUE))
-  } else {
-    category_sym
-  }
-
+  # `shape`/`facet` are materialized into their own columns rather than
+  # referenced by name. rlang::as_name() (used below for the grouping) needs
+  # a bare symbol, so an inline expression - `shape = factor(neg)`, which
+  # every other tidyeval argument in this package accepts - died with
+  # rlang's "Can't convert a call to a string", naming neither this function
+  # nor the argument. Evaluating once here means the grouping, the point
+  # mapping and facet_wrap() all refer to a real column, whatever the caller
+  # passed; rlang::as_label() then builds the legend/strip title from
+  # arbitrary expressions where as_name() throws.
   plot_data <- data
   plot_data$.location <- location_transform(rlang::eval_tidy(location_sym, data))
   plot_data$.sigma <- sigma_transform(rlang::eval_tidy(sigma_sym, data))
+  if (has_shape) {
+    plot_data$.shape <- rlang::eval_tidy(shape_quo, data)
+  }
+  if (has_facet) {
+    plot_data$.facet <- rlang::eval_tidy(facet_quo, data)
+  }
+  shape_label <- if (has_shape) {
+    rlang::as_label(rlang::quo_get_expr(shape_quo))
+  }
+
+  group_expr <- if (has_shape) {
+    rlang::expr(interaction(!!category_sym, .data$.shape, drop = TRUE))
+  } else {
+    category_sym
+  }
 
   # must also group by the facet variable (when given), or the aggregated
   # point collapses across facet levels and then gets replicated
@@ -195,16 +253,37 @@ plot_location_scale <- function(
   # (wrong, cross-facet-averaged) point.
   group_cols <- c(
     rlang::as_name(category_sym),
-    if (has_shape) rlang::as_name(shape_quo),
-    if (has_facet) rlang::as_name(facet_quo)
+    if (has_shape) ".shape",
+    if (has_facet) ".facet"
   )
   point_data <- plot_data |>
     dplyr::group_by(dplyr::across(dplyr::all_of(group_cols))) |>
     dplyr::summarise(
       .location = mean(.data$.location),
       .sigma = mean(.data$.sigma),
+      .n = dplyr::n(),
       .groups = "drop"
     )
+
+  # stat_ellipse() needs at least 4 points per group; below that it warns
+  # "Too few points to calculate an ellipse" - once per ellipse layer, so
+  # 2-3 times by default - and quietly draws nothing for that group, naming
+  # neither the offending condition nor this function. Say which condition
+  # it is, once, before the build gets there.
+  thin <- point_data[point_data$.n < 4, , drop = FALSE]
+  if (nrow(thin) > 0) {
+    ids <- apply(thin[group_cols], 1, paste, collapse = "/")
+    warning(
+      "plot_location_scale(): ",
+      paste0(sQuote(ids, q = FALSE), " (n=", thin$.n, ")", collapse = ", "),
+      if (nrow(thin) == 1) " has " else " have ",
+      "fewer than 4 paired draws - stat_ellipse() needs 4 to fit an ",
+      "ellipse, so no credible region is drawn for ",
+      if (nrow(thin) == 1) "it" else "them",
+      " (the point still is).",
+      call. = FALSE
+    )
+  }
 
   mapping <- aes(
     x = .data$.location,
@@ -214,7 +293,16 @@ plot_location_scale <- function(
     group = !!group_expr
   )
   point_mapping <- mapping
-  if (has_shape) point_mapping$shape <- rlang::quo_get_expr(shape_quo)
+  # An explicit `shape` column wins; otherwise category itself drives the
+  # glyph, so the plot doesn't rest on hue alone (see `category_shape`).
+  # Mapping color, fill and shape to the same variable with the same title
+  # makes ggplot2 merge all three into one legend rather than adding a
+  # second key block.
+  if (has_shape) {
+    point_mapping$shape <- rlang::expr(.data$.shape)
+  } else if (category_shape) {
+    point_mapping$shape <- category_sym
+  }
 
   p <- ggplot(plot_data, mapping)
 
@@ -253,8 +341,34 @@ plot_location_scale <- function(
       # category via the inherited top-level aes(), so the shading itself
       # is still colored per condition.
       ellipse_args$colour <- NA
+    } else if (category_linetype) {
+      # "path" ellipses are outline-only, so the outline's dash pattern is
+      # a second non-color channel available for free. Mapped on this layer
+      # rather than in the top-level aes() so it reaches the ellipses
+      # without leaking into any other inheriting layer. Same variable and
+      # title as color/fill/shape, so it merges into the one legend.
+      ellipse_args$mapping <- aes(linetype = !!category_sym)
     }
     p <- p + do.call(stat_ellipse, ellipse_args)
+  }
+
+  # An explicit shape scale rather than ggplot2's default, for two reasons.
+  # First, the default stops at 6 values: past that it warns and hands back
+  # NA for the extra levels, i.e. silently undrawn points - and since
+  # category-to-shape is a default here rather than something the caller
+  # asked for, it has to survive a 7+-category plot on its own. Second, the
+  # default mixes solid and open glyphs early (its fourth value is a thin
+  # `+`), which reads noticeably weaker next to the three filled ones at
+  # this point size. `.mt_shapes` keeps the filled forms together at the
+  # front. Past twelve it cycles, which is no worse than what the five-hue
+  # palette already does at that many categories. A caller who adds their
+  # own scale_shape_*() on top replaces this one, with ggplot2's usual
+  # "Scale for shape is already present" message.
+  if (!has_shape && category_shape) {
+    n_categories <- length(unique(stats::na.omit(
+      plot_data[[rlang::as_name(category_sym)]]
+    )))
+    p <- p + scale_shape_manual(values = rep_len(.mt_shapes, n_categories))
   }
 
   p <- p +
@@ -264,7 +378,16 @@ plot_location_scale <- function(
       y = ylab,
       color = rlang::as_name(category_sym),
       fill = rlang::as_name(category_sym),
-      shape = if (has_shape) rlang::as_name(rlang::quo_get_expr(shape_quo)) else NULL
+      # NULL for an aesthetic nothing maps, or ggplot2 prints "Ignoring
+      # unknown labels" for it on every build.
+      linetype = if (ellipse_geom == "path" && category_linetype) {
+        rlang::as_name(category_sym)
+      },
+      shape = if (has_shape) {
+        shape_label
+      } else if (category_shape) {
+        rlang::as_name(category_sym)
+      }
     ) +
     # unlike plot_ridge_hdi()/plot_coef_grid_hdi(), there's no coord_flip()
     # here, so both axis titles (not just x) carry a user-settable label -
@@ -283,7 +406,7 @@ plot_location_scale <- function(
   if (has_facet) {
     p <- p +
       facet_wrap(
-        vars(!!facet_quo),
+        vars(.data$.facet),
         nrow = facet_nrow,
         ncol = facet_ncol,
         scales = facet_scales

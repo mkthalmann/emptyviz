@@ -133,3 +133,21 @@ capture_applied_sides <- function(p) {
   render_plot(p)
   dplyr::bind_rows(lapply(get(key, envir = globalenv()), as.data.frame))
 }
+
+# WCAG 2.x relative-luminance contrast ratio between two colors, per
+# https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio. Used by the palette and
+# dark-mode tests to state contrast claims as numbers rather than prose -
+# the specific habit finding #14 of the code review asked for.
+wcag_contrast <- function(a, b) {
+  relative_luminance <- function(hex) {
+    channels <- grDevices::col2rgb(hex)[, 1] / 255
+    linear <- ifelse(
+      channels <= 0.03928,
+      channels / 12.92,
+      ((channels + 0.055) / 1.055)^2.4
+    )
+    sum(c(0.2126, 0.7152, 0.0722) * linear)
+  }
+  lums <- c(relative_luminance(a), relative_luminance(b))
+  (max(lums) + 0.05) / (min(lums) + 0.05)
+}

@@ -1,5 +1,7 @@
 # Counters avoid filename collisions if a single chunk prints more than one
 # ggplot/patchwork object (rare, but each needs a distinct file name).
+# Reset per render by .register_dual_render() below - see the comment there
+# for why the counter's lifetime can't be the R session.
 .dual_render_counters <- new.env(parent = emptyenv())
 
 .next_dual_render_index <- function(label) {
@@ -302,6 +304,21 @@ knit_print_ggplot_dual <- function(x, options, ...) {
 # worth flagging as "if S3 method registration for Suggests-only packages
 # ever changes recommended shape, revisit this."
 .register_dual_render <- function() {
+  # Clearing the counters here is what makes dual-render filenames
+  # deterministic. They're keyed by chunk label and were never reset, so
+  # their lifetime was the whole R session rather than one render - and
+  # repeated renders in one session are the normal workflow (quarto
+  # preview, RStudio's Knit button, devtools::build_vignettes()). Every
+  # render therefore wrote a fresh pair of PNGs under a new name, nothing
+  # was overwritten and nothing cleaned up: a book with 40 dual-rendered
+  # figures previewed ten times left ~800 orphaned files, and each render's
+  # HTML pointed at different ones, defeating asset caching, incremental
+  # deploys and content-hash diffing. use_theme_mt() calls this at the top
+  # of a document's setup chunk, which is exactly one reset per render.
+  rm(
+    list = ls(.dual_render_counters, all.names = TRUE),
+    envir = .dual_render_counters
+  )
   if (requireNamespace("knitr", quietly = TRUE)) {
     registerS3method("knit_print", "ggplot", knit_print_ggplot_dual, envir = asNamespace("knitr"))
   }

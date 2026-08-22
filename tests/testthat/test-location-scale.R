@@ -230,3 +230,195 @@ test_that("independently-summarized (unpaired) data still builds - the documente
   # the shuffle) actually shows up, so that's the meaningful comparison.
   expect_false(isTRUE(all.equal(b_paired$y, b_unpaired$y)))
 })
+
+test_that("`bounds` is validated instead of silently producing an invisible curve", {
+  base_args <- list(
+    location_scale_fixture,
+    category = rlang::sym("category"),
+    location = rlang::sym("location"),
+    sigma = rlang::sym("sigma")
+  )
+  build <- function(bounds) {
+    rlang::inject(plot_location_scale(!!!base_args, bounds = bounds))
+  }
+
+  # Reversed bounds used to reach sqrt() of a negative product, i.e. an
+  # all-NaN curve. It built with no error and no warning - the reference
+  # curve simply wasn't there, and nothing said why.
+  expect_error(build(c(100, 0)), "lower < upper", fixed = TRUE)
+  expect_error(build(c(2, 2)), "lower < upper", fixed = TRUE)
+  # a scalar used to surface as seq()'s "'to' must be a finite number",
+  # naming an argument the caller never passed
+  expect_error(build(5), "`bounds` must be c(lower, upper)", fixed = TRUE)
+  expect_error(build(c(0, NA)), "finite", fixed = TRUE)
+  expect_error(build(c(0, Inf)), "finite", fixed = TRUE)
+  expect_error(build(c("a", "b")), "`bounds` must be c(lower, upper)", fixed = TRUE)
+
+  # the valid case still draws a curve with no NaN in it
+  p <- build(c(-2, 2))
+  curve <- ggplot_build(p)$data[[1]]
+  expect_false(anyNA(curve$y))
+})
+
+test_that("`shape` and `facet` accept an inline expression, not only a bare column", {
+  # rlang::as_name() needs a symbol, so `shape = factor(neg)` used to die
+  # with "Can't convert a call to a string" - naming neither this function
+  # nor the argument, and inconsistent with every other tidyeval argument in
+  # the package. as_label() handles arbitrary expressions.
+  d <- location_scale_fixture
+  d$negation <- rep(c("with", "without"), length.out = nrow(d))
+
+  expect_no_error(ggplot_build(plot_location_scale(
+    d,
+    category = category, location = location, sigma = sigma,
+    shape = factor(negation)
+  )))
+  expect_no_error(ggplot_build(plot_location_scale(
+    d,
+    category = category, location = location, sigma = sigma,
+    facet = factor(negation)
+  )))
+
+  # and the expression becomes the legend title
+  p <- plot_location_scale(
+    d,
+    category = category, location = location, sigma = sigma,
+    shape = factor(negation)
+  )
+  expect_equal(p$labels$shape, "factor(negation)")
+})
+
+test_that("`shape` given as a local variable resolves against the caller, not the data", {
+  # point_mapping$shape used to be assigned a bare expression rather than a
+  # quosure, discarding the caller's environment - the sibling code in
+  # geom-violin-sd.R documents why that's the wrong move. Materializing the
+  # quosure up front sidesteps it entirely.
+  d <- location_scale_fixture
+  d$negation <- rep(c("with", "without"), length.out = nrow(d))
+  local_shape <- rep(c("p", "q"), length.out = nrow(d))
+
+  p <- plot_location_scale(
+    d,
+    category = category, location = location, sigma = sigma,
+    shape = local_shape
+  )
+  b <- ggplot_build(p)
+  point_layer <- Find(function(l) inherits(l$geom, "GeomPoint"), p$layers)
+  # 2 categories x 2 local levels = 4 points, i.e. the local vector really
+  # was used for grouping rather than a same-named column being looked up
+  expect_equal(nrow(b$data[[length(b$data)]]), 4L)
+  expect_true("shape" %in% names(rlang::get_expr(point_layer$mapping)))
+})
+
+test_that("a group with fewer than 4 paired draws warns by name instead of only through stat_ellipse()", {
+  set.seed(7)
+  d <- rbind(
+    location_scale_fixture,
+    data.frame(
+      category = "thin",
+      trigger = "t1",
+      .draw = 1:3,
+      location = rnorm(3),
+      sigma = rgamma(3, 10)
+    )
+  )
+  expect_warning(
+    plot_location_scale(d, category = category, location = location, sigma = sigma),
+    "'thin' (n=3)",
+    fixed = TRUE
+  )
+  expect_no_warning(
+    plot_location_scale(
+      location_scale_fixture,
+      category = category, location = location, sigma = sigma
+    )
+  )
+})
+
+test_that("category drives the point shape by default, so the plot doesn't rest on hue alone", {
+  # Finding #7 in the review: the discrete palette separates categories by
+  # hue with almost no lightness difference (every pair in mt_colors5 is
+  # under the 3:1 WCAG 1.4.11 threshold), and this plot maps category to
+  # colour and fill and nothing else - so a reader who can't resolve hue
+  # couldn't tell the ellipses apart at all. The palette is deliberately
+  # unchanged; the redundant channel is the fix.
+  p <- plot_location_scale(
+    location_scale_fixture,
+    category = category, location = location, sigma = sigma
+  )
+  point_layer <- Find(function(l) inherits(l$geom, "GeomPoint"), p$layers)
+  expect_true("shape" %in% names(rlang::get_expr(point_layer$mapping)))
+  b <- ggplot_build(p)
+  expect_gt(length(unique(b$data[[length(b$data)]]$shape)), 1L)
+
+  # colour, fill and shape all name the same variable, so they merge into
+  # one legend rather than adding a second key block
+  expect_equal(n_legend_boxes(p), 1L)
+
+  # and it stays opt-out
+  off <- plot_location_scale(
+    location_scale_fixture,
+    category = category, location = location, sigma = sigma,
+    category_shape = FALSE
+  )
+  off_points <- Find(function(l) inherits(l$geom, "GeomPoint"), off$layers)
+  expect_false("shape" %in% names(rlang::get_expr(off_points$mapping)))
+
+  # an explicit `shape` column still wins over the default
+  d <- location_scale_fixture
+  d$negation <- rep(c("with", "without"), length.out = nrow(d))
+  explicit <- plot_location_scale(
+    d,
+    category = category, location = location, sigma = sigma, shape = negation
+  )
+  expect_equal(explicit$labels$shape, "negation")
+})
+
+test_that("the default category-shape mapping survives more categories than ggplot2's 6-shape palette", {
+  # ggplot2's default discrete shape scale warns past 6 values and hands
+  # back NA for the rest - i.e. silently undrawn points. Since the mapping
+  # is a default here rather than something the caller asked for, it has to
+  # cope on its own.
+  set.seed(3)
+  k <- 8
+  d <- data.frame(
+    category = rep(letters[seq_len(k)], each = 40),
+    location = rnorm(k * 40),
+    sigma = rgamma(k * 40, 10)
+  )
+  expect_no_warning(
+    b <- ggplot_build(plot_location_scale(
+      d,
+      category = category, location = location, sigma = sigma
+    ))
+  )
+  point_data <- b$data[[length(b$data)]]
+  expect_false(anyNA(point_data$shape))
+  expect_equal(length(unique(point_data$shape)), k)
+})
+
+test_that("ellipse_geom = 'path' maps category to linetype as a second non-colour channel", {
+  p <- plot_location_scale(
+    location_scale_fixture,
+    category = category, location = location, sigma = sigma,
+    ellipse_geom = "path"
+  )
+  b <- ggplot_build(p)
+  expect_gt(length(unique(b$data[[1]]$linetype)), 1L)
+  # still one merged legend, not a separate linetype key block
+  expect_equal(n_legend_boxes(p), 1L)
+
+  off <- plot_location_scale(
+    location_scale_fixture,
+    category = category, location = location, sigma = sigma,
+    ellipse_geom = "path", category_linetype = FALSE
+  )
+  expect_equal(length(unique(ggplot_build(off)$data[[1]]$linetype)), 1L)
+
+  # the default polygon geom draws no outline at all, so nothing to style -
+  # and no stray "Ignoring unknown labels" for an unmapped linetype
+  expect_null(plot_location_scale(
+    location_scale_fixture,
+    category = category, location = location, sigma = sigma
+  )$labels$linetype)
+})

@@ -54,6 +54,31 @@ test_that("layer_halfeye_hdi() no longer claims the whole `fill` aesthetic - an 
   expect_no_error(ggplot_build(p))
 })
 
+test_that("layer_halfeye_hdi() leaves a caller's colour legend alone while still hiding its own keys", {
+  # Same class of bug as the fill one above, applied to `color`. The bundle
+  # returned guides(color = "none") - and guides() is plot-global, not
+  # layer-scoped - so composing this bundle into a plot silently killed the
+  # colour legend of every other layer in it. The bundle never MAPS colour
+  # (it sets `interval_color` as a literal parameter), so it contributes no
+  # key of its own and there was nothing to suppress in the first place.
+  d <- data.frame(cond = rep(c("a", "b"), each = 50), .value = rnorm(100))
+  extra <- data.frame(cond = c("a", "b"), y = c(0, 0), grp = c("x", "y"))
+  p <- ggplot(d, aes(x = cond, y = .value)) +
+    layer_halfeye_hdi(n = 50) +
+    geom_point(
+      data = extra, aes(x = cond, y = y, colour = grp),
+      size = 3, inherit.aes = FALSE
+    )
+
+  expect_false(is.null(ggplot2::get_guide_data(p, "colour")))
+  # the bundle's own aesthetics stay suppressed
+  expect_null(ggplot2::get_guide_data(p, "fill_ramp"))
+
+  # and a plot that maps nothing still shows no legend at all
+  bare <- ggplot(d, aes(x = cond, y = .value)) + layer_halfeye_hdi(n = 50)
+  expect_equal(n_legend_boxes(bare), 0L)
+})
+
 test_that("layer_halfeye_hdi()'s `gap` shifts the point-interval away from the slab baseline", {
   d <- data.frame(cond = "true", .value = rnorm(50, 1.5, .3))
 

@@ -77,6 +77,20 @@ repeating \code{fill = ...} on every layer.
 Call \code{\link[=use_theme_mt]{use_theme_mt()}} to make this the session's active theme -
 \code{library(emptyviz)} does not do this automatically.
 
+The discrete palette separates categories by \strong{hue}, with very little
+lightness difference between them: every pair in \link{mt_colors5} falls below
+the 3:1 WCAG 1.4.11 contrast threshold for distinguishable graphical
+objects, and eight of the ten pairs below 2:1 (teal \verb{#066b8a} and purple
+\verb{#9109d5} sit at 1.09:1 - effectively the same shade of gray). Each color
+has adequate contrast against a white background, so text and outlines
+are fine; the limitation is strictly category-vs-category. Under
+grayscale printing, a monochrome projector, or reduced color
+discrimination, categories can merge. Beyond about three categories, give
+the plot a redundant non-color channel - \code{shape}, \code{linetype}, or direct
+labels - rather than relying on hue alone. \code{\link[=plot_location_scale]{plot_location_scale()}} does
+this by default (see its \code{category_shape}/\code{category_linetype}), and
+\code{\link[=plot_bf_forest]{plot_bf_forest()}}'s \code{positive_shape}/\code{negative_shape} are the same idea.
+
 \code{base_family} (and every other \verb{*_family} argument, which default to it)
 defaults to \code{"Roboto Condensed"}, a font this package does not install or
 register - it must already be present on the system (and discoverable by
