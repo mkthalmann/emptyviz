@@ -187,13 +187,105 @@ knit_print_ggplot_dual <- function(x, options, ...) {
   # class + width replicate what Quarto's own figure output uses (confirmed
   # by comparing against a plain out.width-driven image), since bypassing
   # markdown parsing means those aren't added automatically anymore.
-  width_style <- if (!is.null(options$out.width)) sprintf(' style="width:%s"', options$out.width) else ""
-  img_tag <- function(path) sprintf('<img src="%s" class="img-fluid figure-img"%s>', path, width_style)
+  # Hand-built <img> tags mean nothing adds the accessibility attributes
+  # knitr/Quarto would normally add for us, so `fig.alt`/`fig.cap` have to be
+  # read out of the chunk options explicitly. They used to be ignored
+  # entirely: the emitted tag carried no `alt` attribute at all (worse than
+  # alt="", since screen readers then commonly fall back to announcing the
+  # file name), and an author's `fig.cap` vanished with no warning.
+  #
+  # Falling back to fig.cap for the alt text mirrors knitr's own documented
+  # behaviour for a normal chunk (`fig.alt` defaults to `fig.cap`), so a
+  # dual-rendered chunk and an ordinary one treat the same options the same
+  # way. Both are recycled across plots by index, also matching knitr, for
+  # the multi-plot-per-chunk case the counter above exists for.
+  alt <- .chunk_option_at(options$fig.alt %||% options$fig.cap, idx)
+  caption <- .chunk_option_at(options$fig.cap, idx)
+
+  # Surface the omission at knit time rather than shipping a figure with no
+  # text equivalent. Only on the chunk's first plot, so a multi-plot chunk
+  # warns once.
+  if (idx == 1L && !nzchar(alt)) {
+    warning(
+      "knit_print_ggplot_dual(): chunk '", label, "' has dual_render = TRUE ",
+      "but sets neither `fig.alt` nor `fig.cap`, so both rendered images ",
+      "get an empty alt attribute - which tells assistive technology to ",
+      "skip them entirely. Set `fig.alt` to a description of what the ",
+      "figure shows.",
+      call. = FALSE
+    )
+  }
+
+  # Raw <img> tags, not markdown `![]()` - confirmed by direct comparison that
+  # a chunk with a `fig-` prefixed label + fig-cap gets its output re-parsed
+  # as markdown by Quarto's crossref/figure filter (so `![]()` there becomes
+  # a real <img>), but an ordinary chunk (any other label, no fig-cap - like
+  # this book's plot-crit/plot-control/plot-subsamples chunks) does not: the
+  # `<div>...![]()...</div>` this used to emit came through completely
+  # unprocessed, showing the literal "![](path)" text on the page instead of
+  # the image. Raw HTML <img> tags render correctly either way, sidestepping
+  # that dependency on which processing path a given chunk happens to hit.
+  # class + width replicate what Quarto's own figure output uses (confirmed
+  # by comparing against a plain out.width-driven image), since bypassing
+  # markdown parsing means those aren't added automatically anymore.
+  #
+  # Everything interpolated into an attribute goes through .escape_html()
+  # first: a figure path or an out.width containing a quote or an ampersand
+  # would otherwise break the markup, and alt/caption text is free-form prose
+  # where that's likely rather than hypothetical.
+  width_style <- if (!is.null(options$out.width)) {
+    sprintf(' style="width:%s"', .escape_html(options$out.width))
+  } else {
+    ""
+  }
+  img_tag <- function(path) {
+    sprintf(
+      '<img src="%s" class="img-fluid figure-img" alt="%s"%s>',
+      .escape_html(path), .escape_html(alt), width_style
+    )
+  }
+
+  # No `id` on the <figure>: the same figure is emitted twice (once per
+  # colour scheme) and duplicate element ids are invalid HTML. Quarto's
+  # light/dark CSS hides the inactive half with display:none, so only one
+  # copy of the caption reaches the accessibility tree at a time.
+  fig_wrap <- function(inner) {
+    if (!nzchar(caption)) {
+      return(inner)
+    }
+    paste0(
+      '<figure class="figure">\n', inner,
+      '\n<figcaption class="figure-caption">', .escape_html(caption),
+      "</figcaption>\n</figure>"
+    )
+  }
 
   knitr::asis_output(paste0(
-    '<div class="light-content">\n', img_tag(light_path), '\n</div>\n\n',
-    '<div class="dark-content">\n', img_tag(dark_path), '\n</div>'
+    '<div class="light-content">\n', fig_wrap(img_tag(light_path)), '\n</div>\n\n',
+    '<div class="dark-content">\n', fig_wrap(img_tag(dark_path)), '\n</div>'
   ))
+}
+
+# Minimal HTML-attribute escaping for values interpolated into the hand-built
+# tags above. `&` has to come first or it re-escapes the entities the later
+# substitutions introduce.
+.escape_html <- function(x) {
+  x <- gsub("&", "&amp;", x, fixed = TRUE)
+  x <- gsub("<", "&lt;", x, fixed = TRUE)
+  x <- gsub(">", "&gt;", x, fixed = TRUE)
+  gsub('"', "&quot;", x, fixed = TRUE)
+}
+
+# knitr lets fig.alt/fig.cap be a vector, one entry per plot in a chunk,
+# recycled if shorter. Mirrors that, and normalizes NULL/NA/non-character to
+# "" so callers can treat the result as a plain string.
+.chunk_option_at <- function(value, idx) {
+  if (is.null(value) || length(value) == 0) {
+    return("")
+  }
+  value <- as.character(value)
+  out <- value[[((idx - 1L) %% length(value)) + 1L]]
+  if (is.na(out)) "" else out
 }
 
 # Registers knit_print_ggplot_dual() as the knit_print method for "ggplot"

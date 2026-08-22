@@ -1,6 +1,7 @@
 # emptyviz (development version)
 
-## Fixes from the 2026-08-22 code review
+Fixes from the 2026-08-22 code review (see `CODE_REVIEW.md`), plus the
+violin-geom parity fixes below.
 
 * **Fixed (dark mode, most user-visible):** `theme_mt(dark = TRUE)` and the
   dual-render dark overlay now set the `geom` theme element's own `ink`, so
@@ -23,8 +24,22 @@
   per level, so a single `NA` log-Bayes-Factor row still produced the
   cryptic `lvls_reorder()` error these guards exist to replace. Scattered
   `NA`s inside otherwise-populated categories keep working.
-
-## Violin geom parity fixes
+* **Fixed (accessibility):** `knit_print_ggplot_dual()` now honours the
+  chunk's `fig.alt` and `fig.cap`. It previously read only `out.width`, so
+  the `<img>` tags it hand-builds carried no `alt` attribute at all - worse
+  than `alt=""`, since screen readers then fall back to announcing the file
+  name - and an author's `fig.cap` was discarded silently. Alt text falls
+  back to `fig.cap` (matching knitr's own default for an ordinary chunk), a
+  caption is rendered in a `<figure>`/`<figcaption>` wrapper, both options
+  are recycled across multiple plots in one chunk, and every interpolated
+  value is HTML-escaped. A chunk with `dual_render = TRUE` and neither
+  option set now warns once at knit time instead of shipping a figure with
+  no text equivalent.
+* **Docs (accessibility):** every figure in the README and both vignettes -
+  20 chunks - now has `fig.alt` describing what the figure shows. Re-knitting
+  `README.md` also refreshed `man/figures/README-violin-example-1.png`, which
+  was stale: its SD-band outlines predate the fix that made them track each
+  group's resolved fill.
 
 Parity fixes for `geom_violin_sd()`/`geom_half_violin_sd()`/
 `geom_split_violin_sd()`, found while comparing their output side by side

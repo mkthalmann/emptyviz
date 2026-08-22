@@ -89,6 +89,16 @@ ridge_draws <- believe_projection_draws |>
 ### `plot_ridge_hdi()`
 
 ```{r ridge-basic, fig.height = 7}
+#| fig.alt: >
+#|   A ridgeline of posterior marginal means for the eight
+#|   scenario-by-negation conditions, faceted into a stop panel on top and an
+#|   again panel below. Each row is a density curve with a point-interval
+#|   underneath it, and rows are sorted by mean. Both panels show the same
+#|   ordering: critical-without, false-without and true-with sit around -1.5
+#|   at the low end, undef-with and undef-without cluster near -0.5 in the
+#|   middle, and critical-with, false-with and true-without run from about
+#|   0.7 up to 2. The again panel's densities are slightly narrower and its
+#|   extremes slightly further apart than the stop panel's.
 plot_ridge_hdi(
   ridge_draws,
   category = cond,
@@ -107,6 +117,14 @@ itself is meaningful (e.g. matching a fixed condition sequence elsewhere in
 a paper).
 
 ```{r ridge-reorder, fig.height = 5}
+#| fig.alt: >
+#|   The same eight posterior densities drawn twice. Left, labelled Reordered
+#|   (default): rows run monotonically from the lowest mean at the top to the
+#|   highest at the bottom, so the densities form a clean staircase. Right,
+#|   labelled Original factor order: the identical densities in the
+#|   category column's own factor order, which interleaves high and low
+#|   conditions and leaves the rows scattered across the axis with no visual
+#|   trend.
 p_reorder_on <- plot_ridge_hdi(
   ridge_draws |> filter(trigger == "*again*"),
   category = cond,
@@ -133,6 +151,14 @@ back-transformation done by hand. `believe_projection_draws`' `dpar ==
 "sigma"` rows are exactly that submodel's marginal draws.
 
 ```{r ridge-transform, fig.height = 5}
+#| fig.alt: >
+#|   A ridgeline of posterior marginal standard deviations for the eight
+#|   conditions, back-transformed from the log scale with value_transform =
+#|   exp, so the axis runs in raw SD units from about 0.5 to 1.4. The three
+#|   without-negation conditions with the tightest judgments -
+#|   critical-without, true-without and false-without - sit lowest, around
+#|   0.55 to 0.7 and with narrow densities; undef-with, critical-with and
+#|   undef-without sit highest, above 1.0 and with visibly wider densities.
 sigma_draws <- believe_projection_draws |>
   filter(dpar == "sigma") |>
   mutate(cond = paste0(scenario, "-", negation))
@@ -159,6 +185,16 @@ sigma_coef_draws <- believe_projection_coef_draws |> filter(dpar == "sigma")
 ```
 
 ```{r coef-grid-basic, fig.height = 8}
+#| fig.alt: >
+#|   A four-by-four grid of small posterior density panels, one per fixed
+#|   effect of the mu submodel, each with its own free x scale and a dashed
+#|   reference line at zero. Because the axes are free, coefficients of very
+#|   different magnitude are all legible: Negation:false spans roughly 0.5 to
+#|   1.5 while Negation:stop spans only about -0.15 to 0.10. Several panels -
+#|   critical, the Intercept, Negation, Negation:critical, Negation:false and
+#|   Negation:undef - sit clearly to one side of zero with the reference line
+#|   outside or at the edge of the interval; others, such as false:stop,
+#|   critical:stop and Negation:undef:stop, straddle it.
 plot_coef_grid_hdi(mu_coef_draws, category = coef, scale = 1.4)
 ```
 
@@ -166,6 +202,13 @@ The `sigma` submodel's coefficients (fewer terms - no three-way interaction
 in `sigma ~ negation*scenario + trigger`):
 
 ```{r coef-grid-sigma, fig.height = 5}
+#| fig.alt: >
+#|   The same free-scale grid layout for the sigma submodel's nine
+#|   coefficients, arranged three per row. Negation, Negation:critical and
+#|   undef sit well away from the dashed zero line on the positive side;
+#|   Negation:undef sits well away on the negative side; critical, false and
+#|   the Intercept sit just below zero, and Negation:false and stop straddle
+#|   it.
 plot_coef_grid_hdi(sigma_coef_draws, category = coef, scale = 1.4, ncol = 3)
 ```
 
@@ -173,6 +216,11 @@ plot_coef_grid_hdi(sigma_coef_draws, category = coef, scale = 1.4, ncol = 3)
 grids); pass a different value or `NULL` to move or omit it.
 
 ```{r coef-grid-no-hline, fig.height = 6}
+#| fig.alt: >
+#|   The same sixteen mu-submodel coefficient panels as above with hline =
+#|   NULL, so the dashed zero reference line is gone from every panel. Each
+#|   panel's x range now covers only its own posterior, so several densities
+#|   fill the full panel width and zero is no longer marked anywhere.
 plot_coef_grid_hdi(mu_coef_draws, category = coef, scale = 1.4, hline = NULL)
 ```
 
@@ -266,6 +314,18 @@ opaque core, fainter outer band), the same multi-width idea
 (e.g. `ellipse_level = .95`) to go back to one ellipse per condition.
 
 ```{r location-scale-basic, fig.height = 6}
+#| fig.alt: >
+#|   A joint location-scale plot, faceted into a stop panel and an again
+#|   panel. Posterior marginal mean runs along the x axis from -2 to 2 and
+#|   posterior marginal standard deviation up the y axis; each condition is
+#|   one point inside a darker 50 percent and a fainter 95 percent credible
+#|   ellipse. Colour distinguishes the four scenarios and marker shape the
+#|   two negation levels (circle for with, triangle for without). A dashed
+#|   arc across the top is the sigma_max ceiling curve - the largest spread
+#|   the bounded -2 to 2 response scale allows at each mean. Every condition
+#|   sits well below that arc, with the mid-scale undef and critical
+#|   conditions highest and the extreme-mean conditions such as true-without
+#|   and critical-without lowest.
 plot_location_scale(
   loc_scale_draws,
   category = scenario,
@@ -328,6 +388,17 @@ bf_pairs <- list(
 ```
 
 ```{r bf-forest-basic, fig.height = 6}
+#| fig.alt: >
+#|   A log Bayes factor forest plot with nine contrast rows, sorted from
+#|   largest to smallest. The three with-versus-without contrasts for true,
+#|   critical and false sit far right at roughly 32, 27 and 25; three more
+#|   (with undef vs with critical, with false vs with critical, with true vs
+#|   without false) sit between about 4 and 8; and the last three - without
+#|   true vs with false, without false vs without critical, with undef vs
+#|   without undef - sit just left of zero at about -2 to -3, drawn as
+#|   triangles rather than circles to mark their negative sign. A narrow
+#|   shaded band around zero marks the weak-evidence region; only those three
+#|   negative contrasts come close to it, and none falls inside.
 plot_bf_forest(mu_bf, contrast = contrast, log_bf = log_BF, pairs = bf_pairs)
 ```
 
@@ -350,6 +421,12 @@ sit right at the top edge of the panel, out of the way of the data, adding
 essentially no extra space to the figure.
 
 ```{r bf-forest-arrows, fig.height = 6}
+#| fig.alt: >
+#|   The same nine-contrast forest plot with direction_labels turned on. Two
+#|   arrows now run along the top edge of the panel, one pointing left
+#|   labelled supports equivalence and one pointing right labelled supports
+#|   difference, each in the colour used for that sign's points. The x range
+#|   widens to about -40 to 40 to make room, and the data itself is unchanged.
 plot_bf_forest(
   mu_bf,
   contrast = contrast,
@@ -365,6 +442,13 @@ A dual log/linear Bayes Factor axis - opt-in, since a log-only axis is
 perfectly fine on its own.
 
 ```{r bf-forest-secaxis, fig.height = 6}
+#| fig.alt: >
+#|   The same forest plot with secondary_axis = TRUE. A second axis labelled
+#|   Bayes factor (BF) runs along the top, giving the linear BF values 1, 2,
+#|   5, 15, 50 and 150 at their log positions - which bunches them together
+#|   just right of zero, since the log axis reaches past 30. The primary log
+#|   Bayes factor axis, the direction arrows and the data are otherwise
+#|   unchanged.
 plot_bf_forest(
   mu_bf,
   contrast = contrast,
@@ -383,6 +467,15 @@ rect, arrows, and labels all rotate to hug the right edge of the panel
 instead of the top.
 
 ```{r bf-evidence-scale-y, fig.height = 5}
+#| fig.alt: >
+#|   A line-and-point plot of log Bayes factor against prior standard
+#|   deviation, showing a smooth monotonic decline from about 6.2 at a prior
+#|   SD of 0.1 to about -1.5 at 1.5. The same evidence-scale annotation is
+#|   rotated for a y-axis log-BF: the shaded weak-evidence band is now a
+#|   horizontal stripe around zero that the curve crosses at a prior SD of
+#|   roughly 1.0, and the two direction arrows hug the right edge of the
+#|   panel, pointing up for supports difference and down for supports
+#|   equivalence.
 sweep_data <- data.frame(
   prior_sd = seq(0.1, 1.5, by = 0.2),
   log_bf = c(6.2, 5.1, 3.8, 2.5, 1.4, 0.3, -0.6, -1.5)

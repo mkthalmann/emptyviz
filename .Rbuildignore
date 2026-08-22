@@ -13,3 +13,4 @@
 ^pkgdown$
 ^exploratory-tests\.R$
 ^\.claude$
+^CODE_REVIEW\.md$

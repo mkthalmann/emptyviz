@@ -16,7 +16,11 @@ test_that("knit_print_ggplot_dual() saves two PNGs and emits light/dark-wrapped 
   p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
   out <- emptyviz:::knit_print_ggplot_dual(
     p,
-    options = list(dual_render = TRUE, label = "fig-x", fig.path = fig_path, fig.width = 4, fig.height = 3, dpi = 72)
+    options = list(
+      dual_render = TRUE, label = "fig-x", fig.path = fig_path,
+      fig.width = 4, fig.height = 3, dpi = 72,
+      fig.alt = "Scatter plot of car weight against fuel economy."
+    )
   )
 
   expect_s3_class(out, "knit_asis")
@@ -60,7 +64,11 @@ test_that("knit_print_ggplot_dual()'s dark render applies the overlay to every s
 
   emptyviz:::knit_print_ggplot_dual(
     combo,
-    options = list(dual_render = TRUE, label = "fig-combo", fig.path = fig_path, fig.width = 6, fig.height = 3, dpi = 72)
+    options = list(
+      dual_render = TRUE, label = "fig-combo", fig.path = fig_path,
+      fig.width = 6, fig.height = 3, dpi = 72,
+      fig.alt = "Two scatter plots of fuel economy, against weight and horsepower."
+    )
   )
   expect_true(file.exists(file.path(fig_path, "fig-combo-light-1.png")))
   expect_true(file.exists(file.path(fig_path, "fig-combo-dark-1.png")))
@@ -125,7 +133,11 @@ test_that("knit_print_ggplot_dual() called twice for the same chunk label doesn'
 
   p1 <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
   p2 <- ggplot(mtcars, aes(hp, mpg)) + geom_point()
-  opts <- list(dual_render = TRUE, label = "fig-multi", fig.path = fig_path, fig.width = 4, fig.height = 3, dpi = 72)
+  opts <- list(
+    dual_render = TRUE, label = "fig-multi", fig.path = fig_path,
+    fig.width = 4, fig.height = 3, dpi = 72,
+    fig.alt = "Scatter plot of car weight against fuel economy."
+  )
 
   out1 <- emptyviz:::knit_print_ggplot_dual(p1, options = opts)
   out2 <- emptyviz:::knit_print_ggplot_dual(p2, options = opts)
@@ -163,4 +175,120 @@ test_that(".dark_mode_overlay() resolves default geom colors to the dark ink, no
 
   expect_identical(unique(built$data[[1]]$colour), emptyviz:::.dark_ink)
   expect_identical(unique(built$data[[2]]$colour), emptyviz:::.dark_ink)
+})
+
+test_that("knit_print_ggplot_dual() honours fig.alt, falling back to fig.cap, and always emits an alt attribute", {
+  skip_if_not_installed("knitr")
+  tmp <- tempfile("dual-render-alt-")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  fig_path <- file.path(tmp, "figure-html/")
+
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  base_opts <- list(
+    dual_render = TRUE, fig.path = fig_path,
+    fig.width = 4, fig.height = 3, dpi = 72
+  )
+  render <- function(...) {
+    unclass(emptyviz:::knit_print_ggplot_dual(p, options = utils::modifyList(base_opts, list(...))))
+  }
+
+  # Regression test: the hand-built <img> tags used to read only out.width,
+  # so an author's fig.alt was discarded and the tag carried no alt attribute
+  # at all - worse than alt="", since screen readers then fall back to
+  # announcing the file name.
+  with_alt <- render(label = "fig-alt", fig.alt = "Scatter plot of weight against fuel economy.")
+  expect_match(with_alt, 'alt="Scatter plot of weight against fuel economy."', fixed = TRUE)
+  # both halves of the dual render, not just the light one
+  expect_equal(length(gregexpr("alt=", with_alt, fixed = TRUE)[[1]]), 2L)
+
+  # fig.cap fills in for a missing fig.alt, matching knitr's own default for
+  # an ordinary chunk, and is also rendered as a visible caption - which
+  # used to vanish silently.
+  with_cap <- render(label = "fig-cap", fig.cap = "Weight versus fuel economy.")
+  expect_match(with_cap, 'alt="Weight versus fuel economy."', fixed = TRUE)
+  expect_match(with_cap, "<figcaption", fixed = TRUE)
+  expect_match(with_cap, ">Weight versus fuel economy.</figcaption>", fixed = TRUE)
+
+  # fig.alt wins over fig.cap when both are given
+  both <- render(label = "fig-both", fig.alt = "Alt text.", fig.cap = "Caption text.")
+  expect_match(both, 'alt="Alt text."', fixed = TRUE)
+  expect_match(both, ">Caption text.</figcaption>", fixed = TRUE)
+
+  # no caption means no <figure> wrapper at all
+  expect_no_match(with_alt, "<figure", fixed = TRUE)
+
+  # and the alt attribute is present even when nothing was supplied
+  bare <- suppressWarnings(render(label = "fig-bare"))
+  expect_match(bare, 'alt=""', fixed = TRUE)
+})
+
+test_that("knit_print_ggplot_dual() warns once per chunk when neither fig.alt nor fig.cap is set", {
+  skip_if_not_installed("knitr")
+  tmp <- tempfile("dual-render-warn-")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  fig_path <- file.path(tmp, "figure-html/")
+
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  opts <- list(
+    dual_render = TRUE, label = "fig-no-alt", fig.path = fig_path,
+    fig.width = 4, fig.height = 3, dpi = 72
+  )
+
+  expect_warning(
+    emptyviz:::knit_print_ggplot_dual(p, options = opts),
+    "neither `fig.alt` nor `fig.cap`"
+  )
+  # a second plot in the same chunk doesn't repeat the warning
+  expect_no_warning(emptyviz:::knit_print_ggplot_dual(p, options = opts))
+
+  expect_no_warning(emptyviz:::knit_print_ggplot_dual(
+    p,
+    options = utils::modifyList(opts, list(label = "fig-has-alt", fig.alt = "Something."))
+  ))
+})
+
+test_that("knit_print_ggplot_dual() escapes HTML-special characters in every interpolated attribute", {
+  skip_if_not_installed("knitr")
+  tmp <- tempfile("dual-render-esc-")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  fig_path <- file.path(tmp, "figure-html/")
+
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  out <- unclass(emptyviz:::knit_print_ggplot_dual(
+    p,
+    options = list(
+      dual_render = TRUE, label = "fig-esc", fig.path = fig_path,
+      fig.width = 4, fig.height = 3, dpi = 72,
+      fig.alt = 'Marks "scare quotes" & <angle brackets>.',
+      fig.cap = 'A & B "C"'
+    )
+  ))
+
+  expect_match(out, "&quot;scare quotes&quot; &amp; &lt;angle brackets&gt;.", fixed = TRUE)
+  expect_match(out, "A &amp; B &quot;C&quot;", fixed = TRUE)
+  # the raw quote never reaches the attribute and closes it early
+  expect_no_match(out, 'alt="Marks "', fixed = TRUE)
+})
+
+test_that("knit_print_ggplot_dual() recycles vector fig.alt across plots in one chunk", {
+  skip_if_not_installed("knitr")
+  tmp <- tempfile("dual-render-vec-")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  fig_path <- file.path(tmp, "figure-html/")
+
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  opts <- list(
+    dual_render = TRUE, label = "fig-vec", fig.path = fig_path,
+    fig.width = 4, fig.height = 3, dpi = 72,
+    fig.alt = c("First figure.", "Second figure.")
+  )
+
+  first <- unclass(emptyviz:::knit_print_ggplot_dual(p, options = opts))
+  second <- unclass(emptyviz:::knit_print_ggplot_dual(p, options = opts))
+  expect_match(first, 'alt="First figure."', fixed = TRUE)
+  expect_match(second, 'alt="Second figure."', fixed = TRUE)
 })
