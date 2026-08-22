@@ -460,19 +460,20 @@ plot_bf_forest <- function(
   }
 
   x_expr <- if (contrast_reorder) {
-    # See plot_ridge_hdi()'s identical guard: forcats::fct_reorder() fails
-    # deep inside ggplot2's own aesthetic evaluation with a cryptic,
-    # emptyviz-unattributed error if `log_bf` is entirely NA - checked
-    # eagerly here (plot_data$.log_bf is already materialized above, not
-    # lazy) instead.
-    if (all(is.na(plot_data$.log_bf))) {
-      stop(
-        "plot_bf_forest(): `log_bf` is entirely NA - forcats::fct_reorder() ",
-        "can't reorder contrasts by it. Pass `contrast_reorder = FALSE`, ",
-        "or check your data.",
-        call. = FALSE
-      )
-    }
+    # See plot_ridge_hdi()'s identical guard, and .check_reorder_values()
+    # itself for what fct_reorder() actually chokes on: any contrast with no
+    # non-NA log_bf, which - since each contrast here is a single row - means
+    # any NA row at all. Checked eagerly (plot_data$.log_bf is already
+    # materialized above, not lazy) so the error names this function rather
+    # than surfacing as forcats' lvls_reorder() message from deep inside
+    # ggplot2's aesthetic evaluation.
+    .check_reorder_values(
+      values = plot_data$.log_bf,
+      categories = rlang::eval_tidy(contrast_sym, plot_data),
+      fn = "plot_bf_forest",
+      value_arg = "log_bf",
+      reorder_arg = "contrast_reorder"
+    )
     rlang::expr(forcats::fct_reorder(!!contrast_sym, .data$.log_bf))
   } else {
     contrast_sym

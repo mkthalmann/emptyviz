@@ -54,18 +54,29 @@ warn_reserved_dots <- function(dots, geom_name) {
 
 # Truncates a density-stat `result` (already canonicalized, same convention
 # as .sd_bounds()'s own `data` argument) to each group's own mean +/- 1 SD
-# band. `bounds` and `result` are guaranteed consistent here - the
-# underlying density stat (gghalves:::StatHalfYdensity$compute_panel() /
-# ggplot2::StatYdensity$compute_panel()) already drops any group with fewer
-# than 2 points before this ever runs, the identical n>=2 floor
-# .sd_bounds() itself applies - so every group iterated over below is
-# guaranteed present in `bounds`, and lo/hi are never NA in practice.
+# band. Groups present in `result` but absent from `bounds` have no SD band
+# and are dropped here.
+#
+# The two are NOT guaranteed to line up, though it looks like they should:
+# under the default `drop = TRUE` the underlying density stat
+# (gghalves:::StatHalfYdensity$compute_panel() /
+# ggplot2::StatYdensity$compute_panel()) already discards every group with
+# fewer than 2 points, the identical n>=2 floor .sd_bounds() applies, so
+# every group does line up. Under `drop = FALSE` - which ggplot2 documents
+# (and names in its own thin-group warning) as the remedy for thin groups,
+# and which reaches this stat precisely because of the `...`-forwarding
+# further down this file - StatYdensity deliberately KEEPS those thin
+# groups, while .sd_bounds() still filters them out. Without the explicit
+# `%in%` filter below, match() then returned NA, lo/hi became NA, and R's
+# NA-index subsetting yielded a block of all-NA rows rather than none of
+# them - surfacing much later as ggplot2's own "`scale_id` must not contain
+# any \"NA\"" from scale_apply(), naming nothing this package owns.
 .truncate_to_sd_bounds <- function(result, bounds) {
-  lapply(unique(result$group), function(g) {
+  keep <- unique(result$group[result$group %in% bounds$group])
+  lapply(keep, function(g) {
     grp <- result[result$group == g, ]
-    lo <- bounds$lo[match(g, bounds$group)]
-    hi <- bounds$hi[match(g, bounds$group)]
-    grp[grp$y >= lo & grp$y <= hi, ]
+    i <- match(g, bounds$group)
+    grp[grp$y >= bounds$lo[i] & grp$y <= bounds$hi[i], ]
   }) |>
     bind_rows()
 }

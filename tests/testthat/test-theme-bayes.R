@@ -165,6 +165,30 @@ test_that("plot_ridge_hdi() gives a clear error for all-NA `value` with the defa
   expect_no_error(suppressWarnings(ggplot_build(plot_ridge_hdi(d, category = cond, category_reorder = FALSE))))
 })
 
+test_that("plot_ridge_hdi() catches a single all-NA category, and tolerates scattered NAs", {
+  # forcats::fct_reorder() fails as soon as ONE category has no non-NA value
+  # left to order by - not only when the whole column is NA, which is all the
+  # guard above used to check. Scattered NAs inside otherwise-populated
+  # categories are a different (harmless) case and must keep building.
+  set.seed(4)
+  d <- data.frame(
+    cond = rep(c("a", "b", "c"), each = 20),
+    .value = c(rnorm(20), rep(NA_real_, 20), rnorm(20))
+  )
+  err <- expect_error(plot_ridge_hdi(d, category = cond))
+  expect_match(conditionMessage(err), "category 'b'", fixed = TRUE)
+  expect_match(conditionMessage(err), "no non-NA `value`", fixed = TRUE)
+  expect_no_error(suppressWarnings(ggplot_build(
+    plot_ridge_hdi(d, category = cond, category_reorder = FALSE)
+  )))
+
+  scattered <- data.frame(
+    cond = rep(c("a", "b", "c"), each = 20),
+    .value = replace(rnorm(60), c(1, 25, 50), NA_real_)
+  )
+  expect_no_error(suppressWarnings(ggplot_build(plot_ridge_hdi(scattered, category = cond))))
+})
+
 test_that("plot_ridge_hdi()/plot_coef_grid_hdi()/plot_location_scale() require `category`, with a clear error", {
   expect_error(plot_ridge_hdi(data.frame(x = 1)), "`category` is required")
   expect_error(plot_coef_grid_hdi(data.frame(x = 1)), "`category` is required")

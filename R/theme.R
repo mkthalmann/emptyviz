@@ -333,8 +333,16 @@ theme_mt <- function(
         family = strip_text_family,
         angle = 90
       ),
-      # global geom-level "aura" (keeps your previous geom paper look)
-      geom = element_geom(paper = geom_paper),
+      # global geom-level "aura" (keeps your previous geom paper look),
+      # plus the geom `ink` the default colour of every unmapped geom is
+      # resolved from. `ink` has to be set on this element specifically:
+      # theme_minimal()'s own `ink` argument (passed above) only colors
+      # *text/line theme elements*, not geom defaults, so leaving it out
+      # left geom.ink at ggplot2's factory "black" even in dark mode -
+      # geom_point()/geom_line()/geom_text() then drew black-on-black on a
+      # dark page. Light mode's ink is "black" anyway, so setting it here
+      # explicitly is a no-op there.
+      geom = element_geom(paper = geom_paper, ink = ink),
       geom.density = element_geom(
         fill = alpha(geom_fill, .5),
         color = NA

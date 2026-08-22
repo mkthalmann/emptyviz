@@ -109,7 +109,12 @@
   candidates <- candidates[!vapply(names(candidates), is_blank, logical(1))]
 
   do.call(theme, c(candidates, list(
-    geom = element_geom(paper = alpha("black", 0.3)),
+    # `ink` here is what makes unmapped geoms (geom_point/line/segment/
+    # text/errorbar/rug) draw in a light color on the dark page - without
+    # it they inherit ggplot2's factory "black" default and vanish against
+    # the dark background. Mirrors the same `ink` on theme_mt(dark = TRUE)'s
+    # own `geom` element; the two must stay in sync.
+    geom = element_geom(paper = alpha("black", 0.3), ink = .dark_ink),
     geom.density = element_geom(fill = alpha(dark_mt_colors[1], .5)),
     geom.bar = element_geom(fill = dark_mt_colors[1]),
     geom.area = element_geom(fill = dark_mt_colors[1]),

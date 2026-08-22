@@ -65,7 +65,7 @@
         ..@ linejoin     : chr "round"
         ..@ inherit.blank: logi TRUE
        $ geom                            : <ggplot2::element_geom>
-        ..@ ink        : NULL
+        ..@ ink        : chr "black"
         ..@ paper      : chr "#FFFFFF4C"
         ..@ accent     : NULL
         ..@ linewidth  : NULL

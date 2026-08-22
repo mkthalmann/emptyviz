@@ -448,3 +448,44 @@ test_that("plot_bf_forest() gives a clear error for all-NA `log_bf` with the def
     suppressWarnings(ggplot_build(plot_bf_forest(d, contrast = contrast, log_bf = log_bf, contrast_reorder = FALSE)))
   )
 })
+
+test_that("plot_bf_forest() catches a single NA `log_bf` row, not only an entirely-NA column", {
+  # The all-NA guard above used to be the *only* guard, but
+  # forcats::fct_reorder() fails whenever any level is left with no non-NA
+  # value - and here each contrast is a single row, so one NA is enough.
+  # This case previously produced forcats' own "`idx` must contain one
+  # integer for each level of `f`" from inside ggplot2's aesthetic
+  # evaluation: verbatim the error the guard exists to replace.
+  d <- data.frame(
+    contrast = c("A vs B", "C vs D", "E vs F"),
+    log_bf = c(2.1, NA, -0.4)
+  )
+  expect_error(
+    plot_bf_forest(d, contrast = contrast, log_bf = log_bf),
+    "'C vs D'",
+    fixed = TRUE
+  )
+  expect_error(
+    plot_bf_forest(d, contrast = contrast, log_bf = log_bf),
+    "no non-NA `log_bf`",
+    fixed = TRUE
+  )
+  # the documented escape hatch still works
+  expect_no_error(
+    suppressWarnings(ggplot_build(
+      plot_bf_forest(d, contrast = contrast, log_bf = log_bf, contrast_reorder = FALSE)
+    ))
+  )
+})
+
+test_that("plot_bf_forest() names every offending contrast, and builds when none is empty", {
+  d <- data.frame(
+    contrast = c("A vs B", "C vs D", "E vs F"),
+    log_bf = c(NA, NA, -0.4)
+  )
+  err <- expect_error(plot_bf_forest(d, contrast = contrast, log_bf = log_bf))
+  expect_match(conditionMessage(err), "categories 'A vs B', 'C vs D'", fixed = TRUE)
+
+  ok <- data.frame(contrast = c("A vs B", "C vs D"), log_bf = c(1.2, -0.4))
+  expect_no_error(ggplot_build(plot_bf_forest(ok, contrast = contrast, log_bf = log_bf)))
+})

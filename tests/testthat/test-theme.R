@@ -84,3 +84,26 @@ test_that("theme_mt(dark = FALSE)'s complete output matches its recorded snapsho
   # deliberate, not a regression.
   expect_snapshot(print(theme_mt()))
 })
+
+test_that("theme_mt(dark = TRUE) resolves default geom colors to the dark ink, not black", {
+  # The bug this pins: theme_minimal()'s own `ink` argument colors text/line
+  # theme elements only, NOT the `geom` element's own `ink` slot that geom
+  # default colors are resolved from - so dark mode used to draw points,
+  # lines and text in ggplot2's factory "black" on a dark page.
+  dark_ink <- emptyviz:::.dark_ink
+
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point() +
+    geom_line() +
+    theme_mt(dark = TRUE, base_family = "")
+  built <- ggplot_build(p)
+
+  expect_identical(unique(built$data[[1]]$colour), dark_ink)
+  expect_identical(unique(built$data[[2]]$colour), dark_ink)
+
+  # light mode is unaffected
+  light <- ggplot_build(
+    ggplot(mtcars, aes(wt, mpg)) + geom_point() + theme_mt(base_family = "")
+  )
+  expect_identical(unique(light$data[[1]]$colour), "black")
+})

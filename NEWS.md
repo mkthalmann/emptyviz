@@ -1,5 +1,31 @@
 # emptyviz (development version)
 
+## Fixes from the 2026-08-22 code review
+
+* **Fixed (dark mode, most user-visible):** `theme_mt(dark = TRUE)` and the
+  dual-render dark overlay now set the `geom` theme element's own `ink`, so
+  geoms that don't set a color explicitly - `geom_point()`, `geom_line()`,
+  `geom_segment()`, `geom_text()`, `geom_errorbar()`, `geom_rug()` - draw in
+  a light color. Previously only *text* elements picked up the dark ink
+  (`theme_minimal()`'s `ink` argument doesn't reach geom defaults), leaving
+  geom colors at ggplot2's factory `"black"`: every dark-mode figure built
+  from default-colored geoms rendered its data marks black on a dark page.
+  Light mode is unchanged.
+* **Fixed:** `geom_violin_sd(drop = FALSE)` no longer fails with ggplot2's
+  internal `` `scale_id` must not contain any "NA" ``. Under `drop = FALSE`
+  ggplot2's `StatYdensity` keeps groups with fewer than two points while the
+  SD-bounds helper still drops them; the mismatch produced all-`NA` rows
+  rather than none. Thin groups now keep their slot in the aura sub-layer
+  (matching `geom_violin(drop = FALSE)`) and simply get no SD band.
+* **Fixed:** `plot_bf_forest()` and `plot_ridge_hdi()` now catch *any*
+  category with no non-`NA` ordering value, not only an entirely-`NA`
+  column, and name the offending categories. `forcats::fct_reorder()` fails
+  per level, so a single `NA` log-Bayes-Factor row still produced the
+  cryptic `lvls_reorder()` error these guards exist to replace. Scattered
+  `NA`s inside otherwise-populated categories keep working.
+
+## Violin geom parity fixes
+
 Parity fixes for `geom_violin_sd()`/`geom_half_violin_sd()`/
 `geom_split_violin_sd()`, found while comparing their output side by side
 against plain `geom_violin()`/`gghalves::geom_half_violin()` on zero-variance

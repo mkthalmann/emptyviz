@@ -147,3 +147,20 @@ test_that("use_theme_mt() registers a knit_print method for ggplot objects", {
   m <- getS3method("knit_print", "ggplot", optional = TRUE, envir = asNamespace("knitr"))
   expect_true(is.function(m))
 })
+
+test_that(".dark_mode_overlay() resolves default geom colors to the dark ink, not black", {
+  # Same defect as the theme_mt(dark = TRUE) case (see test-theme.R) reaching
+  # the dual-render path: the overlay sets the geom element's `paper` but used
+  # to leave its `ink` at ggplot2's factory "black", so every dual-rendered
+  # figure built from default-colored geoms shipped a dark half with
+  # invisible data marks.
+  old <- theme_get()
+  on.exit(theme_set(old), add = TRUE)
+  theme_set(theme_mt(base_family = ""))
+
+  base <- ggplot(mtcars, aes(wt, mpg)) + geom_point() + geom_line()
+  built <- ggplot_build(base + .dark_mode_overlay(base))
+
+  expect_identical(unique(built$data[[1]]$colour), emptyviz:::.dark_ink)
+  expect_identical(unique(built$data[[2]]$colour), emptyviz:::.dark_ink)
+})

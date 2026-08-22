@@ -88,3 +88,47 @@ test_that("StatYdensitySD absorbs ggplot2's `bounds` stat param without erroring
     )
   expect_no_error(ggplot_build(p))
 })
+
+test_that("`drop = FALSE` keeps a thin group in the aura layer without crashing the SD layers", {
+  # Regression test for the "guaranteed consistent" invariant
+  # .truncate_to_sd_bounds() used to assert. It holds only under the default
+  # drop = TRUE: with drop = FALSE, ggplot2's StatYdensity deliberately keeps
+  # groups with fewer than 2 points, while .sd_bounds() still filters them
+  # out, so the group survived into `result` with no matching `bounds` row.
+  # match() returned NA, and NA-index subsetting produced a block of all-NA
+  # rows that surfaced much later as ggplot2's own `scale_id` must not
+  # contain any "NA"` from scale_apply() - naming nothing this package owns.
+  #
+  # drop = FALSE is ggplot2's own documented remedy for thin groups and is
+  # suggested by name in the warning users see, so a user following that
+  # advice hit this. Plain geom_violin(drop = FALSE) builds fine on the same
+  # data, which is asserted below so this stays a parity test rather than a
+  # bare "doesn't error".
+  df <- rbind(sd_fixture, data.frame(grp = "d", y = 5))
+  mapping <- aes(x = grp, y = y)
+
+  expect_no_error(
+    b <- suppressWarnings(ggplot_build(
+      ggplot() + geom_violin_sd(data = df, mapping = mapping, drop = FALSE)
+    ))
+  )
+  expect_no_error(
+    suppressWarnings(ggplot_build(
+      ggplot(df, mapping) + geom_violin(drop = FALSE)
+    ))
+  )
+
+  # no NA rows leak into any sub-layer's positional columns
+  for (layer_data in b$data) {
+    expect_false(anyNA(layer_data$x))
+    expect_false(anyNA(layer_data$y))
+    expect_false(anyNA(layer_data$group))
+  }
+
+  # the thin group (4, sorted level "d") has no SD band, but the aura layer
+  # keeps its slot - matching plain geom_violin(drop = FALSE), which is the
+  # whole point of the argument
+  expect_true(4 %in% unique(b$data[[1]]$group))
+  expect_false(4 %in% unique(b$data[[2]]$group))
+  expect_false(4 %in% unique(b$data[[3]]$group))
+})

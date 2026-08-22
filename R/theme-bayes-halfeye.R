@@ -256,22 +256,29 @@ plot_ridge_hdi <- function(
   x_expr <- if (category_reorder) {
     # forcats::fct_reorder() fails deep inside ggplot2's own aesthetic
     # evaluation (a cryptic "`idx` must contain one integer for each level
-    # of `f`" from forcats:::lvls_reorder(), not this function) if `value`
-    # is entirely NA - checked eagerly here, rather than left to fail
-    # lazily at build/print time, since forcats' own error gives no hint
-    # this function or its category_reorder argument is involved at all.
+    # of `f`" from forcats:::lvls_reorder(), not this function) whenever a
+    # category has no non-NA `value` left to order by - checked eagerly
+    # here, rather than left to fail lazily at build/print time, since
+    # forcats' own error gives no hint this function or its
+    # category_reorder argument is involved at all. See
+    # .check_reorder_values() for the exact condition; note it's per
+    # category, so an entirely-NA `value` is only its most extreme case.
     resolved_value <- tryCatch(
       value_transform(rlang::eval_tidy(value_sym, data)),
       error = function(e) NULL
     )
-    if (!is.null(resolved_value) && all(is.na(resolved_value))) {
-      stop(
-        "plot_ridge_hdi(): `value` (after `value_transform`) is entirely ",
-        "NA - forcats::fct_reorder() can't reorder categories by it. Pass ",
-        "`category_reorder = FALSE`, or check your data.",
-        call. = FALSE
-      )
-    }
+    resolved_category <- tryCatch(
+      rlang::eval_tidy(category_sym, data),
+      error = function(e) NULL
+    )
+    .check_reorder_values(
+      values = resolved_value,
+      categories = resolved_category,
+      fn = "plot_ridge_hdi",
+      value_arg = "value",
+      reorder_arg = "category_reorder",
+      value_note = " (after `value_transform`)"
+    )
     rlang::expr(
       forcats::fct_reorder(
         !!category_sym,
