@@ -1,3 +1,13 @@
+# Two path variables, deliberately: `fig.path` is a knitr *filename prefix*,
+# not a directory, so it has to keep its trailing separator - that is what the
+# code under test pastes the figure names onto. The assertions use `fig_dir`
+# (no trailing separator) instead, because on Windows a path with a trailing
+# separator is not a valid path at all and `file.path(fig_path, ...)` doubles
+# the separator, which is only *usually* accepted there. Asserting through
+# `fig_path` therefore reported missing files that had in fact been written -
+# invisible on POSIX, which collapses both forms silently, until the CI matrix
+# grew a Windows runner (2026-08-22).
+
 test_that("knit_print_ggplot_dual() falls through to a normal print when dual_render isn't set", {
   skip_if_not_installed("knitr")
   p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
@@ -11,7 +21,8 @@ test_that("knit_print_ggplot_dual() saves two PNGs and emits light/dark-wrapped 
   tmp <- tempfile("dual-render-test-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  fig_path <- file.path(tmp, "figure-html/")
+  fig_dir <- file.path(tmp, "figure-html")
+  fig_path <- paste0(fig_dir, "/")
 
   p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
   out <- emptyviz:::knit_print_ggplot_dual(
@@ -24,8 +35,8 @@ test_that("knit_print_ggplot_dual() saves two PNGs and emits light/dark-wrapped 
   )
 
   expect_s3_class(out, "knit_asis")
-  expect_true(file.exists(file.path(fig_path, "fig-x-light-1.png")))
-  expect_true(file.exists(file.path(fig_path, "fig-x-dark-1.png")))
+  expect_true(file.exists(file.path(fig_dir, "fig-x-light-1.png")))
+  expect_true(file.exists(file.path(fig_dir, "fig-x-dark-1.png")))
   expect_match(unclass(out), "light-content", fixed = TRUE)
   expect_match(unclass(out), "dark-content", fixed = TRUE)
 
@@ -48,7 +59,8 @@ test_that("knit_print_ggplot_dual()'s dark render applies the overlay to every s
   tmp <- tempfile("dual-render-test-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  fig_path <- file.path(tmp, "figure-html/")
+  fig_dir <- file.path(tmp, "figure-html")
+  fig_path <- paste0(fig_dir, "/")
 
   combo <- (ggplot(mtcars, aes(wt, mpg)) + geom_point()) +
     (ggplot(mtcars, aes(hp, mpg)) + geom_point())
@@ -70,8 +82,8 @@ test_that("knit_print_ggplot_dual()'s dark render applies the overlay to every s
       fig.alt = "Two scatter plots of fuel economy, against weight and horsepower."
     )
   )
-  expect_true(file.exists(file.path(fig_path, "fig-combo-light-1.png")))
-  expect_true(file.exists(file.path(fig_path, "fig-combo-dark-1.png")))
+  expect_true(file.exists(file.path(fig_dir, "fig-combo-light-1.png")))
+  expect_true(file.exists(file.path(fig_dir, "fig-combo-dark-1.png")))
 })
 
 test_that(".dark_mode_overlay() doesn't un-blank elements a plot deliberately hid (e.g. via theme_void())", {
@@ -129,7 +141,8 @@ test_that("knit_print_ggplot_dual() called twice for the same chunk label doesn'
   tmp <- tempfile("dual-render-test-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  fig_path <- file.path(tmp, "figure-html/")
+  fig_dir <- file.path(tmp, "figure-html")
+  fig_path <- paste0(fig_dir, "/")
 
   p1 <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
   p2 <- ggplot(mtcars, aes(hp, mpg)) + geom_point()
@@ -142,10 +155,10 @@ test_that("knit_print_ggplot_dual() called twice for the same chunk label doesn'
   out1 <- emptyviz:::knit_print_ggplot_dual(p1, options = opts)
   out2 <- emptyviz:::knit_print_ggplot_dual(p2, options = opts)
 
-  expect_true(file.exists(file.path(fig_path, "fig-multi-light-1.png")))
-  expect_true(file.exists(file.path(fig_path, "fig-multi-dark-1.png")))
-  expect_true(file.exists(file.path(fig_path, "fig-multi-light-2.png")))
-  expect_true(file.exists(file.path(fig_path, "fig-multi-dark-2.png")))
+  expect_true(file.exists(file.path(fig_dir, "fig-multi-light-1.png")))
+  expect_true(file.exists(file.path(fig_dir, "fig-multi-dark-1.png")))
+  expect_true(file.exists(file.path(fig_dir, "fig-multi-light-2.png")))
+  expect_true(file.exists(file.path(fig_dir, "fig-multi-dark-2.png")))
   expect_match(unclass(out1), "fig-multi-light-1.png", fixed = TRUE)
   expect_match(unclass(out2), "fig-multi-light-2.png", fixed = TRUE)
 })
@@ -182,7 +195,8 @@ test_that("knit_print_ggplot_dual() honours fig.alt, falling back to fig.cap, an
   tmp <- tempfile("dual-render-alt-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  fig_path <- file.path(tmp, "figure-html/")
+  fig_dir <- file.path(tmp, "figure-html")
+  fig_path <- paste0(fig_dir, "/")
 
   p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
   base_opts <- list(
@@ -228,7 +242,8 @@ test_that("knit_print_ggplot_dual() warns once per chunk when neither fig.alt no
   tmp <- tempfile("dual-render-warn-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  fig_path <- file.path(tmp, "figure-html/")
+  fig_dir <- file.path(tmp, "figure-html")
+  fig_path <- paste0(fig_dir, "/")
 
   p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
   opts <- list(
@@ -254,7 +269,8 @@ test_that("knit_print_ggplot_dual() escapes HTML-special characters in every int
   tmp <- tempfile("dual-render-esc-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  fig_path <- file.path(tmp, "figure-html/")
+  fig_dir <- file.path(tmp, "figure-html")
+  fig_path <- paste0(fig_dir, "/")
 
   p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
   out <- unclass(emptyviz:::knit_print_ggplot_dual(
@@ -278,7 +294,8 @@ test_that("knit_print_ggplot_dual() recycles vector fig.alt across plots in one 
   tmp <- tempfile("dual-render-vec-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  fig_path <- file.path(tmp, "figure-html/")
+  fig_dir <- file.path(tmp, "figure-html")
+  fig_path <- paste0(fig_dir, "/")
 
   p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
   opts <- list(
@@ -298,7 +315,8 @@ test_that("repeat renders in one session reuse the same figure filenames instead
   tmp <- tempfile("dual-render-reset-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  fig_path <- file.path(tmp, "figure-html/")
+  fig_dir <- file.path(tmp, "figure-html")
+  fig_path <- paste0(fig_dir, "/")
 
   old <- theme_get()
   on.exit(theme_set(old), add = TRUE)
@@ -322,7 +340,7 @@ test_that("repeat renders in one session reuse the same figure filenames instead
 
   expect_equal(length(unique(emitted)), 1L)
   expect_match(emitted[[1]], "fig-x-light-1.png", fixed = TRUE)
-  expect_equal(sort(list.files(fig_path)), c("fig-x-dark-1.png", "fig-x-light-1.png"))
+  expect_equal(sort(list.files(fig_dir)), c("fig-x-dark-1.png", "fig-x-light-1.png"))
 })
 
 test_that("multiple plots within one chunk still get distinct filenames", {
@@ -330,7 +348,8 @@ test_that("multiple plots within one chunk still get distinct filenames", {
   tmp <- tempfile("dual-render-multi2-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  fig_path <- file.path(tmp, "figure-html/")
+  fig_dir <- file.path(tmp, "figure-html")
+  fig_path <- paste0(fig_dir, "/")
 
   old <- theme_get()
   on.exit(theme_set(old), add = TRUE)
@@ -346,7 +365,7 @@ test_that("multiple plots within one chunk still get distinct filenames", {
   emptyviz:::knit_print_ggplot_dual(p, options = opts)
 
   expect_equal(
-    sort(list.files(fig_path)),
+    sort(list.files(fig_dir)),
     c("fig-two-dark-1.png", "fig-two-dark-2.png", "fig-two-light-1.png", "fig-two-light-2.png")
   )
 })
