@@ -4,8 +4,8 @@ test_that("layer_halfeye_hdi() returns the expected 4-element layer/scale/guide 
   expect_length(layers, 4)
   expect_true(inherits(layers[[1]], "LayerInstance")) # stat_slab
   expect_true(inherits(layers[[2]], "LayerInstance")) # stat_pointinterval
-  expect_true(inherits(layers[[3]], "ScaleDiscrete")) # scale_fill_manual
-  expect_true(inherits(layers[[4]], "Guides")) # guides()
+  expect_true(inherits(layers[[3]], "ScaleDiscrete")) # the fill-ramp scale
+  expect_true(inherits(layers[[4]], "Guides")) # the guide-suppression block
 })
 
 test_that("layer_halfeye_hdi() omits `limits` from the stats unless explicitly given", {
@@ -251,8 +251,8 @@ test_that("plot_ridge_hdi() applies value_transform before plotting", {
 test_that("plot_ridge_hdi() draws a reference line only when `hline` is given", {
   p_no_line <- plot_ridge_hdi(bayes_draws_fixture, category = cond)
   p_line <- plot_ridge_hdi(bayes_draws_fixture, category = cond, hline = 0)
-  expect_length(p_no_line$layers, 2) # slab + pointinterval only
-  expect_length(p_line$layers, 3) # geom_hline + slab + pointinterval
+  expect_length(p_no_line$layers, 2) # the slab and pointinterval layers only
+  expect_length(p_line$layers, 3) # hline, then slab and pointinterval
   expect_true(inherits(p_line$layers[[1]]$geom, "GeomHline"))
 })
 

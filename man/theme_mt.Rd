@@ -5,7 +5,7 @@
 \title{A markdown-aware ggplot2 theme}
 \usage{
 theme_mt(
-  base_size = 19,
+  base_size = 10,
   base_family = "Roboto Condensed",
   plot_title_family = base_family,
   subtitle_family = base_family,
@@ -27,7 +27,11 @@ theme_mt(
 )
 }
 \arguments{
-\item{base_size}{Base font size, in points.}
+\item{base_size}{Base font size, in points. Every other size argument
+derives from it by default. \code{\link[=use_theme_mt]{use_theme_mt()}} passes the same default
+through, so a plot themed directly with \code{theme_mt()} and one themed via
+the session default look the same - they used to disagree by nearly 2x
+(19 here, 10 there), with neither docstring mentioning the other.}
 
 \item{base_family, plot_title_family, subtitle_family, strip_text_family, axis_title_family, axis_text_family, caption_family}{Font families for each text element; all default to \code{base_family}. See
 Details for the \code{"Roboto Condensed"} default's system requirement.}
@@ -76,6 +80,19 @@ repeating \code{fill = ...} on every layer.
 \details{
 Call \code{\link[=use_theme_mt]{use_theme_mt()}} to make this the session's active theme -
 \code{library(emptyviz)} does not do this automatically.
+
+\code{dark = TRUE} is tuned for a page background of about \verb{#151515}. It sets
+\code{paper = NA} and a transparent \code{plot.background}, deliberately - the
+figure then sits directly on whatever the host page uses, which is what
+makes a Quarto light/dark toggle work without re-rendering. The
+consequence is that the \emph{real} background is the host's, not this
+theme's, and every contrast decision in dark mode is made against
+\verb{#151515}: the grid line at 1.19:1, the axis line at 3.14:1, the ink at
+14.4:1. Nothing validates the assumption, and a host theme at, say,
+\verb{#2b2b2b} or \verb{#1e1e2e} shifts all three - far enough that the
+near-invisible grid could invert against a light-ish "dark" background.
+If your site's dark background differs much from \verb{#151515}, either match
+it or pass \code{grid_color}/\code{axis_text_color}/\code{axis_line_color} explicitly.
 
 The discrete palette separates categories by \strong{hue}, with very little
 lightness difference between them: every pair in \link{mt_colors5} falls below

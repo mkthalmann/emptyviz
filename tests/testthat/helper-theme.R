@@ -122,13 +122,13 @@ capture_applied_sides <- function(p) {
     })
   }
 
-  GHV <- environment(gghalves::geom_half_violin)$GeomHalfViolin
-  trace(what = "draw_group", where = GHV, tracer = tracer_for("GeomHalfViolinSD"), print = FALSE)
-  on.exit(untrace(what = "draw_group", where = GHV), add = TRUE)
+  half_violin_geom <- environment(gghalves::geom_half_violin)$GeomHalfViolin
+  trace(what = "draw_group", where = half_violin_geom, tracer = tracer_for("GeomHalfViolinSD"), print = FALSE)
+  on.exit(untrace(what = "draw_group", where = half_violin_geom), add = TRUE)
 
-  GHVO <- emptyviz:::GeomHalfViolinOutline
-  trace(what = "draw_group", where = GHVO, tracer = tracer_for("GeomHalfViolinOutline"), print = FALSE)
-  on.exit(untrace(what = "draw_group", where = GHVO), add = TRUE)
+  half_violin_outline_geom <- emptyviz:::GeomHalfViolinOutline
+  trace(what = "draw_group", where = half_violin_outline_geom, tracer = tracer_for("GeomHalfViolinOutline"), print = FALSE)
+  on.exit(untrace(what = "draw_group", where = half_violin_outline_geom), add = TRUE)
 
   render_plot(p)
   dplyr::bind_rows(lapply(get(key, envir = globalenv()), as.data.frame))

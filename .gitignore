@@ -10,3 +10,11 @@ inst/doc
 docs
 _private
 /exploratory-tests.R
+Rplots.pdf
+
+# ~/.gitignore_global ignores .lintr (machine-wide lint config is the default
+# elsewhere). This repo is the documented exception: its .lintr encodes a
+# package-specific convention - ggplot2 mandates UpperCamelCase for ggproto
+# objects - and the lint CI job can't see a config in $HOME, so the file has
+# to be tracked here. See .lintr's own comment.
+!.lintr

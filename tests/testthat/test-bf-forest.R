@@ -533,3 +533,42 @@ test_that("plot_bf_forest()'s arrow range ignores infinite log_bf values", {
   ))
   expect_true(all(is.finite(b$layout$panel_params[[1]]$x.range)))
 })
+
+test_that("prepare_bf_contrasts() warns when two requested pairs resolve to the same source row", {
+  # Requesting both directions of a contrast returns the same source row
+  # twice with opposite signs, and requesting the identical pair twice
+  # returns it twice unchanged - in both cases with duplicated row names.
+  # Neither is an error (both directions can genuinely be wanted), but on a
+  # forest plot one estimate then appears as two rows, reading as two
+  # independent ones. It used to happen silently.
+  bf <- data.frame(contrast = c("a - b", "c - d"), log_BF = c(2.5, -1))
+
+  expect_warning(
+    both_directions <- prepare_bf_contrasts(
+      bf,
+      contrast = contrast, value = log_BF,
+      pairs = list(c("a", "b"), c("b", "a"))
+    ),
+    "resolve to the same row"
+  )
+  # the behaviour itself is unchanged - relabeled and sign-flipped
+  expect_equal(both_directions$.left, c("a", "b"))
+  expect_equal(both_directions$log_BF, c(2.5, -2.5))
+
+  expect_warning(
+    prepare_bf_contrasts(
+      bf,
+      contrast = contrast, value = log_BF,
+      pairs = list(c("a", "b"), c("a", "b"))
+    ),
+    'c("a", "b") and c("a", "b")',
+    fixed = TRUE
+  )
+
+  # distinct pairs stay silent
+  expect_no_warning(prepare_bf_contrasts(
+    bf,
+    contrast = contrast, value = log_BF,
+    pairs = list(c("a", "b"), c("c", "d"))
+  ))
+})

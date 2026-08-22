@@ -263,8 +263,8 @@ knit_print_ggplot_dual <- function(x, options, ...) {
   }
 
   knitr::asis_output(paste0(
-    '<div class="light-content">\n', fig_wrap(img_tag(light_path)), '\n</div>\n\n',
-    '<div class="dark-content">\n', fig_wrap(img_tag(dark_path)), '\n</div>'
+    '<div class="light-content">\n', fig_wrap(img_tag(light_path)), "\n</div>\n\n",
+    '<div class="dark-content">\n', fig_wrap(img_tag(dark_path)), "\n</div>"
   ))
 }
 

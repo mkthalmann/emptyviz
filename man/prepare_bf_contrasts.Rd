@@ -42,7 +42,15 @@ pair isn't found. \code{NULL} (default) keeps every row, unfiltered and in
 A pair's order does NOT have to match bayestestR's own \code{"<left> - <right>"} order for that contrast - a pair that only matches once
 \code{.left}/\code{.right} are swapped is accepted the same as a direct match;
 \code{.left}/\code{.right}/\code{.contrast_label} are then set to the \emph{requested}
-order regardless of which way \code{data} actually had it.}
+order regardless of which way \code{data} actually had it.
+
+Two entries can therefore resolve to the \emph{same} row of \code{data} - either
+as an outright repeat, or as the two directions of one contrast
+(\code{c("a", "b")} and \code{c("b", "a")}, the second relabeled and
+sign-flipped). Both are allowed and warn: each becomes its own output
+row, so a forest plot built from the result shows one estimate as
+several, which reads as several independent ones. Drop the duplicate if
+that wasn't the intent.}
 }
 \value{
 \code{data}, with \code{.left}, \code{.right}, and \code{.contrast_label} columns

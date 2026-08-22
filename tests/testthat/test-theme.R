@@ -84,15 +84,20 @@ test_that("axis text has a non-zero margin from the axis, in both light and dark
 })
 
 test_that("theme_mt(dark = FALSE)'s complete output matches its recorded snapshot", {
-  # NEWS.md claims theme_mt(dark = FALSE) has stayed "pixel-identical" since
-  # 0.1.0, but every other test here only checks individual fields - a
-  # change to, say, plot.margin or panel.spacing would pass all of them
-  # silently. This pins the FULL theme object (all 153-ish elements),
+  # Every other test here checks individual fields, so a change to, say,
+  # plot.margin or panel.spacing would pass all of them silently. This pins
+  # the FULL theme object (all 153-ish elements),
   # confirmed deterministic across calls (identical(theme_mt(), theme_mt())
   # is TRUE - no environment/pointer noise), so any future accidental
   # change shows up as a snapshot diff instead of nothing at all. Run
   # `testthat::snapshot_review()`/`snapshot_accept()` if a change here is
   # deliberate, not a regression.
+  #
+  # Note that theme_mt(dark = FALSE) is NOT byte-stable across releases any
+  # more: 0.2.0's NEWS entry recorded it as pixel-identical to 0.1.0, but
+  # base_size moved from 19 to 10 to match use_theme_mt()'s (see that
+  # release's NEWS). This snapshot is the record going forward; the old
+  # claim is history, not an invariant.
   expect_snapshot(print(theme_mt()))
 })
 
@@ -165,6 +170,14 @@ test_that("the dark axis line clears 3:1 against the page background it's design
   # text tints are well clear of the 4.5:1 body-text threshold
   expect_gte(wcag_contrast(emptyviz:::.dark_ink, page_bg), 4.5)
   expect_gte(wcag_contrast(emptyviz:::.dark_axis_text, page_bg), 4.5)
+  expect_gte(wcag_contrast(emptyviz:::.dark_subtitle, page_bg), 4.5)
+  expect_gte(wcag_contrast(emptyviz:::.dark_caption, page_bg), 4.5)
+
+  # the exact figures theme_mt()'s Details quotes, so the prose can't drift
+  # away from the constants
+  expect_equal(wcag_contrast(emptyviz:::.dark_ink, page_bg), 14.4, tolerance = 0.05)
+  expect_equal(wcag_contrast(emptyviz:::.dark_axis_line, page_bg), 3.14, tolerance = 0.01)
+  expect_equal(wcag_contrast(emptyviz:::.dark_grid, page_bg), 1.19, tolerance = 0.01)
 })
 
 test_that("the discrete palettes separate categories by hue, not lightness - recorded, not asserted away", {

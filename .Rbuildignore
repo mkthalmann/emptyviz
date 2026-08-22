@@ -14,3 +14,5 @@
 ^exploratory-tests\.R$
 ^\.claude$
 ^CODE_REVIEW\.md$
+^Rplots\.pdf$
+^\.lintr$

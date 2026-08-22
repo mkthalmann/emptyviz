@@ -241,6 +241,14 @@ layer_bf_evidence_scale <- function(
 #'   `.left`/`.right` are swapped is accepted the same as a direct match;
 #'   `.left`/`.right`/`.contrast_label` are then set to the *requested*
 #'   order regardless of which way `data` actually had it.
+#'
+#'   Two entries can therefore resolve to the *same* row of `data` - either
+#'   as an outright repeat, or as the two directions of one contrast
+#'   (`c("a", "b")` and `c("b", "a")`, the second relabeled and
+#'   sign-flipped). Both are allowed and warn: each becomes its own output
+#'   row, so a forest plot built from the result shows one estimate as
+#'   several, which reads as several independent ones. Drop the duplicate if
+#'   that wasn't the intent.
 #' @return `data`, with `.left`, `.right`, and `.contrast_label` columns
 #'   added (and, if `pairs` was given, filtered/reordered/relabeled to
 #'   match).
@@ -319,6 +327,32 @@ prepare_bf_contrasts <- function(
         sum(unmatched), " of ", length(pairs), " requested pair(s) missing ",
         "in total) - check unique(data$", contrast_name, ") for the exact ",
         "available strings.",
+        call. = FALSE
+      )
+    }
+
+    # Two requested pairs can resolve to one source row - an outright
+    # repeat, or the two directions of the same contrast. Neither is an
+    # error (the caller may genuinely want both directions shown), but on a
+    # forest plot the same estimate then appears as two rows, which reads as
+    # two independent ones. Warn rather than silently duplicating.
+    duplicated_rows <- unique(row_idx[duplicated(row_idx)])
+    if (length(duplicated_rows) > 0) {
+      offenders <- vapply(duplicated_rows, function(row) {
+        i <- which(row_idx == row)
+        paste0(
+          sprintf('c("%s", "%s")', pair_left[i], pair_right[i]),
+          collapse = " and "
+        )
+      }, character(1))
+      warning(
+        "prepare_bf_contrasts(): ",
+        paste(offenders, collapse = "; "),
+        " resolve to the same row of `data`, so the same estimate appears ",
+        "more than once in the output - on a forest plot that reads as ",
+        "several independent estimates. Requesting both directions of a ",
+        "pair is supported (the reversed one is relabeled and sign-flipped); ",
+        "drop the duplicate if it wasn't intended.",
         call. = FALSE
       )
     }

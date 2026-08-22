@@ -1,0 +1,28 @@
+# Project-level lintr config. Deliberately project-level rather than relying
+# on the machine-wide ~/.lintr, for two reasons:
+#
+#   1. This package defines ggproto objects (StatYdensitySD,
+#      GeomHalfViolinOutline, ...). ggplot2's extension convention *requires*
+#      UpperCamelCase for those, so `object_name_linter`'s snake_case default
+#      reports ~13 false positives here. `dotted.case` is allowed for the
+#      same reason: `na.rm`/`inherit.aes`/`show.legend` are ggplot2's own
+#      argument names, not this package's choices. Relaxing either
+#      machine-wide would weaken the check for every other project; the need
+#      is specific to this repo, not a personal style preference.
+#   2. CI lints on every push (.github/workflows/lint.yaml), and a config in
+#      $HOME isn't available to a GitHub runner - so without this file, CI
+#      would lint under lintr's raw defaults and disagree with local runs.
+#
+# Otherwise this mirrors the machine-wide ~/.lintr settings; if those change,
+# this file needs the same edit.
+linters: linters_with_defaults(
+    object_usage_linter = NULL,
+    commas_linter = NULL,
+    line_length_linter = NULL,
+    indentation_linter = indentation_linter(indent = 2L),
+    pipe_consistency_linter = pipe_consistency_linter(pipe = "|>"),
+    object_name_linter = object_name_linter(
+      styles = c("snake_case", "symbols", "CamelCase", "dotted.case")
+    )
+  )
+exclusions: list("data-raw")

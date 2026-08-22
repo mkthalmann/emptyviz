@@ -60,6 +60,26 @@ test_that("alpha/linewidth passed via ... warn instead of being silently dropped
   )
 })
 
+test_that("`fill` is a real formal, not a reserved ... argument, so passing it never warns", {
+  # The comment above warn_reserved_dots() used to list `fill` among the
+  # internally-controlled arguments; it isn't in the `reserved` vector, and
+  # correctly so - it's a named formal of all three geoms, so it never
+  # arrives through `...` at all. Harmless drift, but a future reader
+  # reconciling comment against code would burn time on it. Pinned here so
+  # the two can't disagree silently again.
+  for (geom in list(geom_violin_sd, geom_half_violin_sd)) {
+    expect_no_warning(
+      geom(data = sd_fixture, mapping = aes(x = grp, y = y), fill = "steelblue")
+    )
+  }
+  # ...and the genuinely reserved ones still do warn, so this isn't just
+  # asserting that warnings are broken
+  expect_warning(
+    geom_violin_sd(data = sd_fixture, mapping = aes(x = grp, y = y), alpha = 0.5),
+    "alpha"
+  )
+})
+
 test_that("non-reserved stat/geom params (scale, bw, adjust, kernel, na.rm, width, position) pass through without warning", {
   expect_no_warning(
     geom_violin_sd(
@@ -87,4 +107,24 @@ test_that("missing data with no parent ggplot() still surfaces a clear error at 
   # time, if there's truly nothing to inherit from.
   expect_no_error(geom_violin_sd(mapping = aes(x = grp, y = y)))
   expect_no_error(geom_half_violin_sd(mapping = aes(x = grp, y = y)))
+})
+
+test_that("show.legend via ... reaches only the aura sub-layer; the SD sub-layers are always FALSE", {
+  # The comments at the fill_layer/outline_layer construction sites state
+  # that show.legend "is always FALSE regardless of what's in `...`" - the
+  # aura is the single sub-layer allowed to contribute a key, so the legend
+  # shows one entry per group rather than two or three stacked ones. That
+  # was prose; this makes it fail if a future refactor starts forwarding
+  # show.legend to all three.
+  for (geom in list(geom_violin_sd, geom_half_violin_sd)) {
+    layers <- Filter(
+      function(l) inherits(l, "Layer"),
+      geom(data = sd_fixture, mapping = aes(x = grp, y = y), show.legend = TRUE)
+    )
+    expect_gte(length(layers), 3)
+    # first layer is the aura, and it honoured the caller
+    expect_true(isTRUE(layers[[1]]$show.legend))
+    # every sub-layer after it stays out of the legend
+    for (l in layers[-1]) expect_false(isTRUE(l$show.legend))
+  }
 })

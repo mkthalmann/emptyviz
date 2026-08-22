@@ -7,7 +7,8 @@
 use_theme_mt(base_size = 10, ...)
 }
 \arguments{
-\item{base_size}{Passed to \code{theme_mt()}.}
+\item{base_size}{Passed to \code{theme_mt()}, whose own default is the same
+value - the two used to disagree by nearly 2x.}
 
 \item{...}{Passed to \code{theme_mt()} as well - e.g. \code{base_family} or \code{dark},
 for callers that want an activated theme other than the plain default.}

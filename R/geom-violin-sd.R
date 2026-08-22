@@ -1,6 +1,6 @@
 # include a way to visualize SDs in the half-violin plots I like so much; based on the results in @zhang2023inferentialuncertainty;@hofmann2025anaphoric; see also @hoekstra2014confidenceintervals
 
-# alpha/color/colour/fill/linewidth are always set internally by the three
+# alpha/color/colour/linewidth are always set internally by the three
 # sub-layers (base "aura", SD fill, SD outline) of geom_violin_sd() /
 # geom_half_violin_sd(); `stat` is hardcoded on the SD-fill/SD-outline
 # sub-layers specifically. Warn instead of silently dropping or erroring
@@ -12,6 +12,10 @@
 # so a caller who triggers one of these (or an na.rm-removed-rows warning)
 # will see it repeated 2-3 times, once per sub-layer - not a new bug if you
 # see a warning here more than once.
+#
+# `fill` is deliberately NOT in `reserved` below, and deliberately not named
+# in the list above either: it's a real named formal of all three geoms, so
+# it never arrives through `...` in the first place.
 warn_reserved_dots <- function(dots, geom_name) {
   reserved <- c("alpha", "color", "colour", "linewidth", "stat")
   ignored <- intersect(names(dots), reserved)
@@ -111,8 +115,14 @@ StatHalfYdensitySD <- ggproto(
   # forwarding below exists to avoid in the first place. `ggproto_formals`
   # is itself an unexported ggplot2 helper (verified present and behaving
   # this way in ggplot2 4.0.3) - if a future release renames/removes it,
-  # this errors loudly at package-load/first-call time rather than
-  # silently misbehaving, so a break here should be easy to spot.
+  # this errors rather than silently misbehaving, which is the good half.
+  # The bad half is WHEN: not at package load, as an earlier version of
+  # this comment claimed, but only when this function actually runs -
+  # inside parameters(), during layer construction. So an upstream removal
+  # surfaces as a user's plot failing, not as a package that won't load.
+  # tests/testthat/test-upstream-internals.R asserts all three of this
+  # package's `:::` reaches still exist, so a break shows up as a red CI
+  # run first.
   parameters = function(self, extra = FALSE) {
     args <- names(ggplot2:::ggproto_formals(gghalves:::StatHalfYdensity$compute_panel))
     args <- setdiff(args, c("self", "data", "scales"))

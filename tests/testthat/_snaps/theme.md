@@ -6,7 +6,7 @@
       <theme> List of 153
        $ line                            : <ggplot2::element_line>
         ..@ colour       : chr "black"
-        ..@ linewidth    : num 0.864
+        ..@ linewidth    : num 0.455
         ..@ linetype     : num 1
         ..@ lineend      : chr "butt"
         ..@ linejoin     : chr "round"
@@ -16,7 +16,7 @@
        $ rect                            : <ggplot2::element_rect>
         ..@ fill         : chr "#FFFFFF80"
         ..@ colour       : chr "black"
-        ..@ linewidth    : num 0.864
+        ..@ linewidth    : num 0.455
         ..@ linetype     : num 1
         ..@ linejoin     : chr "round"
         ..@ inherit.blank: logi TRUE
@@ -27,7 +27,7 @@
         ..@ fontweight   : num NA
         ..@ fontwidth    : num NA
         ..@ colour       : chr "black"
-        ..@ size         : num 19
+        ..@ size         : num 10
         ..@ hjust        : num 0.5
         ..@ vjust        : num 0.5
         ..@ angle        : num 0
@@ -53,14 +53,14 @@
        $ point                           : <ggplot2::element_point>
         ..@ colour       : chr "black"
         ..@ shape        : num 19
-        ..@ size         : num 2.59
+        ..@ size         : num 1.36
         ..@ fill         : chr "#FFFFFF80"
-        ..@ stroke       : num 0.864
+        ..@ stroke       : num 0.455
         ..@ inherit.blank: logi TRUE
        $ polygon                         : <ggplot2::element_polygon>
         ..@ fill         : chr "#FFFFFF80"
         ..@ colour       : chr "black"
-        ..@ linewidth    : num 0.864
+        ..@ linewidth    : num 0.455
         ..@ linetype     : num 1
         ..@ linejoin     : chr "round"
         ..@ inherit.blank: logi TRUE
@@ -78,15 +78,15 @@
         ..@ pointshape : NULL
         ..@ colour     : NULL
         ..@ fill       : NULL
-       $ spacing                         : 'simpleUnit' num 9.5points
+       $ spacing                         : 'simpleUnit' num 5points
         ..- attr(*, "unit")= int 8
-       $ margins                         : <ggplot2::margin> num [1:4] 9.5 9.5 9.5 9.5
+       $ margins                         : <ggplot2::margin> num [1:4] 5 5 5 5
        $ aspect.ratio                    : NULL
        $ axis.title                      : NULL
        $ axis.title.x                    :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : chr "plain"
-        ..$ size          : num 21
+        ..$ size          : num 12
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -110,7 +110,7 @@
        $ axis.title.x.top                :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : chr "plain"
-        ..$ size          : num 21
+        ..$ size          : num 12
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -135,7 +135,7 @@
        $ axis.title.y                    :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : chr "plain"
-        ..$ size          : num 21
+        ..$ size          : num 12
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -160,7 +160,7 @@
        $ axis.title.y.right              :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : chr "plain"
-        ..$ size          : num 21
+        ..$ size          : num 12
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -199,7 +199,7 @@
        $ axis.text.x                     :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : NULL
-        ..$ size          : num 19
+        ..$ size          : num 10
         ..$ colour        : chr "gray30"
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -223,7 +223,7 @@
        $ axis.text.x.top                 :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : NULL
-        ..$ size          : num 19
+        ..$ size          : num 10
         ..$ colour        : chr "gray30"
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -247,7 +247,7 @@
        $ axis.text.x.bottom              :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : NULL
-        ..$ size          : num 19
+        ..$ size          : num 10
         ..$ colour        : chr "gray30"
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -271,7 +271,7 @@
        $ axis.text.y                     :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : NULL
-        ..$ size          : num 19
+        ..$ size          : num 10
         ..$ colour        : chr "gray30"
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -295,7 +295,7 @@
        $ axis.text.y.left                :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : NULL
-        ..$ size          : num 19
+        ..$ size          : num 10
         ..$ colour        : chr "gray30"
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -319,7 +319,7 @@
        $ axis.text.y.right               :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : NULL
-        ..$ size          : num 19
+        ..$ size          : num 10
         ..$ colour        : chr "gray30"
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -353,7 +353,7 @@
         ..@ vjust        : NULL
         ..@ angle        : NULL
         ..@ lineheight   : NULL
-        ..@ margin       : <ggplot2::margin> num [1:4] 0 3.8 0 3.8
+        ..@ margin       : <ggplot2::margin> num [1:4] 0 2 0 2
         ..@ debug        : NULL
         ..@ inherit.blank: logi TRUE
        $ axis.ticks                      : <ggplot2::element_blank>
@@ -407,7 +407,7 @@
        $ axis.line.theta                 : NULL
        $ axis.line.r                     : NULL
        $ legend.background               : <ggplot2::element_blank>
-       $ legend.margin                   : <ggplot2::margin> num [1:4] -19 0 0 0
+       $ legend.margin                   : <ggplot2::margin> num [1:4] -10 0 0 0
        $ legend.spacing                  : 'rel' num 2
        $ legend.spacing.x                : NULL
        $ legend.spacing.y                : NULL
@@ -427,7 +427,7 @@
        $ legend.text                     :List of 22
         ..$ family        : NULL
         ..$ face          : NULL
-        ..$ size          : num 21
+        ..$ size          : num 12
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -452,7 +452,7 @@
        $ legend.title                    :List of 22
         ..$ family        : NULL
         ..$ face          : NULL
-        ..$ size          : num 21
+        ..$ size          : num 12
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL

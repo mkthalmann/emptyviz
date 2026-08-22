@@ -100,6 +100,37 @@ violin-geom parity fixes below.
   redundant non-colour channel beyond about three categories. The palette
   constants also gained test coverage (they had none), pinning their values
   and recording where their pairwise contrast actually stands.
+* **Breaking (visual):** `theme_mt()`'s `base_size` default drops from 19 to
+  10, matching `use_theme_mt()`'s. The two disagreed by nearly 2x with
+  neither docstring mentioning the other, so a plot themed directly with
+  `theme_mt()` looked nothing like the same theme applied via the session
+  default. Pass `base_size = 19` to keep the old size. This ends the
+  "`theme_mt(dark = FALSE)` is pixel-identical to 0.1.0" property recorded in
+  0.2.0's notes; the theme snapshot test is the record from here on.
+* **Fixed:** `prepare_bf_contrasts()` warns when two requested `pairs`
+  resolve to the same row of `data` - either an outright repeat, or the two
+  directions of one contrast. Both are still allowed, but the same estimate
+  then appears as several output rows, which on a forest plot reads as
+  several independent ones. This used to happen silently.
+* **Docs:** `theme_mt()` documents that dark mode is tuned for a page
+  background of about `#151515`, quotes the resulting contrast ratios, and
+  says what to do when a host site's dark background differs - the theme sets
+  `paper = NA` on purpose, so the real background is the page's and nothing
+  validates the assumption.
+* **Tests/infra:** the `R CMD check` matrix now covers macOS, Windows, and
+  R devel/release/oldrel-1 rather than one Ubuntu runner on release only,
+  and a `lint` workflow runs `lintr` on every push against a repo-level
+  `.lintr`. New tests assert the three upstream `:::` objects this package
+  reaches into still exist and still have the shape the call sites assume,
+  so an upstream removal shows up as a red CI run rather than a user's plot
+  crashing. Several load-bearing prose invariants became executable checks:
+  that `aes(weight = )` reaches the density but deliberately not the SD
+  bounds, that `show.legend` reaches only the aura sub-layer, and that
+  `fill` is a real formal rather than a reserved `...` argument.
+* `Rplots.pdf` is now ignored by git and by `R CMD build`. `DESCRIPTION`'s
+  `Remotes:` pin gained a comment recording *why* it is load-bearing:
+  gghalves is not on CRAN - it was archived on 2025-12-04 - so the pin is
+  the only way to resolve the dependency, not a leftover from development.
 
 Parity fixes for `geom_violin_sd()`/`geom_half_violin_sd()`/
 `geom_split_violin_sd()`, found while comparing their output side by side

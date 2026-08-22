@@ -97,6 +97,19 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #' Call [use_theme_mt()] to make this the session's active theme -
 #' `library(emptyviz)` does not do this automatically.
 #'
+#' `dark = TRUE` is tuned for a page background of about `#151515`. It sets
+#' `paper = NA` and a transparent `plot.background`, deliberately - the
+#' figure then sits directly on whatever the host page uses, which is what
+#' makes a Quarto light/dark toggle work without re-rendering. The
+#' consequence is that the *real* background is the host's, not this
+#' theme's, and every contrast decision in dark mode is made against
+#' `#151515`: the grid line at 1.19:1, the axis line at 3.14:1, the ink at
+#' 14.4:1. Nothing validates the assumption, and a host theme at, say,
+#' `#2b2b2b` or `#1e1e2e` shifts all three - far enough that the
+#' near-invisible grid could invert against a light-ish "dark" background.
+#' If your site's dark background differs much from `#151515`, either match
+#' it or pass `grid_color`/`axis_text_color`/`axis_line_color` explicitly.
+#'
 #' The discrete palette separates categories by **hue**, with very little
 #' lightness difference between them: every pair in [mt_colors5] falls below
 #' the 3:1 WCAG 1.4.11 contrast threshold for distinguishable graphical
@@ -122,7 +135,11 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #' for device-independent rendering), or pass a `base_family` you know is
 #' available, if reproducing a plot's exact appearance matters.
 #'
-#' @param base_size Base font size, in points.
+#' @param base_size Base font size, in points. Every other size argument
+#'   derives from it by default. [use_theme_mt()] passes the same default
+#'   through, so a plot themed directly with `theme_mt()` and one themed via
+#'   the session default look the same - they used to disagree by nearly 2x
+#'   (19 here, 10 there), with neither docstring mentioning the other.
 #' @param base_family,plot_title_family,subtitle_family,strip_text_family,axis_title_family,axis_text_family,caption_family
 #'   Font families for each text element; all default to `base_family`. See
 #'   Details for the `"Roboto Condensed"` default's system requirement.
@@ -162,7 +179,7 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #'   theme_mt(base_family = "")
 #' @export
 theme_mt <- function(
-  base_size = 19,
+  base_size = 10,
   base_family = "Roboto Condensed",
   plot_title_family = base_family,
   subtitle_family = base_family,
@@ -403,7 +420,8 @@ theme_mt <- function(
 #' wrapped for Quarto's light/dark toggle. Chunks that don't set the option
 #' are completely unaffected.
 #'
-#' @param base_size Passed to `theme_mt()`.
+#' @param base_size Passed to `theme_mt()`, whose own default is the same
+#'   value - the two used to disagree by nearly 2x.
 #' @param ... Passed to `theme_mt()` as well - e.g. `base_family` or `dark`,
 #'   for callers that want an activated theme other than the plain default.
 #' @return `invisible(NULL)`, called for its side effect.
