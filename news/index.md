@@ -5,6 +5,15 @@
 Fixes from the 2026-08-22 code review (see `CODE_REVIEW.md`), plus the
 violin-geom parity fixes below.
 
+- **New:** `mt_colors12`/`dark_mt_colors12` extend the discrete palette
+  from five colors to twelve, and
+  [`theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/theme_mt.md)
+  now uses them as its default discrete palette (`dark = TRUE` and the
+  dual-render dark overlay use the dark set). The first five positions
+  are `mt_colors5`/`dark_mt_colors5` unchanged, so plots with five or
+  fewer categories render as before. The shorter constants remain
+  exported.
+
 - **Fixed (dark mode, most user-visible):** `theme_mt(dark = TRUE)` and
   the dual-render dark overlay now set the `geom` theme element’s own
   `ink`, so geoms that don’t set a color explicitly -
@@ -21,6 +30,7 @@ violin-geom parity fixes below.
   ggplot2’s factory `"black"`: every dark-mode figure built from
   default-colored geoms rendered its data marks black on a dark page.
   Light mode is unchanged.
+
 - **Fixed:** `geom_violin_sd(drop = FALSE)` no longer fails with
   ggplot2’s internal `` `scale_id` must not contain any "NA" ``. Under
   `drop = FALSE` ggplot2’s `StatYdensity` keeps groups with fewer than
@@ -28,6 +38,7 @@ violin-geom parity fixes below.
   produced all-`NA` rows rather than none. Thin groups now keep their
   slot in the aura sub-layer (matching `geom_violin(drop = FALSE)`) and
   simply get no SD band.
+
 - **Fixed:**
   [`plot_bf_forest()`](https://mkthalmann.github.io/emptyviz/reference/plot_bf_forest.md)
   and
@@ -40,6 +51,7 @@ violin-geom parity fixes below.
   [`lvls_reorder()`](https://forcats.tidyverse.org/reference/lvls.html)
   error these guards exist to replace. Scattered `NA`s inside
   otherwise-populated categories keep working.
+
 - **Fixed (accessibility):** `knit_print_ggplot_dual()` now honours the
   chunk’s `fig.alt` and `fig.cap`. It previously read only `out.width`,
   so the `<img>` tags it hand-builds carried no `alt` attribute at all -
@@ -51,12 +63,14 @@ violin-geom parity fixes below.
   and every interpolated value is HTML-escaped. A chunk with
   `dual_render = TRUE` and neither option set now warns once at knit
   time instead of shipping a figure with no text equivalent.
+
 - **Docs (accessibility):** every figure in the README and both
   vignettes - 20 chunks - now has `fig.alt` describing what the figure
   shows. Re-knitting `README.md` also refreshed
   `man/figures/README-violin-example-1.png`, which was stale: its
   SD-band outlines predate the fix that made them track each group’s
   resolved fill.
+
 - **Breaking (visual):**
   [`plot_location_scale()`](https://mkthalmann.github.io/emptyviz/reference/plot_location_scale.md)
   now maps `category` to the point glyph as well as to colour when no
@@ -69,12 +83,14 @@ violin-geom parity fixes below.
   the same variable and merge into one legend. Opt out with
   `category_shape = FALSE` / `category_linetype = FALSE`. The palettes
   themselves are unchanged.
+
 - **Breaking (visual, dark mode only):** `.dark_axis_line` lightened
   from `#545b63` to `#5f666e`. The axis line is documented as a real
   boundary - a meaningful graphical object - and measured 2.655:1
   against the `#151515` page background the dark constants are tuned
   for, just under WCAG 1.4.11’s 3:1 floor. It now measures 3.14:1. The
   grid line stays at 1.19:1 deliberately: it is decorative.
+
 - **Removed:**
   [`use_theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/use_theme_mt.md)
   no longer calls `update_geom_defaults("density", list(adjust = 5))`.
@@ -85,6 +101,7 @@ violin-geom parity fixes below.
   `adjust` to
   [`geom_density()`](https://ggplot2.tidyverse.org/reference/geom_density.html)
   directly for heavier smoothing.
+
 - **Fixed:**
   [`layer_halfeye_hdi()`](https://mkthalmann.github.io/emptyviz/reference/layer_halfeye_hdi.md)
   no longer suppresses the caller’s colour legend. It returned
@@ -95,6 +112,7 @@ violin-geom parity fixes below.
   bundle never maps `color` (it sets `interval_color` as a literal
   parameter), so there was nothing to suppress; `fill_ramp` and `pch`
   are genuinely its own and stay hidden.
+
 - **Fixed:**
   [`plot_bf_forest()`](https://mkthalmann.github.io/emptyviz/reference/plot_bf_forest.md)
   errors on a `log_bf` column with no finite values instead of building
@@ -104,6 +122,7 @@ violin-geom parity fixes below.
   extent now also ignores infinite values rather than only `NA`, so a
   single infinite Bayes Factor no longer stretches the arrows to
   infinity.
+
 - **Fixed:**
   [`plot_location_scale()`](https://mkthalmann.github.io/emptyviz/reference/plot_location_scale.md)
   validates `bounds`. Reversed bounds produced an all-`NaN` sigma_max
@@ -111,12 +130,14 @@ violin-geom parity fixes below.
   simply wasn’t drawn - and a scalar surfaced as
   [`seq()`](https://rdrr.io/r/base/seq.html)’s error naming an argument
   the caller never passed.
+
 - **Fixed:**
   [`plot_location_scale()`](https://mkthalmann.github.io/emptyviz/reference/plot_location_scale.md)’s
   `shape` and `facet` accept an inline expression, not just a bare
   column name, matching every other tidyeval argument in the package.
   `shape` also keeps the caller’s environment, so a local variable
   resolves against the caller rather than the data frame.
+
 - **Fixed:**
   [`plot_location_scale()`](https://mkthalmann.github.io/emptyviz/reference/plot_location_scale.md)
   warns, naming the condition, when a group has fewer than the 4 paired
@@ -124,14 +145,17 @@ violin-geom parity fixes below.
   [`stat_ellipse()`](https://ggplot2.tidyverse.org/reference/stat_ellipse.html)
   needs. Previously the only signal was ggplot2’s own “Too few points to
   calculate an ellipse”
+
   - repeated once per ellipse layer and naming neither the condition nor
     this function.
+
 - **Fixed:** dual-render figure counters reset per render. Keyed by
   chunk label and never cleared, their lifetime was the whole R session,
   so every re-render (`quarto preview`, the Knit button,
   `build_vignettes()`) wrote a fresh pair of PNGs under a new name -
   nothing overwritten, nothing cleaned up, and each render’s HTML
   pointing at different files.
+
 - **Docs:**
   [`theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/theme_mt.md)
   now documents that the discrete palette separates categories by hue
@@ -139,6 +163,7 @@ violin-geom parity fixes below.
   non-colour channel beyond about three categories. The palette
   constants also gained test coverage (they had none), pinning their
   values and recording where their pairwise contrast actually stands.
+
 - **Breaking (visual):**
   [`theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/theme_mt.md)’s
   `base_size` default drops from 19 to 10, matching
@@ -151,6 +176,7 @@ violin-geom parity fixes below.
   “`theme_mt(dark = FALSE)` is pixel-identical to 0.1.0” property
   recorded in 0.2.0’s notes; the theme snapshot test is the record from
   here on.
+
 - **Fixed:**
   [`prepare_bf_contrasts()`](https://mkthalmann.github.io/emptyviz/reference/prepare_bf_contrasts.md)
   warns when two requested `pairs` resolve to the same row of `data` -
@@ -158,6 +184,7 @@ violin-geom parity fixes below.
   are still allowed, but the same estimate then appears as several
   output rows, which on a forest plot reads as several independent ones.
   This used to happen silently.
+
 - **Docs:**
   [`theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/theme_mt.md)
   documents that dark mode is tuned for a page background of about
@@ -165,6 +192,7 @@ violin-geom parity fixes below.
   when a host site’s dark background differs - the theme sets
   `paper = NA` on purpose, so the real background is the page’s and
   nothing validates the assumption.
+
 - **Tests/infra:** the `R CMD check` matrix now covers macOS, Windows,
   and R devel/release/oldrel-1 rather than one Ubuntu runner on release
   only, and a `lint` workflow runs `lintr` on every push against a
@@ -176,6 +204,7 @@ violin-geom parity fixes below.
   density but deliberately not the SD bounds, that `show.legend` reaches
   only the aura sub-layer, and that `fill` is a real formal rather than
   a reserved `...` argument.
+
 - `Rplots.pdf` is now ignored by git and by `R CMD build`.
   `DESCRIPTION`’s `Remotes:` pin gained a comment recording *why* it is
   load-bearing: gghalves is not on CRAN - it was archived on

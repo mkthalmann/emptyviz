@@ -115,7 +115,7 @@
 <div class="section level2">
 <h2 id="dark-mode">Dark mode<a class="anchor" aria-label="anchor" href="#dark-mode"></a>
 </h2>
-<p><code>theme_mt(dark = TRUE)</code> is a dark-background variant - transparent plot/panel background, light text/gridline colors, and <code>dark_mt_colors5</code> in place of <code>mt_colors5</code> as the discrete palette - for a plot rendered directly against a dark page. <code><a href="reference/theme_mt.html">theme_mt()</a></code>’s regular (<code>dark = FALSE</code>) output is unaffected by this argument existing.</p>
+<p><code>theme_mt(dark = TRUE)</code> is a dark-background variant - transparent plot/panel background, light text/gridline colors, and <code>dark_mt_colors12</code> in place of <code>mt_colors12</code> as the discrete palette - for a plot rendered directly against a dark page. <code><a href="reference/theme_mt.html">theme_mt()</a></code>’s regular (<code>dark = FALSE</code>) output is unaffected by this argument existing.</p>
 <p>In a Quarto document, <code><a href="reference/use_theme_mt.html">use_theme_mt()</a></code> also registers automatic dual light/dark figure rendering: set the <code>dual_render</code> chunk option to <code>TRUE</code> (per chunk, or as a project-wide <code>knitr: opts_chunk: dual_render: true</code> default) and every <code>ggplot</code>/<code>patchwork</code> figure in that chunk renders twice - once normally, once with the dark variant - wrapped for Quarto’s <code>.light-content</code>/<code>.dark-content</code> toggle, so a light/dark theme-switching site shows the right one without any client-side re-rendering. Chunks that don’t set the option are unaffected.</p>
 </div>
 <div class="section level2">

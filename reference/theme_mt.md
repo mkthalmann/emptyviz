@@ -6,7 +6,7 @@ with markdown/HTML-aware text (via
 [`ggtext::element_markdown()`](https://wilkelab.org/ggtext/reference/element_markdown.html))
 on every text element, a bottom legend, and the package's discrete color
 palette
-([mt_colors5](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md))
+([mt_colors12](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md))
 wired into the theme itself. Also sets `geom.*` defaults (a translucent
 global "paper" aura, plus fill defaults for
 [`geom_bar()`](https://ggplot2.tidyverse.org/reference/geom_bar.html)/[`geom_area()`](https://ggplot2.tidyverse.org/reference/geom_ribbon.html)/[`geom_col()`](https://ggplot2.tidyverse.org/reference/geom_bar.html)/
@@ -68,9 +68,9 @@ theme_mt(
   Build a dark-mode-appropriate variant instead: transparent plot/panel
   background (rather than the translucent white "paper" used in light
   mode), light text/gridline/ink colors, and
-  [dark_mt_colors5](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
+  [dark_mt_colors12](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
   in place of
-  [mt_colors5](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
+  [mt_colors12](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
   as the discrete palette and geom fill default. Meant for rendering the
   same plot a second time for a dark-themed page, alongside a
   `dark = FALSE` (default) render for the light-themed page -
@@ -144,6 +144,15 @@ three categories, give the plot a redundant non-color channel - `shape`,
 does this by default (see its `category_shape`/`category_linetype`), and
 [`plot_bf_forest()`](https://mkthalmann.github.io/emptyviz/reference/plot_bf_forest.md)'s
 `positive_shape`/`negative_shape` are the same idea.
+
+[mt_colors12](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)'s
+first five positions are
+[mt_colors5](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md),
+so plots with five or fewer categories are unaffected by the extension
+to twelve. The advice above applies with more force past five
+categories, not less: the worst pair sits at 1.02:1 against
+[mt_colors5](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)'s
+1.09:1.
 
 `base_family` (and every other `*_family` argument, which default to it)
 defaults to `"Roboto Condensed"`, a font this package does not install

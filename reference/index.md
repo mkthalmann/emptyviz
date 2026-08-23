@@ -19,6 +19,7 @@
   [`dark_mt_colors3`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
   [`dark_mt_colors4`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
   [`dark_mt_colors5`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
+  [`dark_mt_colors12`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
   : Dark-mode variant of the base palette
 
 - [`geom_half_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_half_violin_sd.md)
@@ -40,6 +41,7 @@
   [`mt_colors3`](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
   [`mt_colors4`](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
   [`mt_colors5`](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
+  [`mt_colors12`](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
   : Base two-color palette
 
 - [`mt_colors_many()`](https://mkthalmann.github.io/emptyviz/reference/mt_colors_many.md)
