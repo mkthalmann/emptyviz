@@ -1,13 +1,15 @@
 #' Base two-color palette
 #'
-#' The package's base discrete palette, and three extensions of it
-#' (`mt_colors3`, `mt_colors4`, `mt_colors5`) with one, two, and three additional
-#' hues appended. `theme_mt()` uses `mt_colors5` as its default discrete
-#' palette (`palette.colour.discrete`/`palette.fill.discrete`).
+#' The package's base discrete palette, and four extensions of it
+#' (`mt_colors3`, `mt_colors4`, `mt_colors5`, `mt_colors12`) with one, two,
+#' three, and ten additional hues appended. `theme_mt()` uses `mt_colors12`
+#' as its default discrete palette
+#' (`palette.colour.discrete`/`palette.fill.discrete`).
 #'
 #' @examples
 #' mt_colors
 #' mt_colors5
+#' mt_colors12
 #' @export
 mt_colors <- c("#066b8a", "#8a064a")
 
@@ -23,18 +25,28 @@ mt_colors4 <- c(mt_colors3, "#9109d5")
 #' @export
 mt_colors5 <- c(mt_colors4, "#142f8f")
 
+#' @rdname mt_colors
+#' @export
+mt_colors12 <- c(
+  mt_colors5,
+  "#e40add", "#ea280a", "#6e4cf8", "#068a7f", "#b30732", "#ac8307", "#064d8c"
+)
+
 #' Dark-mode variant of the base palette
 #'
-#' Lightened tints of [mt_colors]/[mt_colors3]/[mt_colors4]/[mt_colors5],
-#' each hue's HSL lightness raised to keep adequate contrast against a
-#' near-black background. Used by `theme_mt(dark = TRUE)` as the discrete
-#' palette and geom fill defaults; exported separately so the same tints can
-#' be reused directly (e.g. in a hand-written `scale_color_manual()`) without
-#' re-deriving them.
+#' Lightened tints of
+#' [mt_colors]/[mt_colors3]/[mt_colors4]/[mt_colors5]/[mt_colors12], each
+#' hue's HSL lightness raised to keep adequate contrast against a near-black
+#' background. Used by `theme_mt(dark = TRUE)` as the discrete palette and
+#' geom fill defaults; exported separately so the same tints can be reused
+#' directly (e.g. in a hand-written `scale_color_manual()`) without
+#' re-deriving them. `dark_mt_colors12[i]` is the dark counterpart of
+#' `mt_colors12[i]` at every position.
 #'
 #' @examples
 #' dark_mt_colors
 #' dark_mt_colors5
+#' dark_mt_colors12
 #' @export
 dark_mt_colors <- c("#70ceeb", "#eb70af")
 
@@ -50,9 +62,16 @@ dark_mt_colors4 <- c(dark_mt_colors3, "#c270eb")
 #' @export
 dark_mt_colors5 <- c(dark_mt_colors4, "#7b91e0")
 
+#' @rdname dark_mt_colors
+#' @export
+dark_mt_colors12 <- c(
+  dark_mt_colors5,
+  "#e755e2", "#e76855", "#9f8bef", "#8befe6", "#ef8ba4", "#efd68b", "#55a3e7"
+)
+
 # Non-palette dark-mode colors (ink/grid/text), shared between
 # theme_mt(dark = TRUE) and the color-only overlay in R/dual-render.R so the
-# two can't drift out of sync. Not exported - `dark_mt_colors5` is the
+# two can't drift out of sync. Not exported - `dark_mt_colors12` is the
 # public-facing constant; these are text/line tints, not the data palette.
 # grid/axis_line are deliberately two different brightnesses (measured
 # contrast 1.19:1 and 3.14:1 against the #151515 page background
@@ -88,7 +107,7 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #'
 #' Extends [ggplot2::theme_minimal()] with markdown/HTML-aware text (via
 #' [ggtext::element_markdown()]) on every text element, a bottom legend, and
-#' the package's discrete color palette ([mt_colors5]) wired into the theme
+#' the package's discrete color palette ([mt_colors12]) wired into the theme
 #' itself. Also sets `geom.*` defaults (a translucent global "paper" aura,
 #' plus fill defaults for `geom_bar()`/`geom_area()`/`geom_col()`/
 #' `geom_ribbon()`/`geom_density()`) so plots look consistent without
@@ -123,6 +142,11 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #' labels - rather than relying on hue alone. [plot_location_scale()] does
 #' this by default (see its `category_shape`/`category_linetype`), and
 #' [plot_bf_forest()]'s `positive_shape`/`negative_shape` are the same idea.
+#'
+#' [mt_colors12]'s first five positions are [mt_colors5], so plots with five
+#' or fewer categories are unaffected by the extension to twelve. The
+#' advice above applies with more force past five categories, not less:
+#' the worst pair sits at 1.02:1 against [mt_colors5]'s 1.09:1.
 #'
 #' `base_family` (and every other `*_family` argument, which default to it)
 #' defaults to `"Roboto Condensed"`, a font this package does not install or
@@ -160,8 +184,8 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #'   than the grid) and reads as too faint at the grid's own brightness.
 #' @param dark Build a dark-mode-appropriate variant instead: transparent
 #'   plot/panel background (rather than the translucent white "paper" used
-#'   in light mode), light text/gridline/ink colors, and [dark_mt_colors5]
-#'   in place of [mt_colors5] as the discrete palette and geom fill default.
+#'   in light mode), light text/gridline/ink colors, and [dark_mt_colors12]
+#'   in place of [mt_colors12] as the discrete palette and geom fill default.
 #'   Meant for rendering the same plot a second time for a dark-themed page,
 #'   alongside a `dark = FALSE` (default) render for the light-themed page -
 #'   `theme_mt()`'s output with `dark = FALSE` is unchanged by this argument
@@ -205,7 +229,7 @@ theme_mt <- function(
   caption_color <- if (dark) .dark_caption else "gray50"
   geom_fill <- if (dark) dark_mt_colors[1] else mt_colors[1]
   geom_paper <- if (dark) alpha("black", 0.3) else alpha("white", 0.3)
-  discrete_palette <- if (dark) dark_mt_colors5 else mt_colors5
+  discrete_palette <- if (dark) dark_mt_colors12 else mt_colors12
   # A small gap between axis tick labels and the axis line/panel, in both
   # light and dark mode - text sitting flush against the line read as too
   # cramped.

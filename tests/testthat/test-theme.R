@@ -13,7 +13,7 @@ test_that("use_theme_mt() forwards ... to theme_mt()", {
   on.exit(theme_set(old), add = TRUE)
 
   use_theme_mt(dark = TRUE)
-  expect_identical(theme_get()$palette.colour.discrete, dark_mt_colors5)
+  expect_identical(theme_get()$palette.colour.discrete, dark_mt_colors12)
 })
 
 test_that("use_theme_mt() leaves geom_density()'s bandwidth alone and injects no phantom aesthetic", {
@@ -47,15 +47,15 @@ test_that("use_theme_mt() returns invisible(NULL)", {
 
 test_that("theme_mt(dark = FALSE) is unchanged by the dark argument existing", {
   t <- theme_mt()
-  expect_identical(t$palette.colour.discrete, mt_colors5)
-  expect_identical(t$palette.fill.discrete, mt_colors5)
+  expect_identical(t$palette.colour.discrete, mt_colors12)
+  expect_identical(t$palette.fill.discrete, mt_colors12)
   expect_identical(t$plot.background$fill, alpha("white", .5))
 })
 
 test_that("theme_mt(dark = TRUE) swaps in the dark palette and a transparent background", {
   t <- theme_mt(dark = TRUE)
-  expect_identical(t$palette.colour.discrete, dark_mt_colors5)
-  expect_identical(t$palette.fill.discrete, dark_mt_colors5)
+  expect_identical(t$palette.colour.discrete, dark_mt_colors12)
+  expect_identical(t$palette.fill.discrete, dark_mt_colors12)
   expect_true(is.na(t$plot.background$fill))
 })
 
@@ -124,6 +124,16 @@ test_that("theme_mt(dark = TRUE) resolves default geom colors to the dark ink, n
   expect_identical(unique(light$data[[1]]$colour), "black")
 })
 
+test_that("the theme default's first five positions are still mt_colors5", {
+  light <- theme_mt()$palette.colour.discrete
+  dark <- theme_mt(dark = TRUE)$palette.colour.discrete
+
+  expect_identical(light[seq_along(mt_colors5)], mt_colors5)
+  expect_identical(dark[seq_along(dark_mt_colors5)], dark_mt_colors5)
+  expect_length(light, 12)
+  expect_length(dark, 12)
+})
+
 test_that("the palette constants are exactly what they claim to be", {
   # The palette constants had zero test coverage, so an accidental edit to a
   # hex digit would go unnoticed - and every plot built on theme_mt()'s
@@ -145,9 +155,29 @@ test_that("the palette constants are exactly what they claim to be", {
     c("#70ceeb", "#eb70af", "#ebad70", "#c270eb", "#7b91e0")
   )
 
+  expect_identical(
+    mt_colors12,
+    c(
+      "#066b8a", "#8a064a", "#d56f09", "#9109d5", "#142f8f", "#e40add",
+      "#ea280a", "#6e4cf8", "#068a7f", "#b30732", "#ac8307", "#064d8c"
+    )
+  )
+  expect_identical(
+    dark_mt_colors12,
+    c(
+      "#70ceeb", "#eb70af", "#ebad70", "#c270eb", "#7b91e0", "#e755e2",
+      "#e76855", "#9f8bef", "#8befe6", "#ef8ba4", "#efd68b", "#55a3e7"
+    )
+  )
+
   # each extension appends to the previous one rather than redefining it
   expect_identical(mt_colors5[seq_along(mt_colors4)], mt_colors4)
   expect_identical(dark_mt_colors5[seq_along(dark_mt_colors4)], dark_mt_colors4)
+  expect_identical(mt_colors12[seq_along(mt_colors5)], mt_colors5)
+  expect_identical(dark_mt_colors12[seq_along(dark_mt_colors5)], dark_mt_colors5)
+
+  expect_length(mt_colors12, 12)
+  expect_length(dark_mt_colors12, length(mt_colors12))
 
   # the continuous ramp still runs between the two base hues
   ramp <- mt_colors_many(3)
@@ -194,7 +224,43 @@ test_that("the discrete palettes separate categories by hue, not lightness - rec
   expect_equal(worst(mt_colors5), 1.09, tolerance = 0.01)
   expect_lt(worst(dark_mt_colors5), 3)
 
+  expect_equal(worst(mt_colors12), 1.02, tolerance = 0.01)
+  expect_lt(worst(dark_mt_colors12), 3)
+
   # against a white page every hue is legible on its own - the limitation is
   # strictly category-vs-category, which is what theme_mt()'s Details says
   for (col in mt_colors5) expect_gte(wcag_contrast(col, "#ffffff"), 3)
+  for (col in mt_colors12) expect_gte(wcag_contrast(col, "#ffffff"), 3)
+
+  # and every dark tint clears 3:1 against the page background it targets
+  for (col in dark_mt_colors12) expect_gte(wcag_contrast(col, "#151515"), 3)
+
+  light_on_white <- vapply(mt_colors12, wcag_contrast, numeric(1), "#ffffff")
+  expect_equal(min(light_on_white), 3.44, tolerance = 0.01)
+  expect_equal(max(light_on_white), 11.46, tolerance = 0.01)
+  dark_on_page <- vapply(dark_mt_colors12, wcag_contrast, numeric(1), "#151515")
+  expect_equal(min(dark_on_page), 5.66, tolerance = 0.01)
+  expect_equal(max(dark_on_page), 13.55, tolerance = 0.01)
+})
+
+test_that("each dark tint is its light counterpart's exact hue, position for position", {
+  skip_if_not_installed("farver")
+  hue <- function(cols) farver::decode_colour(cols, to = "hsl")[, "h"]
+  expect_equal(hue(dark_mt_colors12), hue(mt_colors12), tolerance = 0.01)
+})
+
+test_that("every prefix of mt_colors12 is at least as separated as the full palette", {
+  skip_if_not_installed("farver")
+  closest_pair <- function(pal) {
+    lab <- farver::decode_colour(pal, to = "oklab")
+    d <- as.matrix(stats::dist(lab))
+    diag(d) <- NA_real_
+    min(d, na.rm = TRUE)
+  }
+
+  full <- closest_pair(mt_colors12)
+  expect_equal(full, 0.079, tolerance = 0.01)
+
+  for (n in 6:12) expect_gte(closest_pair(mt_colors12[seq_len(n)]), full)
+  expect_equal(closest_pair(mt_colors12[1:6]), 0.167, tolerance = 0.01)
 })

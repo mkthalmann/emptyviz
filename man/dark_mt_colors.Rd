@@ -5,6 +5,7 @@
 \alias{dark_mt_colors3}
 \alias{dark_mt_colors4}
 \alias{dark_mt_colors5}
+\alias{dark_mt_colors12}
 \title{Dark-mode variant of the base palette}
 \usage{
 dark_mt_colors
@@ -14,16 +15,21 @@ dark_mt_colors3
 dark_mt_colors4
 
 dark_mt_colors5
+
+dark_mt_colors12
 }
 \description{
-Lightened tints of \link{mt_colors}/\link{mt_colors3}/\link{mt_colors4}/\link{mt_colors5},
-each hue's HSL lightness raised to keep adequate contrast against a
-near-black background. Used by \code{theme_mt(dark = TRUE)} as the discrete
-palette and geom fill defaults; exported separately so the same tints can
-be reused directly (e.g. in a hand-written \code{scale_color_manual()}) without
-re-deriving them.
+Lightened tints of
+\link{mt_colors}/\link{mt_colors3}/\link{mt_colors4}/\link{mt_colors5}/\link{mt_colors12}, each
+hue's HSL lightness raised to keep adequate contrast against a near-black
+background. Used by \code{theme_mt(dark = TRUE)} as the discrete palette and
+geom fill defaults; exported separately so the same tints can be reused
+directly (e.g. in a hand-written \code{scale_color_manual()}) without
+re-deriving them. \code{dark_mt_colors12[i]} is the dark counterpart of
+\code{mt_colors12[i]} at every position.
 }
 \examples{
 dark_mt_colors
 dark_mt_colors5
+dark_mt_colors12
 }

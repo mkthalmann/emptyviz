@@ -5,6 +5,7 @@
 \alias{mt_colors3}
 \alias{mt_colors4}
 \alias{mt_colors5}
+\alias{mt_colors12}
 \title{Base two-color palette}
 \usage{
 mt_colors
@@ -14,14 +15,18 @@ mt_colors3
 mt_colors4
 
 mt_colors5
+
+mt_colors12
 }
 \description{
-The package's base discrete palette, and three extensions of it
-(\code{mt_colors3}, \code{mt_colors4}, \code{mt_colors5}) with one, two, and three additional
-hues appended. \code{theme_mt()} uses \code{mt_colors5} as its default discrete
-palette (\code{palette.colour.discrete}/\code{palette.fill.discrete}).
+The package's base discrete palette, and four extensions of it
+(\code{mt_colors3}, \code{mt_colors4}, \code{mt_colors5}, \code{mt_colors12}) with one, two,
+three, and ten additional hues appended. \code{theme_mt()} uses \code{mt_colors12}
+as its default discrete palette
+(\code{palette.colour.discrete}/\code{palette.fill.discrete}).
 }
 \examples{
 mt_colors
 mt_colors5
+mt_colors12
 }

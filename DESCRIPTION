@@ -33,6 +33,7 @@ Suggests:
     bayestestR,
     brms,
     emmeans,
+    farver,
     knitr,
     patchwork,
     purrr,

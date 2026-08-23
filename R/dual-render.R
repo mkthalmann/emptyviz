@@ -122,8 +122,8 @@
     geom.area = element_geom(fill = dark_mt_colors[1]),
     geom.col = element_geom(fill = dark_mt_colors[1]),
     geom.ribbon = element_geom(fill = dark_mt_colors[1]),
-    palette.colour.discrete = dark_mt_colors5,
-    palette.fill.discrete = dark_mt_colors5
+    palette.colour.discrete = dark_mt_colors12,
+    palette.fill.discrete = dark_mt_colors12
   )))
 }
 

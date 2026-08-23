@@ -3,6 +3,13 @@
 Fixes from the 2026-08-22 code review (see `CODE_REVIEW.md`), plus the
 violin-geom parity fixes below.
 
+* **New:** `mt_colors12`/`dark_mt_colors12` extend the discrete palette from
+  five colors to twelve, and `theme_mt()` now uses them as its default
+  discrete palette (`dark = TRUE` and the dual-render dark overlay use the
+  dark set). The first five positions are `mt_colors5`/`dark_mt_colors5`
+  unchanged, so plots with five or fewer categories render as before. The
+  shorter constants remain exported.
+
 * **Fixed (dark mode, most user-visible):** `theme_mt(dark = TRUE)` and the
   dual-render dark overlay now set the `geom` theme element's own `ink`, so
   geoms that don't set a color explicitly - `geom_point()`, `geom_line()`,

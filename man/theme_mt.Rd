@@ -41,8 +41,8 @@ default.}
 
 \item{dark}{Build a dark-mode-appropriate variant instead: transparent
 plot/panel background (rather than the translucent white "paper" used
-in light mode), light text/gridline/ink colors, and \link{dark_mt_colors5}
-in place of \link{mt_colors5} as the discrete palette and geom fill default.
+in light mode), light text/gridline/ink colors, and \link{dark_mt_colors12}
+in place of \link{mt_colors12} as the discrete palette and geom fill default.
 Meant for rendering the same plot a second time for a dark-themed page,
 alongside a \code{dark = FALSE} (default) render for the light-themed page -
 \code{theme_mt()}'s output with \code{dark = FALSE} is unchanged by this argument
@@ -71,7 +71,7 @@ A \code{ggplot2} theme object.
 \description{
 Extends \code{\link[ggplot2:theme_minimal]{ggplot2::theme_minimal()}} with markdown/HTML-aware text (via
 \code{\link[ggtext:element_markdown]{ggtext::element_markdown()}}) on every text element, a bottom legend, and
-the package's discrete color palette (\link{mt_colors5}) wired into the theme
+the package's discrete color palette (\link{mt_colors12}) wired into the theme
 itself. Also sets \verb{geom.*} defaults (a translucent global "paper" aura,
 plus fill defaults for \code{geom_bar()}/\code{geom_area()}/\code{geom_col()}/
 \code{geom_ribbon()}/\code{geom_density()}) so plots look consistent without
@@ -107,6 +107,11 @@ the plot a redundant non-color channel - \code{shape}, \code{linetype}, or direc
 labels - rather than relying on hue alone. \code{\link[=plot_location_scale]{plot_location_scale()}} does
 this by default (see its \code{category_shape}/\code{category_linetype}), and
 \code{\link[=plot_bf_forest]{plot_bf_forest()}}'s \code{positive_shape}/\code{negative_shape} are the same idea.
+
+\link{mt_colors12}'s first five positions are \link{mt_colors5}, so plots with five
+or fewer categories are unaffected by the extension to twelve. The
+advice above applies with more force past five categories, not less:
+the worst pair sits at 1.02:1 against \link{mt_colors5}'s 1.09:1.
 
 \code{base_family} (and every other \verb{*_family} argument, which default to it)
 defaults to \code{"Roboto Condensed"}, a font this package does not install or
