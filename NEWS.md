@@ -3,6 +3,78 @@
 Fixes from the 2026-08-22 code review (see `CODE_REVIEW.md`), plus the
 violin-geom parity fixes below.
 
+* **Breaking (visual):** `theme_mt()`'s type scale, spacing and several
+  defaults were reworked, so every figure this package produces changes.
+  What did *not* change: the palettes, the black `hjust = 1` axis titles,
+  the plain centred strip text, the centred bottom legend, the tick-less
+  axes, the always-drawn axis line at `grid_color`, and the hard-blanked
+  `panel.grid.major.x`. The individual entries below cover the rest.
+* **Breaking (API):** `theme_mt()`'s `show_axis_line` argument is gone - the
+  axis line is always drawn, and `axis_line_color` still controls its
+  colour. `legend_text_size`, `minor_grid`, `background` and
+  `continuous_palette` are new. Anything passing `theme_mt()`'s arguments
+  positionally past `dark` shifts by one; named arguments are unaffected.
+* **Changed (typography):** the title, subtitle, strip text, axis titles and
+  legend text all sat at `base_size + 2`, so `face = "bold"` was the only
+  thing distinguishing a plot title from an axis label, and the axis titles
+  outranked the tick labels they describe. The title moves to
+  `base_size + 4`, that whole tier to `base_size + 1`, and the caption from
+  `base_size - 3` (7pt at the default, under the readable floor once a
+  journal typesets a 6-inch figure at 3.3 inches) to `base_size - 2`.
+  `legend.text`/`legend.title` were pinned at `base_size + 2` in the
+  function body with no argument to change them; they are now
+  `legend_text_size`, defaulting to `base_size`.
+* **Changed (spacing):** `plot.margin` was `0.1` lines - about a point -
+  which, with this theme's `hjust = 1` axis titles, clipped the x-axis
+  title against the device edge in most figures and left a LaTeX caption
+  flush against the figure's descenders. It is now sized off `base_size`
+  and biased right and top. `legend.key.size` scales with the legend text
+  rather than being pinned at `0.7cm` (roughly twice the cap height of its
+  own labels), and the panel-to-legend gap goes through
+  `legend.box.spacing` instead of a negative `legend.margin` that could
+  clip the legend's top. `strip.text.x`/`.y` carried `margin()` - zero on
+  every side - so under `strip.placement = "outside"` a facet label sat
+  flush against the panel it labels; they now get a small margin.
+* **Changed:** minor gridlines are off by default (`minor_grid = TRUE`
+  restores them). At `linewidth = 0.1` they are about 0.1 mm, which is
+  where print workflows stop guaranteeing a line, and they doubled the
+  grid's ink without adding information. The major grid moves from
+  `gray85 @ 0.20` to `gray87 @ 0.25` - the same apparent weight on screen,
+  more reliable on paper - and the axis line tracks it, since
+  `axis_line_color` still defaults to `grid_color`.
+* **Changed:** `plot.caption`'s colour goes from `gray50` (3.94:1 against
+  white) to `gray45` (4.74:1). It is the smallest text in the figure and
+  the first thing to dissolve when a journal scales the figure down. It is
+  the only text colour that changed.
+* **Fixed:** `theme_mt()`'s light-mode `plot.background` was
+  `alpha("white", .5)`: invisible on a white page and a milky half-wash on
+  any other, so a figure dropped onto a tinted slide or a shaded box picked
+  up a haze belonging to neither. It is now opaque `"white"`, with the new
+  `background` argument taking `"transparent"` (or any colour) for callers
+  who really are compositing. `dark = TRUE` stays transparent regardless,
+  as the Quarto light/dark toggle needs.
+* **Fixed:** the `geom` theme element's `paper` was `alpha("white", 0.3)`
+  (`alpha("black", 0.3)` in dark mode and in the dual-render overlay). In
+  ggplot2 >= 4, `GeomLabel$default_aes` resolves `fill` from
+  `from_theme(fill %||% paper)`, so every `geom_label()` drew a
+  30%-transparent background and the marks underneath showed through the
+  text. It is now opaque in all three places.
+* **New:** `theme_mt()` sets `palette.colour.continuous`/
+  `palette.fill.continuous` to a lightness ramp of `mt_colors[1]` (of
+  `dark_mt_colors[1]` in dark mode), and the dual-render dark overlay
+  mirrors it. These were unset, so a mapped continuous variable fell
+  through to ggplot2's factory blue gradient: a hue outside this palette
+  entirely, running *dark to light*, so the largest values drew the
+  faintest marks. `continuous_palette = NULL` restores ggplot2's default.
+  `mt_colors_many()` is unchanged and still exported.
+* **New:** `plot.tag`/`plot.tag.position` are styled to match the title.
+  patchwork's `plot_annotation(tag_levels = "A")` previously fell back to
+  ggplot2's grey `1.2 * base_size` default, and the tag landed on top of
+  the y-axis.
+* **New:** continuous colourbars get a hairline `legend.frame` and no
+  `legend.ticks`. An unframed gradient bar has no edges against the page,
+  which shows up most in print.
+
 * **New:** `mt_colors12`/`dark_mt_colors12` extend the discrete palette from
   five colors to twelve, and `theme_mt()` now uses them as its default
   discrete palette (`dark = TRUE` and the dual-render dark overlay use the

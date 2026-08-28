@@ -49,7 +49,133 @@ test_that("theme_mt(dark = FALSE) is unchanged by the dark argument existing", {
   t <- theme_mt()
   expect_identical(t$palette.colour.discrete, mt_colors12)
   expect_identical(t$palette.fill.discrete, mt_colors12)
-  expect_identical(t$plot.background$fill, alpha("white", .5))
+  expect_identical(t$plot.background$fill, "white")
+})
+
+test_that("light mode's plot background is opaque, and `background` still buys transparency", {
+  # This used to be alpha("white", .5): invisible on a white page, and a
+  # milky half-wash on anything else - a figure dropped onto a tinted
+  # slide picked up a haze belonging to neither. Opaque by default, with
+  # the escape hatch kept for callers who really are compositing.
+  expect_identical(theme_mt()$plot.background$fill, "white")
+  expect_true(is.na(theme_mt(background = "transparent")$plot.background$fill))
+  expect_identical(theme_mt(background = "#fafafa")$plot.background$fill, "#fafafa")
+
+  # `dark` wins over `background` unconditionally - the dark variant has
+  # to stay transparent for the Quarto light/dark toggle to work.
+  expect_true(is.na(theme_mt(dark = TRUE, background = "white")$plot.background$fill))
+})
+
+test_that("geom.paper is opaque in both modes, so geom_label() isn't see-through", {
+  # GeomLabel$default_aes maps fill to `from_theme(fill %||% paper)`, so a
+  # translucent geom.paper (it was alpha("white", 0.3) / alpha("black",
+  # 0.3)) made every label a 30%-transparent hole with the marks
+  # underneath showing through the text.
+  expect_identical(theme_mt()$geom@paper, "white")
+  expect_identical(theme_mt(dark = TRUE)$geom@paper, "#151515")
+})
+
+test_that("continuous scales use a light-to-dark ramp of the palette's own hue", {
+  # palette.colour.continuous was unset, so a mapped continuous variable
+  # fell through to ggplot2's factory blue gradient - a hue outside this
+  # palette entirely, running dark to light, so the largest values drew
+  # the faintest marks.
+  light <- theme_mt()
+  expect_identical(light$palette.colour.continuous, c("#b7d4e0", mt_colors[1]))
+  expect_identical(light$palette.fill.continuous, c("#b7d4e0", mt_colors[1]))
+
+  dark <- theme_mt(dark = TRUE)
+  expect_identical(dark$palette.colour.continuous, c("#13414f", dark_mt_colors[1]))
+
+  # The high end must be darker than the low end in light mode, and
+  # lighter than it in dark mode: "more" reads as "further from the page".
+  ends <- theme_mt()$palette.colour.continuous
+  expect_gt(wcag_contrast(ends[2], "white"), wcag_contrast(ends[1], "white"))
+  dark_ends <- theme_mt(dark = TRUE)$palette.colour.continuous
+  expect_gt(wcag_contrast(dark_ends[2], "#151515"), wcag_contrast(dark_ends[1], "#151515"))
+
+  # NULL hands the aesthetic back to ggplot2's own default.
+  expect_null(theme_mt(continuous_palette = NULL)$palette.colour.continuous)
+})
+
+test_that("the type scale has exactly one element above the metadata tier", {
+  # Every text element except the tick labels and the caption used to sit
+  # at base_size + 2, so face = "bold" was the only thing telling a plot
+  # title apart from an axis title.
+  t <- theme_mt(base_size = 10)
+  metadata <- c(
+    t$plot.subtitle$size, t$strip.text.x$size,
+    t$axis.title.x$size, t$legend.text$size
+  )
+  expect_true(all(t$plot.title$size > metadata))
+  expect_true(all(metadata >= t$axis.text.x$size))
+  expect_lt(t$plot.caption$size, t$axis.text.x$size)
+
+  # ...and it still tracks base_size rather than being pinned.
+  expect_equal(theme_mt(base_size = 14)$plot.title$size, 18)
+  expect_equal(theme_mt(base_size = 14)$legend.text$size, 14)
+})
+
+test_that("minor gridlines are off by default and restorable", {
+  t <- theme_mt()
+  expect_s3_class(t$panel.grid.minor, "element_blank")
+  expect_s3_class(t$panel.grid.minor.y, "element_blank")
+
+  on_t <- theme_mt(minor_grid = TRUE)
+  expect_false(inherits(on_t$panel.grid.minor.y, "element_blank"))
+  expect_identical(on_t$panel.grid.minor.y$colour, on_t$panel.grid.major$colour)
+  # minor.x stays blank either way - the major x grid is blanked too.
+  expect_s3_class(on_t$panel.grid.minor.x, "element_blank")
+})
+
+test_that("the legend is sized off base_size, without a negative margin", {
+  # legend.key.size was pinned at 0.7cm - about twice the cap height of a
+  # base_size + 2 label - and the gap to the panel was faked with
+  # legend.margin = margin(-base_size, ...) rather than legend.box.spacing.
+  t <- theme_mt(base_size = 10)
+  expect_equal(as.numeric(t$legend.key.size), 11)
+  expect_equal(as.numeric(theme_mt(base_size = 20)$legend.key.size), 22)
+  expect_true(all(as.numeric(t$legend.margin) >= 0))
+  expect_gt(as.numeric(t$legend.box.spacing), 0)
+})
+
+test_that("a continuous colourbar gets a frame and no ticks", {
+  for (t in list(theme_mt(), theme_mt(dark = TRUE))) {
+    expect_s3_class(t$legend.ticks, "element_blank")
+    expect_false(inherits(t$legend.frame, "element_blank"))
+    expect_true(nzchar(t$legend.frame$colour))
+  }
+  # The dark frame has to be a dark-mode tint, not light mode's gray70.
+  expect_false(identical(theme_mt()$legend.frame$colour,
+                         theme_mt(dark = TRUE)$legend.frame$colour))
+})
+
+test_that("plot.tag is styled and anchored to the plot, not the panel", {
+  # patchwork's tag_levels = "A" used to fall back to ggplot2's grey
+  # 1.2 * base_size default and land on top of the y-axis.
+  t <- theme_mt()
+  expect_equal(t$plot.tag$size, t$plot.title$size)
+  expect_identical(t$plot.tag$face, "bold")
+  expect_identical(t$plot.tag.position, "topleft")
+  expect_identical(theme_mt(dark = TRUE)$plot.tag$colour, emptyviz:::.dark_ink)
+})
+
+test_that("plot.margin and strip.text margins are non-zero and scale with base_size", {
+  # plot.margin was 0.1 lines (about a point), which clipped the hjust = 1
+  # x-axis title against the device edge; strip.text carried margin() -
+  # zero on every side - under strip.placement = "outside".
+  small <- theme_mt(base_size = 10)
+  big <- theme_mt(base_size = 20)
+  expect_true(all(as.numeric(small$plot.margin) > 0))
+  expect_true(all(as.numeric(big$plot.margin) > as.numeric(small$plot.margin)))
+  # the right edge gets the most, since that's where hjust = 1 clips
+  expect_equal(which.max(as.numeric(small$plot.margin)), 2L)
+
+  for (t in list(small, theme_mt(dark = TRUE))) {
+    expect_gt(sum(as.numeric(t$strip.text.x$margin)), 0)
+    expect_gt(sum(as.numeric(t$strip.text.y$margin)), 0)
+    expect_gt(sum(as.numeric(t$strip.text.y.left$margin)), 0)
+  }
 })
 
 test_that("theme_mt(dark = TRUE) swaps in the dark palette and a transparent background", {
@@ -98,6 +224,13 @@ test_that("theme_mt(dark = FALSE)'s complete output matches its recorded snapsho
   # base_size moved from 19 to 10 to match use_theme_mt()'s (see that
   # release's NEWS). This snapshot is the record going forward; the old
   # claim is history, not an invariant.
+  #
+  # Re-recorded again for the type-scale/spacing revision in the current
+  # development version (see NEWS.md): sizes, plot.margin, the legend
+  # metrics, the grid and caption colours, plot.background, geom.paper,
+  # plot.tag, legend.frame and the continuous palettes all moved at once.
+  # The tests above pin each of those individually; this pins everything
+  # else that came along with them.
   expect_snapshot(print(theme_mt()))
 })
 

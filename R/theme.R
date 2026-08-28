@@ -107,14 +107,35 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #'
 #' Extends [ggplot2::theme_minimal()] with markdown/HTML-aware text (via
 #' [ggtext::element_markdown()]) on every text element, a bottom legend, and
-#' the package's discrete color palette ([mt_colors12]) wired into the theme
-#' itself. Also sets `geom.*` defaults (a translucent global "paper" aura,
-#' plus fill defaults for `geom_bar()`/`geom_area()`/`geom_col()`/
-#' `geom_ribbon()`/`geom_density()`) so plots look consistent without
-#' repeating `fill = ...` on every layer.
+#' the package's color palettes ([mt_colors12] for discrete scales, a
+#' lightness ramp of `mt_colors[1]` for continuous ones) wired into the
+#' theme itself. Also sets `geom.*` defaults (an opaque "paper" for
+#' label backgrounds, plus fill defaults for `geom_bar()`/`geom_area()`/
+#' `geom_col()`/`geom_ribbon()`/`geom_density()`) so plots look consistent
+#' without repeating `fill = ...` on every layer.
 #'
 #' Call [use_theme_mt()] to make this the session's active theme -
 #' `library(emptyviz)` does not do this automatically.
+#'
+#' The type scale has exactly one element above the metadata tier. The
+#' title, subtitle, strip text, axis titles and legend text used to share
+#' `base_size + 2`, so `face = "bold"` was the only thing distinguishing a
+#' plot title from an axis label, and the axis titles outranked the tick
+#' labels they describe. The title is now `base_size + 4` and everything
+#' else in that tier is `base_size + 1`, above `base_size` tick labels and
+#' a `base_size - 2` caption. Every size remains an argument.
+#'
+#' Spacing is sized off `base_size` rather than fixed: `plot.margin` used
+#' to be `0.1` lines (about a point), which - with the `hjust = 1` axis
+#' titles this theme uses - clipped the x-axis title against the device
+#' edge in most figures, and left a LaTeX caption sitting flush against the
+#' figure's descenders. Legend keys scale with the legend text instead of
+#' being pinned at `0.7cm`, and the gap between panel and legend is set
+#' through `legend.box.spacing` rather than a negative `legend.margin`.
+#'
+#' Minor gridlines are off by default (`minor_grid`): at `linewidth = 0.1`
+#' they are about 0.1 mm, which is where print workflows stop guaranteeing
+#' a line, and they double the grid's ink without adding information.
 #'
 #' `dark = TRUE` is tuned for a page background of about `#151515`. It sets
 #' `paper = NA` and a transparent `plot.background`, deliberately - the
@@ -128,6 +149,9 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #' near-invisible grid could invert against a light-ish "dark" background.
 #' If your site's dark background differs much from `#151515`, either match
 #' it or pass `grid_color`/`axis_text_color`/`axis_line_color` explicitly.
+#' `geom.paper` follows the same assumption: it is that same `#151515`, so
+#' a `geom_label()` on a dark page reads as opaque rather than as a
+#' 30%-transparent hole.
 #'
 #' The discrete palette separates categories by **hue**, with very little
 #' lightness difference between them: every pair in [mt_colors5] falls below
@@ -167,30 +191,49 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #' @param base_family,plot_title_family,subtitle_family,strip_text_family,axis_title_family,axis_text_family,caption_family
 #'   Font families for each text element; all default to `base_family`. See
 #'   Details for the `"Roboto Condensed"` default's system requirement.
-#' @param plot_title_size,axis_text_size,strip_text_size,subtitle_size,caption_size,axis_title_size
+#' @param plot_title_size,axis_text_size,strip_text_size,subtitle_size,caption_size,axis_title_size,legend_text_size
 #'   Font sizes for each text element, all derived from `base_size` by
-#'   default.
-#' @param grid_color Color of the panel grid lines (and the axis line, when
-#'   `show_axis_line` is `TRUE`). Defaults to a near-invisible light gray, or
-#'   a near-invisible dark gray when `dark = TRUE`.
-#' @param show_axis_line Whether to draw the axis line at all (`TRUE`) or
-#'   make it transparent (`FALSE`).
+#'   default. See Details for how the scale is laid out. `legend_text_size`
+#'   covers both `legend.text` and `legend.title`, which used to be pinned
+#'   at `base_size + 2` in the function body with no way to change them.
+#' @param grid_color Color of the panel grid lines, and of the axis line
+#'   unless `axis_line_color` says otherwise. Defaults to a near-invisible
+#'   light gray, or a near-invisible dark gray when `dark = TRUE`.
+#' @param minor_grid Whether to draw minor gridlines (on the major axis
+#'   only, matching the major grid). `FALSE` by default; `TRUE` restores
+#'   the previous behaviour. See Details.
+#' @param background Fill for `plot.background` in light mode: `"white"`
+#'   (the default), `"transparent"`, or any color. This used to be
+#'   `alpha("white", .5)`, which is invisible on a white page and a milky
+#'   half-wash on any other - so a figure dropped onto a tinted slide or a
+#'   shaded box picked up a haze that was neither the page's color nor the
+#'   figure's. `dark = TRUE` is always transparent, whatever this is set to,
+#'   for the reason given above.
 #' @param axis_text_color Color of the axis tick labels. Defaults to a dark
 #'   gray, or a light gray when `dark = TRUE`.
-#' @param axis_line_color Color of the axis line itself (only drawn when
-#'   `show_axis_line` is `TRUE`). Defaults to `grid_color` in light mode
-#'   (as before); in dark mode it defaults to something brighter than
-#'   `grid_color`, since the axis line is a real boundary (drawn thicker
-#'   than the grid) and reads as too faint at the grid's own brightness.
+#' @param axis_line_color Color of the axis line, which is always drawn.
+#'   Defaults to `grid_color` in light mode; in dark mode it defaults to
+#'   something brighter than `grid_color`, since the axis line is a real
+#'   boundary (drawn thicker than the grid) and reads as too faint at the
+#'   grid's own brightness.
+#' @param continuous_palette Colors for continuous `colour`/`fill` scales,
+#'   as the two ends of a ramp. Defaults to a lightness ramp of
+#'   `mt_colors[1]` (or of `dark_mt_colors[1]` when `dark = TRUE`) - a
+#'   single-hue sequential scale in the palette's own teal, running light to
+#'   dark. `palette.colour.continuous` was previously unset, so a mapped
+#'   continuous variable fell through to ggplot2's factory blue gradient:
+#'   a hue that isn't in this palette at all, running *dark to light*, so
+#'   the largest values drew the faintest marks. Pass `NULL` to go back to
+#'   that default.
 #' @param dark Build a dark-mode-appropriate variant instead: transparent
-#'   plot/panel background (rather than the translucent white "paper" used
-#'   in light mode), light text/gridline/ink colors, and [dark_mt_colors12]
+#'   plot/panel background (rather than the opaque white "paper" used in
+#'   light mode), light text/gridline/ink colors, and [dark_mt_colors12]
 #'   in place of [mt_colors12] as the discrete palette and geom fill default.
 #'   Meant for rendering the same plot a second time for a dark-themed page,
-#'   alongside a `dark = FALSE` (default) render for the light-themed page -
-#'   `theme_mt()`'s output with `dark = FALSE` is unchanged by this argument
-#'   existing at all. `grid_color`/`axis_text_color`/`axis_line_color` still
-#'   default off of `dark` but can be overridden individually either way.
+#'   alongside a `dark = FALSE` (default) render for the light-themed page.
+#'   `grid_color`/`axis_text_color`/`axis_line_color`/`background`/
+#'   `continuous_palette` still default off of `dark` but can be overridden
+#'   individually either way.
 #'
 #' @return A `ggplot2` theme object.
 #' @seealso [use_theme_mt()]
@@ -211,29 +254,62 @@ theme_mt <- function(
   axis_title_family = base_family,
   axis_text_family = base_family,
   caption_family = base_family,
-  plot_title_size = base_size + 2,
+  # The type scale: the title is the only element above the metadata tier,
+  # and the metadata tier no longer outranks the tick labels it describes.
+  # See this function's Details for the full rationale.
+  plot_title_size = base_size + 4,
   axis_text_size = base_size,
-  strip_text_size = base_size + 2,
-  subtitle_size = base_size + 2,
-  caption_size = base_size - 3,
-  axis_title_size = base_size + 2,
+  strip_text_size = base_size + 1,
+  subtitle_size = base_size + 1,
+  # base_size - 3 is 7pt at the default base_size, which is under the
+  # readable floor once a journal typesets a 6-inch figure at 3.3 inches.
+  caption_size = base_size - 2,
+  axis_title_size = base_size + 1,
+  legend_text_size = base_size,
   dark = FALSE,
-  grid_color = if (dark) .dark_grid else "gray85",
-  show_axis_line = TRUE,
+  minor_grid = FALSE,
+  background = if (dark) "transparent" else "white",
+  grid_color = if (dark) .dark_grid else "gray87",
   axis_text_color = if (dark) .dark_axis_text else "gray30",
-  axis_line_color = if (dark) .dark_axis_line else grid_color
+  axis_line_color = if (dark) .dark_axis_line else grid_color,
+  continuous_palette = if (dark) {
+    c("#13414f", dark_mt_colors[1])
+  } else {
+    c("#b7d4e0", mt_colors[1])
+  }
 ) {
   ink <- if (dark) .dark_ink else "black"
-  paper <- if (dark) NA else alpha("white", .5)
+  paper <- if (dark || identical(background, "transparent")) NA else background
   subtitle_color <- if (dark) .dark_subtitle else "gray40"
-  caption_color <- if (dark) .dark_caption else "gray50"
+  # gray45 measures 4.74:1 against white, up from gray50's 3.94:1. The
+  # caption is the smallest text in the figure and the first thing to
+  # dissolve when a journal scales the figure down, so it gets the extra
+  # contrast rather than the least.
+  caption_color <- if (dark) .dark_caption else "gray45"
   geom_fill <- if (dark) dark_mt_colors[1] else mt_colors[1]
-  geom_paper <- if (dark) alpha("black", 0.3) else alpha("white", 0.3)
+  # `geom.paper` is what geom_label()'s fill resolves from in ggplot2 >= 4
+  # (GeomLabel$default_aes maps fill to `from_theme(fill %||% paper)`).
+  # This used to be alpha("white", 0.3) / alpha("black", 0.3), so every
+  # label drew a 30%-transparent background and the marks underneath showed
+  # through the text - an opaque background being the entire point of a
+  # label. Dark mode uses the same #151515 the rest of dark mode assumes;
+  # .dark_mode_overlay() in R/dual-render.R mirrors this and must stay in
+  # sync.
+  geom_paper <- if (dark) "#151515" else "white"
+  # A continuous colourbar has no edges against the page. Recessive enough
+  # not to compete with the ramp it frames, dark enough to survive print.
+  legend_frame_color <- if (dark) .dark_axis_line else "gray70"
   discrete_palette <- if (dark) dark_mt_colors12 else mt_colors12
   # A small gap between axis tick labels and the axis line/panel, in both
   # light and dark mode - text sitting flush against the line read as too
   # cramped.
   axis_text_gap <- 4
+
+  minor_line <- if (minor_grid) {
+    element_line(color = grid_color, linewidth = 0.1)
+  } else {
+    element_blank()
+  }
 
   theme_minimal(
     ink = ink,
@@ -243,21 +319,12 @@ theme_mt <- function(
     base_size = base_size
   ) %+replace%
     theme(
-      axis.line = element_line(
-        color = if (show_axis_line) axis_line_color else "transparent",
-        linewidth = 0.6
-      ),
+      axis.line = element_line(color = axis_line_color, linewidth = 0.6),
       axis.text.x = element_markdown(
         size = axis_text_size,
         color = axis_text_color,
         family = axis_text_family,
         margin = margin(t = axis_text_gap)
-      ),
-      axis.text.y = element_markdown(
-        size = axis_text_size,
-        color = axis_text_color,
-        family = axis_text_family,
-        margin = margin(r = axis_text_gap)
       ),
       # ggplot2 >= 4.0 resolves axis labels through position-suffixed
       # elements (e.g. axis.text.y.left) rather than axis.text.y/.x
@@ -276,6 +343,12 @@ theme_mt <- function(
         color = axis_text_color,
         family = axis_text_family,
         margin = margin(b = axis_text_gap)
+      ),
+      axis.text.y = element_markdown(
+        size = axis_text_size,
+        color = axis_text_color,
+        family = axis_text_family,
+        margin = margin(r = axis_text_gap)
       ),
       axis.text.y.left = element_markdown(
         size = axis_text_size,
@@ -324,37 +397,58 @@ theme_mt <- function(
       legend.background = element_blank(),
       legend.direction = "horizontal",
       legend.key = element_blank(),
-      legend.key.size = unit(0.7, "cm"),
-      legend.margin = margin(-base_size, 0, 0, 0, "pt"),
+      # 0.7cm keys were about twice the cap height of their own labels.
+      # These scale with the text they sit beside instead.
+      legend.key.size = unit(base_size * 1.1, "pt"),
+      legend.key.spacing.x = unit(base_size * 0.7, "pt"),
+      # legend.box.spacing is the argument that actually controls the gap
+      # between the panel and the legend; this used to be done with
+      # legend.margin = margin(-base_size, 0, 0, 0, "pt"), a negative
+      # margin standing in for it, which could clip the legend's own top.
+      legend.margin = margin(0, 0, 0, 0),
+      legend.box.spacing = unit(base_size * 0.6, "pt"),
       legend.position = "bottom",
-      legend.text = element_markdown(size = base_size + 2),
-      legend.title = element_markdown(size = base_size + 2),
-      panel.grid = element_line(color = grid_color, linewidth = 0.2),
+      legend.text = element_markdown(size = legend_text_size),
+      legend.title = element_markdown(size = legend_text_size),
+      # A colourbar drawn straight onto the page has no edges. Ticks off,
+      # hairline frame on - see legend_frame_color above.
+      legend.ticks = element_blank(),
+      legend.frame = element_rect(colour = legend_frame_color, linewidth = 0.3),
+      panel.grid = element_line(color = grid_color, linewidth = 0.25),
       panel.grid.major = element_line(
         color = grid_color,
-        linewidth = 0.2
+        linewidth = 0.25
       ),
       panel.grid.major.x = element_blank(),
-      panel.grid.minor = element_line(
-        color = grid_color,
-        linewidth = 0.1
-      ),
+      panel.grid.minor = minor_line,
       panel.grid.minor.x = element_blank(),
+      panel.grid.minor.y = minor_line,
       panel.spacing = unit(1, "lines"),
       panel.spacing.y = unit(1, "lines"),
-      plot.margin = margin(.1, .1, .1, .1, "lines"),
+      # This used to be margin(.1, .1, .1, .1, "lines") - about a point -
+      # so the hjust = 1 x-axis title and the last x tick label ran into
+      # the device edge, and a LaTeX caption sat flush against the
+      # figure's descenders. Biased right and top, where the clipping
+      # actually happens, and sized off base_size so it tracks the type.
+      plot.margin = margin(
+        t = base_size * 0.5,
+        r = base_size * 0.7,
+        b = base_size * 0.4,
+        l = base_size * 0.4,
+        unit = "pt"
+      ),
       plot.caption = element_markdown(
         hjust = 1,
         color = caption_color,
         size = caption_size,
-        margin = margin(t = 10),
+        margin = margin(t = base_size * 1.2),
         family = caption_family,
         face = "plain"
       ),
       plot.subtitle = element_markdown(
         hjust = 0,
         size = subtitle_size,
-        margin = margin(b = 10),
+        margin = margin(b = base_size * 1.2),
         color = subtitle_color,
         family = subtitle_family,
         face = "plain"
@@ -362,22 +456,38 @@ theme_mt <- function(
       plot.title = element_markdown(
         hjust = 0,
         size = plot_title_size,
-        margin = margin(b = 5),
+        margin = margin(b = base_size * 0.5),
         family = plot_title_family,
         face = "bold"
       ),
       plot.title.position = "plot",
       plot.caption.position = "plot",
+      # patchwork panel letters (plot_annotation(tag_levels = "A")) had no
+      # style here at all, so they fell back to ggplot2's grey
+      # 1.2 * base_size default and landed on top of the y-axis. Matching
+      # the title, and anchored to the plot rather than the panel, the way
+      # plot.title.position = "plot" already anchors the title.
+      plot.tag = element_markdown(
+        size = plot_title_size,
+        face = "bold",
+        color = ink,
+        family = plot_title_family,
+        hjust = 0
+      ),
+      plot.tag.position = "topleft",
       strip.background = element_blank(),
       strip.placement = "outside",
+      # These used to be margin() - zero on every side - so with
+      # strip.placement = "outside" a facet label sat flush against the
+      # panel it labels.
       strip.text.x = element_markdown(
-        margin = margin(),
+        margin = margin(t = base_size * 0.2, b = base_size * 0.5),
         size = strip_text_size,
         face = "plain",
         family = strip_text_family
       ),
       strip.text.y = element_markdown(
-        margin = margin(),
+        margin = margin(l = base_size * 0.5, r = base_size * 0.2),
         size = strip_text_size,
         face = "plain",
         family = strip_text_family,
@@ -389,21 +499,21 @@ theme_mt <- function(
       # reads bottom-to-top on both sides of a facet_grid()/switch = "y"
       # plot instead of upside-down on the left.
       strip.text.y.left = element_markdown(
-        margin = margin(),
+        margin = margin(l = base_size * 0.5, r = base_size * 0.2),
         size = strip_text_size,
         face = "plain",
         family = strip_text_family,
         angle = 90
       ),
-      # global geom-level "aura" (keeps your previous geom paper look),
-      # plus the geom `ink` the default colour of every unmapped geom is
-      # resolved from. `ink` has to be set on this element specifically:
-      # theme_minimal()'s own `ink` argument (passed above) only colors
-      # *text/line theme elements*, not geom defaults, so leaving it out
-      # left geom.ink at ggplot2's factory "black" even in dark mode -
-      # geom_point()/geom_line()/geom_text() then drew black-on-black on a
-      # dark page. Light mode's ink is "black" anyway, so setting it here
-      # explicitly is a no-op there.
+      # global geom-level "paper" (see geom_paper above), plus the geom
+      # `ink` the default colour of every unmapped geom is resolved from.
+      # `ink` has to be set on this element specifically: theme_minimal()'s
+      # own `ink` argument (passed above) only colors *text/line theme
+      # elements*, not geom defaults, so leaving it out left geom.ink at
+      # ggplot2's factory "black" even in dark mode - geom_point()/
+      # geom_line()/geom_text() then drew black-on-black on a dark page.
+      # Light mode's ink is "black" anyway, so setting it here explicitly
+      # is a no-op there.
       geom = element_geom(paper = geom_paper, ink = ink),
       geom.density = element_geom(
         fill = alpha(geom_fill, .5),
@@ -417,7 +527,9 @@ theme_mt <- function(
       geom.label = element_geom(family = base_family, fontsize = 5),
       # theme-level palettes (used by scales internally)
       palette.colour.discrete = discrete_palette,
-      palette.fill.discrete = discrete_palette
+      palette.fill.discrete = discrete_palette,
+      palette.colour.continuous = continuous_palette,
+      palette.fill.continuous = continuous_palette
     )
 }
 

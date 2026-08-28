@@ -3,7 +3,7 @@
     Code
       print(theme_mt())
     Output
-      <theme> List of 153
+      <theme> List of 155
        $ line                            : <ggplot2::element_line>
         ..@ colour       : chr "black"
         ..@ linewidth    : num 0.455
@@ -14,7 +14,7 @@
         ..@ arrow.fill   : chr "black"
         ..@ inherit.blank: logi TRUE
        $ rect                            : <ggplot2::element_rect>
-        ..@ fill         : chr "#FFFFFF80"
+        ..@ fill         : chr "white"
         ..@ colour       : chr "black"
         ..@ linewidth    : num 0.455
         ..@ linetype     : num 1
@@ -54,11 +54,11 @@
         ..@ colour       : chr "black"
         ..@ shape        : num 19
         ..@ size         : num 1.36
-        ..@ fill         : chr "#FFFFFF80"
+        ..@ fill         : chr "white"
         ..@ stroke       : num 0.455
         ..@ inherit.blank: logi TRUE
        $ polygon                         : <ggplot2::element_polygon>
-        ..@ fill         : chr "#FFFFFF80"
+        ..@ fill         : chr "white"
         ..@ colour       : chr "black"
         ..@ linewidth    : num 0.455
         ..@ linetype     : num 1
@@ -66,7 +66,7 @@
         ..@ inherit.blank: logi TRUE
        $ geom                            : <ggplot2::element_geom>
         ..@ ink        : chr "black"
-        ..@ paper      : chr "#FFFFFF4C"
+        ..@ paper      : chr "white"
         ..@ accent     : NULL
         ..@ linewidth  : NULL
         ..@ borderwidth: NULL
@@ -86,7 +86,7 @@
        $ axis.title.x                    :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : chr "plain"
-        ..$ size          : num 12
+        ..$ size          : num 11
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -110,7 +110,7 @@
        $ axis.title.x.top                :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : chr "plain"
-        ..$ size          : num 12
+        ..$ size          : num 11
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -135,7 +135,7 @@
        $ axis.title.y                    :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : chr "plain"
-        ..$ size          : num 12
+        ..$ size          : num 11
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -160,7 +160,7 @@
        $ axis.title.y.right              :List of 22
         ..$ family        : chr "Roboto Condensed"
         ..$ face          : chr "plain"
-        ..$ size          : num 12
+        ..$ size          : num 11
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -187,7 +187,7 @@
         ..@ italic       : chr NA
         ..@ fontweight   : num NA
         ..@ fontwidth    : num NA
-        ..@ colour       : chr "#4D4D4DD9"
+        ..@ colour       : chr "#4D4D4DFF"
         ..@ size         : 'rel' num 0.8
         ..@ hjust        : NULL
         ..@ vjust        : NULL
@@ -390,13 +390,13 @@
        $ axis.minor.ticks.length.theta   : NULL
        $ axis.minor.ticks.length.r       : NULL
        $ axis.line                       : <ggplot2::element_line>
-        ..@ colour       : chr "gray85"
+        ..@ colour       : chr "gray87"
         ..@ linewidth    : num 0.6
         ..@ linetype     : NULL
         ..@ lineend      : NULL
         ..@ linejoin     : NULL
         ..@ arrow        : logi FALSE
-        ..@ arrow.fill   : chr "gray85"
+        ..@ arrow.fill   : chr "gray87"
         ..@ inherit.blank: logi FALSE
        $ axis.line.x                     : NULL
        $ axis.line.x.top                 : NULL
@@ -407,27 +407,34 @@
        $ axis.line.theta                 : NULL
        $ axis.line.r                     : NULL
        $ legend.background               : <ggplot2::element_blank>
-       $ legend.margin                   : <ggplot2::margin> num [1:4] -10 0 0 0
+       $ legend.margin                   : <ggplot2::margin> num [1:4] 0 0 0 0
        $ legend.spacing                  : 'rel' num 2
        $ legend.spacing.x                : NULL
        $ legend.spacing.y                : NULL
        $ legend.key                      : <ggplot2::element_blank>
-       $ legend.key.size                 : 'simpleUnit' num 0.7cm
-        ..- attr(*, "unit")= int 1
+       $ legend.key.size                 : 'simpleUnit' num 11points
+        ..- attr(*, "unit")= int 8
        $ legend.key.height               : NULL
        $ legend.key.width                : NULL
        $ legend.key.spacing              : NULL
-       $ legend.key.spacing.x            : NULL
+       $ legend.key.spacing.x            : 'simpleUnit' num 7points
+        ..- attr(*, "unit")= int 8
        $ legend.key.spacing.y            : NULL
        $ legend.key.justification        : NULL
-       $ legend.frame                    : NULL
-       $ legend.ticks                    : NULL
+       $ legend.frame                    : <ggplot2::element_rect>
+        ..@ fill         : NULL
+        ..@ colour       : chr "gray70"
+        ..@ linewidth    : num 0.3
+        ..@ linetype     : NULL
+        ..@ linejoin     : NULL
+        ..@ inherit.blank: logi FALSE
+       $ legend.ticks                    : <ggplot2::element_blank>
        $ legend.ticks.length             : 'rel' num 0.2
        $ legend.axis.line                : NULL
        $ legend.text                     :List of 22
         ..$ family        : NULL
         ..$ face          : NULL
-        ..$ size          : num 12
+        ..$ size          : num 10
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL
@@ -452,7 +459,7 @@
        $ legend.title                    :List of 22
         ..$ family        : NULL
         ..$ face          : NULL
-        ..$ size          : num 12
+        ..$ size          : num 10
         ..$ colour        : NULL
         ..$ fill          : NULL
         ..$ box.colour    : NULL

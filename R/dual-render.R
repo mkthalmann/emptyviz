@@ -101,6 +101,10 @@
     axis.line = element_line(colour = .dark_axis_line),
     legend.text = element_markdown(colour = .dark_axis_text),
     legend.title = element_markdown(colour = .dark_axis_text),
+    # theme_mt(dark = TRUE) frames a continuous colourbar in
+    # .dark_axis_line; without this the light render's gray70 frame came
+    # through onto the dark page.
+    legend.frame = element_rect(colour = .dark_axis_line),
     strip.text.x = strip_text(),
     strip.text.y = strip_text(),
     strip.text.y.left = strip_text(),
@@ -116,14 +120,23 @@
     # it they inherit ggplot2's factory "black" default and vanish against
     # the dark background. Mirrors the same `ink` on theme_mt(dark = TRUE)'s
     # own `geom` element; the two must stay in sync.
-    geom = element_geom(paper = alpha("black", 0.3), ink = .dark_ink),
+    # `paper` is the #151515 page background this whole dark mode is tuned
+    # for, matching theme_mt(dark = TRUE)'s own geom_paper. It used to be
+    # alpha("black", 0.3), which made every dual-rendered geom_label()
+    # 30%-transparent, so the marks underneath showed through the text.
+    geom = element_geom(paper = "#151515", ink = .dark_ink),
     geom.density = element_geom(fill = alpha(dark_mt_colors[1], .5)),
     geom.bar = element_geom(fill = dark_mt_colors[1]),
     geom.area = element_geom(fill = dark_mt_colors[1]),
     geom.col = element_geom(fill = dark_mt_colors[1]),
     geom.ribbon = element_geom(fill = dark_mt_colors[1]),
     palette.colour.discrete = dark_mt_colors12,
-    palette.fill.discrete = dark_mt_colors12
+    palette.fill.discrete = dark_mt_colors12,
+    # Mirrors theme_mt(dark = TRUE)'s continuous_palette default. Without
+    # it, a dual-rendered continuous scale kept the light render's teal
+    # ramp, whose light end is tuned for white paper.
+    palette.colour.continuous = c("#13414f", dark_mt_colors[1]),
+    palette.fill.continuous = c("#13414f", dark_mt_colors[1])
   )))
 }
 

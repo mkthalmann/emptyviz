@@ -94,10 +94,10 @@ plot builders.
 ## Dark mode
 
 `theme_mt(dark = TRUE)` is a dark-background variant - transparent
-plot/panel background, light text/gridline colors, and `dark_mt_colors12`
-in place of `mt_colors12` as the discrete palette - for a plot rendered
-directly against a dark page. `theme_mt()`’s regular (`dark = FALSE`)
-output is unaffected by this argument existing.
+plot/panel background, light text/gridline colors, and
+`dark_mt_colors12` in place of `mt_colors12` as the discrete palette -
+for a plot rendered directly against a dark page. `theme_mt()`’s regular
+(`dark = FALSE`) output is unaffected by this argument existing.
 
 In a Quarto document, `use_theme_mt()` also registers automatic dual
 light/dark figure rendering: set the `dual_render` chunk option to

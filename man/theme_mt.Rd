@@ -13,17 +13,25 @@ theme_mt(
   axis_title_family = base_family,
   axis_text_family = base_family,
   caption_family = base_family,
-  plot_title_size = base_size + 2,
+  plot_title_size = base_size + 4,
   axis_text_size = base_size,
-  strip_text_size = base_size + 2,
-  subtitle_size = base_size + 2,
-  caption_size = base_size - 3,
-  axis_title_size = base_size + 2,
+  strip_text_size = base_size + 1,
+  subtitle_size = base_size + 1,
+  caption_size = base_size - 2,
+  axis_title_size = base_size + 1,
+  legend_text_size = base_size,
   dark = FALSE,
-  grid_color = if (dark) .dark_grid else "gray85",
-  show_axis_line = TRUE,
+  minor_grid = FALSE,
+  background = if (dark) "transparent" else "white",
+  grid_color = if (dark) .dark_grid else "gray87",
   axis_text_color = if (dark) .dark_axis_text else "gray30",
-  axis_line_color = if (dark) .dark_axis_line else grid_color
+  axis_line_color = if (dark) .dark_axis_line else grid_color,
+  continuous_palette = if (dark) {
+     c("#13414f", dark_mt_colors[1])
+ } else {
+    
+    c("#b7d4e0", mt_colors[1])
+ }
 )
 }
 \arguments{
@@ -36,34 +44,55 @@ the session default look the same - they used to disagree by nearly 2x
 \item{base_family, plot_title_family, subtitle_family, strip_text_family, axis_title_family, axis_text_family, caption_family}{Font families for each text element; all default to \code{base_family}. See
 Details for the \code{"Roboto Condensed"} default's system requirement.}
 
-\item{plot_title_size, axis_text_size, strip_text_size, subtitle_size, caption_size, axis_title_size}{Font sizes for each text element, all derived from \code{base_size} by
-default.}
+\item{plot_title_size, axis_text_size, strip_text_size, subtitle_size, caption_size, axis_title_size, legend_text_size}{Font sizes for each text element, all derived from \code{base_size} by
+default. See Details for how the scale is laid out. \code{legend_text_size}
+covers both \code{legend.text} and \code{legend.title}, which used to be pinned
+at \code{base_size + 2} in the function body with no way to change them.}
 
 \item{dark}{Build a dark-mode-appropriate variant instead: transparent
-plot/panel background (rather than the translucent white "paper" used
-in light mode), light text/gridline/ink colors, and \link{dark_mt_colors12}
+plot/panel background (rather than the opaque white "paper" used in
+light mode), light text/gridline/ink colors, and \link{dark_mt_colors12}
 in place of \link{mt_colors12} as the discrete palette and geom fill default.
 Meant for rendering the same plot a second time for a dark-themed page,
-alongside a \code{dark = FALSE} (default) render for the light-themed page -
-\code{theme_mt()}'s output with \code{dark = FALSE} is unchanged by this argument
-existing at all. \code{grid_color}/\code{axis_text_color}/\code{axis_line_color} still
-default off of \code{dark} but can be overridden individually either way.}
+alongside a \code{dark = FALSE} (default) render for the light-themed page.
+\code{grid_color}/\code{axis_text_color}/\code{axis_line_color}/\code{background}/
+\code{continuous_palette} still default off of \code{dark} but can be overridden
+individually either way.}
 
-\item{grid_color}{Color of the panel grid lines (and the axis line, when
-\code{show_axis_line} is \code{TRUE}). Defaults to a near-invisible light gray, or
-a near-invisible dark gray when \code{dark = TRUE}.}
+\item{minor_grid}{Whether to draw minor gridlines (on the major axis
+only, matching the major grid). \code{FALSE} by default; \code{TRUE} restores
+the previous behaviour. See Details.}
 
-\item{show_axis_line}{Whether to draw the axis line at all (\code{TRUE}) or
-make it transparent (\code{FALSE}).}
+\item{background}{Fill for \code{plot.background} in light mode: \code{"white"}
+(the default), \code{"transparent"}, or any color. This used to be
+\code{alpha("white", .5)}, which is invisible on a white page and a milky
+half-wash on any other - so a figure dropped onto a tinted slide or a
+shaded box picked up a haze that was neither the page's color nor the
+figure's. \code{dark = TRUE} is always transparent, whatever this is set to,
+for the reason given above.}
+
+\item{grid_color}{Color of the panel grid lines, and of the axis line
+unless \code{axis_line_color} says otherwise. Defaults to a near-invisible
+light gray, or a near-invisible dark gray when \code{dark = TRUE}.}
 
 \item{axis_text_color}{Color of the axis tick labels. Defaults to a dark
 gray, or a light gray when \code{dark = TRUE}.}
 
-\item{axis_line_color}{Color of the axis line itself (only drawn when
-\code{show_axis_line} is \code{TRUE}). Defaults to \code{grid_color} in light mode
-(as before); in dark mode it defaults to something brighter than
-\code{grid_color}, since the axis line is a real boundary (drawn thicker
-than the grid) and reads as too faint at the grid's own brightness.}
+\item{axis_line_color}{Color of the axis line, which is always drawn.
+Defaults to \code{grid_color} in light mode; in dark mode it defaults to
+something brighter than \code{grid_color}, since the axis line is a real
+boundary (drawn thicker than the grid) and reads as too faint at the
+grid's own brightness.}
+
+\item{continuous_palette}{Colors for continuous \code{colour}/\code{fill} scales,
+as the two ends of a ramp. Defaults to a lightness ramp of
+\code{mt_colors[1]} (or of \code{dark_mt_colors[1]} when \code{dark = TRUE}) - a
+single-hue sequential scale in the palette's own teal, running light to
+dark. \code{palette.colour.continuous} was previously unset, so a mapped
+continuous variable fell through to ggplot2's factory blue gradient:
+a hue that isn't in this palette at all, running \emph{dark to light}, so
+the largest values drew the faintest marks. Pass \code{NULL} to go back to
+that default.}
 }
 \value{
 A \code{ggplot2} theme object.
@@ -71,15 +100,36 @@ A \code{ggplot2} theme object.
 \description{
 Extends \code{\link[ggplot2:theme_minimal]{ggplot2::theme_minimal()}} with markdown/HTML-aware text (via
 \code{\link[ggtext:element_markdown]{ggtext::element_markdown()}}) on every text element, a bottom legend, and
-the package's discrete color palette (\link{mt_colors12}) wired into the theme
-itself. Also sets \verb{geom.*} defaults (a translucent global "paper" aura,
-plus fill defaults for \code{geom_bar()}/\code{geom_area()}/\code{geom_col()}/
-\code{geom_ribbon()}/\code{geom_density()}) so plots look consistent without
-repeating \code{fill = ...} on every layer.
+the package's color palettes (\link{mt_colors12} for discrete scales, a
+lightness ramp of \code{mt_colors[1]} for continuous ones) wired into the
+theme itself. Also sets \verb{geom.*} defaults (an opaque "paper" for
+label backgrounds, plus fill defaults for \code{geom_bar()}/\code{geom_area()}/
+\code{geom_col()}/\code{geom_ribbon()}/\code{geom_density()}) so plots look consistent
+without repeating \code{fill = ...} on every layer.
 }
 \details{
 Call \code{\link[=use_theme_mt]{use_theme_mt()}} to make this the session's active theme -
 \code{library(emptyviz)} does not do this automatically.
+
+The type scale has exactly one element above the metadata tier. The
+title, subtitle, strip text, axis titles and legend text used to share
+\code{base_size + 2}, so \code{face = "bold"} was the only thing distinguishing a
+plot title from an axis label, and the axis titles outranked the tick
+labels they describe. The title is now \code{base_size + 4} and everything
+else in that tier is \code{base_size + 1}, above \code{base_size} tick labels and
+a \code{base_size - 2} caption. Every size remains an argument.
+
+Spacing is sized off \code{base_size} rather than fixed: \code{plot.margin} used
+to be \code{0.1} lines (about a point), which - with the \code{hjust = 1} axis
+titles this theme uses - clipped the x-axis title against the device
+edge in most figures, and left a LaTeX caption sitting flush against the
+figure's descenders. Legend keys scale with the legend text instead of
+being pinned at \verb{0.7cm}, and the gap between panel and legend is set
+through \code{legend.box.spacing} rather than a negative \code{legend.margin}.
+
+Minor gridlines are off by default (\code{minor_grid}): at \code{linewidth = 0.1}
+they are about 0.1 mm, which is where print workflows stop guaranteeing
+a line, and they double the grid's ink without adding information.
 
 \code{dark = TRUE} is tuned for a page background of about \verb{#151515}. It sets
 \code{paper = NA} and a transparent \code{plot.background}, deliberately - the
@@ -93,6 +143,9 @@ theme's, and every contrast decision in dark mode is made against
 near-invisible grid could invert against a light-ish "dark" background.
 If your site's dark background differs much from \verb{#151515}, either match
 it or pass \code{grid_color}/\code{axis_text_color}/\code{axis_line_color} explicitly.
+\code{geom.paper} follows the same assumption: it is that same \verb{#151515}, so
+a \code{geom_label()} on a dark page reads as opaque rather than as a
+30\%-transparent hole.
 
 The discrete palette separates categories by \strong{hue}, with very little
 lightness difference between them: every pair in \link{mt_colors5} falls below
