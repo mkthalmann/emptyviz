@@ -4,13 +4,13 @@ Extends
 [`ggplot2::theme_minimal()`](https://ggplot2.tidyverse.org/reference/ggtheme.html)
 with markdown/HTML-aware text (via
 [`ggtext::element_markdown()`](https://wilkelab.org/ggtext/reference/element_markdown.html))
-on every text element, a bottom legend, and the package's discrete color
-palette
-([mt_colors12](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md))
-wired into the theme itself. Also sets `geom.*` defaults (a translucent
-global "paper" aura, plus fill defaults for
-[`geom_bar()`](https://ggplot2.tidyverse.org/reference/geom_bar.html)/[`geom_area()`](https://ggplot2.tidyverse.org/reference/geom_ribbon.html)/[`geom_col()`](https://ggplot2.tidyverse.org/reference/geom_bar.html)/
-[`geom_ribbon()`](https://ggplot2.tidyverse.org/reference/geom_ribbon.html)/[`geom_density()`](https://ggplot2.tidyverse.org/reference/geom_density.html))
+on every text element, a bottom legend, and the package's color palettes
+([mt_colors12](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
+for discrete scales, a lightness ramp of `mt_colors[1]` for continuous
+ones) wired into the theme itself. Also sets `geom.*` defaults (an
+opaque "paper" for label backgrounds, plus fill defaults for
+[`geom_bar()`](https://ggplot2.tidyverse.org/reference/geom_bar.html)/[`geom_area()`](https://ggplot2.tidyverse.org/reference/geom_ribbon.html)/
+[`geom_col()`](https://ggplot2.tidyverse.org/reference/geom_bar.html)/[`geom_ribbon()`](https://ggplot2.tidyverse.org/reference/geom_ribbon.html)/[`geom_density()`](https://ggplot2.tidyverse.org/reference/geom_density.html))
 so plots look consistent without repeating `fill = ...` on every layer.
 
 ## Usage
@@ -25,17 +25,25 @@ theme_mt(
   axis_title_family = base_family,
   axis_text_family = base_family,
   caption_family = base_family,
-  plot_title_size = base_size + 2,
+  plot_title_size = base_size + 4,
   axis_text_size = base_size,
-  strip_text_size = base_size + 2,
-  subtitle_size = base_size + 2,
-  caption_size = base_size - 3,
-  axis_title_size = base_size + 2,
+  strip_text_size = base_size + 1,
+  subtitle_size = base_size + 1,
+  caption_size = base_size - 2,
+  axis_title_size = base_size + 1,
+  legend_text_size = base_size,
   dark = FALSE,
-  grid_color = if (dark) .dark_grid else "gray85",
-  show_axis_line = TRUE,
+  minor_grid = FALSE,
+  background = if (dark) "transparent" else "white",
+  grid_color = if (dark) .dark_grid else "gray87",
   axis_text_color = if (dark) .dark_axis_text else "gray30",
-  axis_line_color = if (dark) .dark_axis_line else grid_color
+  axis_line_color = if (dark) .dark_axis_line else grid_color,
+  continuous_palette = if (dark) {
+     c("#13414f", dark_mt_colors[1])
+ } else {
+    
+    c("#b7d4e0", mt_colors[1])
+ }
 )
 ```
 
@@ -58,37 +66,49 @@ theme_mt(
   Details for the `"Roboto Condensed"` default's system requirement.
 
 - plot_title_size, axis_text_size, strip_text_size, subtitle_size,
-  caption_size, axis_title_size:
+  caption_size, axis_title_size, legend_text_size:
 
   Font sizes for each text element, all derived from `base_size` by
-  default.
+  default. See Details for how the scale is laid out. `legend_text_size`
+  covers both `legend.text` and `legend.title`, which used to be pinned
+  at `base_size + 2` in the function body with no way to change them.
 
 - dark:
 
   Build a dark-mode-appropriate variant instead: transparent plot/panel
-  background (rather than the translucent white "paper" used in light
-  mode), light text/gridline/ink colors, and
+  background (rather than the opaque white "paper" used in light mode),
+  light text/gridline/ink colors, and
   [dark_mt_colors12](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
   in place of
   [mt_colors12](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
   as the discrete palette and geom fill default. Meant for rendering the
   same plot a second time for a dark-themed page, alongside a
-  `dark = FALSE` (default) render for the light-themed page -
-  `theme_mt()`'s output with `dark = FALSE` is unchanged by this
-  argument existing at all.
-  `grid_color`/`axis_text_color`/`axis_line_color` still default off of
-  `dark` but can be overridden individually either way.
+  `dark = FALSE` (default) render for the light-themed page.
+  `grid_color`/`axis_text_color`/`axis_line_color`/`background`/
+  `continuous_palette` still default off of `dark` but can be overridden
+  individually either way.
+
+- minor_grid:
+
+  Whether to draw minor gridlines (on the major axis only, matching the
+  major grid). `FALSE` by default; `TRUE` restores the previous
+  behaviour. See Details.
+
+- background:
+
+  Fill for `plot.background` in light mode: `"white"` (the default),
+  `"transparent"`, or any color. This used to be `alpha("white", .5)`,
+  which is invisible on a white page and a milky half-wash on any
+  other - so a figure dropped onto a tinted slide or a shaded box picked
+  up a haze that was neither the page's color nor the figure's.
+  `dark = TRUE` is always transparent, whatever this is set to, for the
+  reason given above.
 
 - grid_color:
 
-  Color of the panel grid lines (and the axis line, when
-  `show_axis_line` is `TRUE`). Defaults to a near-invisible light gray,
-  or a near-invisible dark gray when `dark = TRUE`.
-
-- show_axis_line:
-
-  Whether to draw the axis line at all (`TRUE`) or make it transparent
-  (`FALSE`).
+  Color of the panel grid lines, and of the axis line unless
+  `axis_line_color` says otherwise. Defaults to a near-invisible light
+  gray, or a near-invisible dark gray when `dark = TRUE`.
 
 - axis_text_color:
 
@@ -97,11 +117,23 @@ theme_mt(
 
 - axis_line_color:
 
-  Color of the axis line itself (only drawn when `show_axis_line` is
-  `TRUE`). Defaults to `grid_color` in light mode (as before); in dark
-  mode it defaults to something brighter than `grid_color`, since the
-  axis line is a real boundary (drawn thicker than the grid) and reads
-  as too faint at the grid's own brightness.
+  Color of the axis line, which is always drawn. Defaults to
+  `grid_color` in light mode; in dark mode it defaults to something
+  brighter than `grid_color`, since the axis line is a real boundary
+  (drawn thicker than the grid) and reads as too faint at the grid's own
+  brightness.
+
+- continuous_palette:
+
+  Colors for continuous `colour`/`fill` scales, as the two ends of a
+  ramp. Defaults to a lightness ramp of `mt_colors[1]` (or of
+  `dark_mt_colors[1]` when `dark = TRUE`) - a single-hue sequential
+  scale in the palette's own teal, running light to dark.
+  `palette.colour.continuous` was previously unset, so a mapped
+  continuous variable fell through to ggplot2's factory blue gradient: a
+  hue that isn't in this palette at all, running *dark to light*, so the
+  largest values drew the faintest marks. Pass `NULL` to go back to that
+  default.
 
 ## Value
 
@@ -115,6 +147,26 @@ to make this the session's active theme -
 [`library(emptyviz)`](https://github.com/mkthalmann/emptyviz) does not
 do this automatically.
 
+The type scale has exactly one element above the metadata tier. The
+title, subtitle, strip text, axis titles and legend text used to share
+`base_size + 2`, so `face = "bold"` was the only thing distinguishing a
+plot title from an axis label, and the axis titles outranked the tick
+labels they describe. The title is now `base_size + 4` and everything
+else in that tier is `base_size + 1`, above `base_size` tick labels and
+a `base_size - 2` caption. Every size remains an argument.
+
+Spacing is sized off `base_size` rather than fixed: `plot.margin` used
+to be `0.1` lines (about a point), which - with the `hjust = 1` axis
+titles this theme uses - clipped the x-axis title against the device
+edge in most figures, and left a LaTeX caption sitting flush against the
+figure's descenders. Legend keys scale with the legend text instead of
+being pinned at `0.7cm`, and the gap between panel and legend is set
+through `legend.box.spacing` rather than a negative `legend.margin`.
+
+Minor gridlines are off by default (`minor_grid`): at `linewidth = 0.1`
+they are about 0.1 mm, which is where print workflows stop guaranteeing
+a line, and they double the grid's ink without adding information.
+
 `dark = TRUE` is tuned for a page background of about `#151515`. It sets
 `paper = NA` and a transparent `plot.background`, deliberately - the
 figure then sits directly on whatever the host page uses, which is what
@@ -127,6 +179,10 @@ theme's, and every contrast decision in dark mode is made against
 near-invisible grid could invert against a light-ish "dark" background.
 If your site's dark background differs much from `#151515`, either match
 it or pass `grid_color`/`axis_text_color`/`axis_line_color` explicitly.
+`geom.paper` follows the same assumption: it is that same `#151515`, so
+a
+[`geom_label()`](https://ggplot2.tidyverse.org/reference/geom_text.html)
+on a dark page reads as opaque rather than as a 30%-transparent hole.
 
 The discrete palette separates categories by **hue**, with very little
 lightness difference between them: every pair in
