@@ -183,6 +183,23 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #' for device-independent rendering), or pass a `base_family` you know is
 #' available, if reproducing a plot's exact appearance matters.
 #'
+#' @section Hiding elements:
+#' Native elements (lines, rectangles, plain text) are hidden the usual
+#' way: `theme(panel.grid = element_blank())` also hides
+#' `panel.grid.major.y`, as under ggplot2's built-in themes. The markdown
+#' text elements are an exception. ggplot2 4 draws axis labels through the
+#' position-specific children (`axis.text.y.left`, `axis.text.x.bottom`,
+#' ...), which this theme has to set explicitly with
+#' [ggtext::element_markdown()], and ggplot2 ignores `inherit.blank` for
+#' such elements. `theme(axis.text.y = element_blank())` therefore leaves
+#' the y tick labels drawn. Use [blank_elements()] instead, which blanks an
+#' element together with all of its children, or blank the
+#' position-specific child directly. The same applies to `strip.text` and
+#' its children, to the parent `axis.title`, and to the secondary-axis
+#' titles (`axis.title.x.top`, `axis.title.y.right`). Blanking
+#' `axis.title.x`, `axis.title.y`, `legend.text` or `legend.title` directly
+#' works as usual.
+#'
 #' @param base_size Base font size, in points. Every other size argument
 #'   derives from it by default. [use_theme_mt()] passes the same default
 #'   through, so a plot themed directly with `theme_mt()` and one themed via
@@ -236,7 +253,7 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #'   individually either way.
 #'
 #' @return A `ggplot2` theme object.
-#' @seealso [use_theme_mt()]
+#' @seealso [use_theme_mt()], [blank_elements()]
 #' @examples
 #' library(ggplot2)
 #' # a system-available family sidesteps the "Roboto Condensed" requirement
@@ -529,7 +546,13 @@ theme_mt <- function(
       palette.colour.discrete = discrete_palette,
       palette.fill.discrete = discrete_palette,
       palette.colour.continuous = continuous_palette,
-      palette.fill.continuous = continuous_palette
+      palette.fill.continuous = continuous_palette,
+      # Without this every element above keeps the constructor default
+      # inherit.blank = FALSE, so e.g. `theme(panel.grid = element_blank())`
+      # could not reach the panel.grid.major set here. ggplot2's own themes
+      # are built the same way. It does not help the element_markdown
+      # children; see the "Hiding elements" section of the docs.
+      complete = TRUE
     )
 }
 

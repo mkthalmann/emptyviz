@@ -397,3 +397,41 @@ test_that("every prefix of mt_colors12 is at least as separated as the full pale
   for (n in 6:12) expect_gte(closest_pair(mt_colors12[seq_len(n)]), full)
   expect_equal(closest_pair(mt_colors12[1:6]), 0.167, tolerance = 0.01)
 })
+
+test_that("blanking a native parent element hides its children", {
+  # theme_mt() used to build its overrides without `complete = TRUE`, so its
+  # elements kept inherit.blank = FALSE and a blank panel.grid could not
+  # reach the panel.grid.major set there.
+  t <- theme_mt(base_family = "") +
+    theme(panel.grid = element_blank(), axis.line = element_blank())
+  expect_s3_class(calc_element("panel.grid.major.y", t), "element_blank")
+  expect_s3_class(calc_element("axis.line.x.bottom", t), "element_blank")
+})
+
+test_that("blank_elements() hides markdown children that a blank parent cannot reach", {
+  t <- theme_mt(base_family = "") + blank_elements("axis.text.y", "strip.text")
+  for (el in c("axis.text.y.left", "axis.text.y.right", "strip.text.x", "strip.text.y.left")) {
+    expect_s3_class(calc_element(el, t), "element_blank")
+  }
+  # siblings are untouched
+  expect_s3_class(calc_element("axis.text.x.bottom", t), "element_markdown")
+
+  # still renders
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point() + t
+  expect_no_error(ggplotGrob(p))
+})
+
+test_that("blank_elements() rejects names it cannot blank", {
+  expect_error(blank_elements(), "one or more element names")
+  expect_error(blank_elements("axis.txt"), "`axis.txt`")
+  expect_error(blank_elements("legend.position"), "`legend.position`")
+  expect_error(blank_elements("geom"), "`geom`")
+})
+
+test_that("without blanking, the position-specific axis text stays markdown", {
+  # Regression guard for complete = TRUE: the explicit children must keep
+  # the element_markdown class, or markdown in tick labels is drawn as text.
+  t <- theme_mt(base_family = "")
+  expect_s3_class(calc_element("axis.text.y.left", t), "element_markdown")
+  expect_s3_class(calc_element("axis.text.x.bottom", t), "element_markdown")
+})

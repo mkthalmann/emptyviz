@@ -190,18 +190,6 @@ knit_print_ggplot_dual <- function(x, options, ...) {
   ggsave(light_path, x, width = width, height = height, dpi = dpi, bg = "transparent")
   ggsave(dark_path, x_dark, width = width, height = height, dpi = dpi, bg = "transparent")
 
-  # Raw <img> tags, not markdown `![]()` - confirmed by direct comparison that
-  # a chunk with a `fig-` prefixed label + fig-cap gets its output re-parsed
-  # as markdown by Quarto's crossref/figure filter (so `![]()` there becomes
-  # a real <img>), but an ordinary chunk (any other label, no fig-cap - like
-  # this book's plot-crit/plot-control/plot-subsamples chunks) does not: the
-  # `<div>...![]()...</div>` this used to emit came through completely
-  # unprocessed, showing the literal "![](path)" text on the page instead of
-  # the image. Raw HTML <img> tags render correctly either way, sidestepping
-  # that dependency on which processing path a given chunk happens to hit.
-  # class + width replicate what Quarto's own figure output uses (confirmed
-  # by comparing against a plain out.width-driven image), since bypassing
-  # markdown parsing means those aren't added automatically anymore.
   # Hand-built <img> tags mean nothing adds the accessibility attributes
   # knitr/Quarto would normally add for us, so `fig.alt`/`fig.cap` have to be
   # read out of the chunk options explicitly. They used to be ignored
@@ -264,8 +252,15 @@ knit_print_ggplot_dual <- function(x, options, ...) {
   # colour scheme) and duplicate element ids are invalid HTML. Quarto's
   # light/dark CSS hides the inactive half with display:none, so only one
   # copy of the caption reaches the accessibility tree at a time.
+  #
+  # A chunk with a `fig-` label is wrapped by Quarto's crossref filter in its
+  # own numbered <figure> with the fig-cap as caption, so adding ours as well
+  # would show the caption twice. Other chunks still need ours, because
+  # Quarto does not caption raw asis output for them. `alt` is unaffected:
+  # the <img> tags need it either way.
+  quarto_captions <- startsWith(label, "fig-")
   fig_wrap <- function(inner) {
-    if (!nzchar(caption)) {
+    if (!nzchar(caption) || quarto_captions) {
       return(inner)
     }
     paste0(

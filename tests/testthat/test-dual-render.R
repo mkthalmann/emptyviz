@@ -218,19 +218,28 @@ test_that("knit_print_ggplot_dual() honours fig.alt, falling back to fig.cap, an
 
   # fig.cap fills in for a missing fig.alt, matching knitr's own default for
   # an ordinary chunk, and is also rendered as a visible caption - which
-  # used to vanish silently.
-  with_cap <- render(label = "fig-cap", fig.cap = "Weight versus fuel economy.")
+  # used to vanish silently. The label has no `fig-` prefix, so emptyviz
+  # still owns the caption.
+  with_cap <- render(label = "plot-cap", fig.cap = "Weight versus fuel economy.")
   expect_match(with_cap, 'alt="Weight versus fuel economy."', fixed = TRUE)
   expect_match(with_cap, "<figcaption", fixed = TRUE)
   expect_match(with_cap, ">Weight versus fuel economy.</figcaption>", fixed = TRUE)
 
   # fig.alt wins over fig.cap when both are given
-  both <- render(label = "fig-both", fig.alt = "Alt text.", fig.cap = "Caption text.")
+  both <- render(label = "plot-both", fig.alt = "Alt text.", fig.cap = "Caption text.")
   expect_match(both, 'alt="Alt text."', fixed = TRUE)
   expect_match(both, ">Caption text.</figcaption>", fixed = TRUE)
 
   # no caption means no <figure> wrapper at all
   expect_no_match(with_alt, "<figure", fixed = TRUE)
+
+  # A `fig-` label means Quarto's crossref filter adds its own numbered
+  # caption; emitting ours too used to show the caption twice. The alt text
+  # must survive, though.
+  quarto_cap <- render(label = "fig-quarto", fig.cap = "Weight versus fuel economy.")
+  expect_match(quarto_cap, 'alt="Weight versus fuel economy."', fixed = TRUE)
+  expect_no_match(quarto_cap, "<figcaption", fixed = TRUE)
+  expect_no_match(quarto_cap, "<figure", fixed = TRUE)
 
   # and the alt attribute is present even when nothing was supplied
   bare <- suppressWarnings(render(label = "fig-bare"))
@@ -276,7 +285,7 @@ test_that("knit_print_ggplot_dual() escapes HTML-special characters in every int
   out <- unclass(emptyviz:::knit_print_ggplot_dual(
     p,
     options = list(
-      dual_render = TRUE, label = "fig-esc", fig.path = fig_path,
+      dual_render = TRUE, label = "plot-esc", fig.path = fig_path,
       fig.width = 4, fig.height = 3, dpi = 72,
       fig.alt = 'Marks "scare quotes" & <angle brackets>.',
       fig.cap = 'A & B "C"'

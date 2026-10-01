@@ -177,6 +177,25 @@ with no warning. Install it (e.g. via a system font manager, or
 for device-independent rendering), or pass a \code{base_family} you know is
 available, if reproducing a plot's exact appearance matters.
 }
+\section{Hiding elements}{
+
+Native elements (lines, rectangles, plain text) are hidden the usual
+way: \code{theme(panel.grid = element_blank())} also hides
+\code{panel.grid.major.y}, as under ggplot2's built-in themes. The markdown
+text elements are an exception. ggplot2 4 draws axis labels through the
+position-specific children (\code{axis.text.y.left}, \code{axis.text.x.bottom},
+...), which this theme has to set explicitly with
+\code{\link[ggtext:element_markdown]{ggtext::element_markdown()}}, and ggplot2 ignores \code{inherit.blank} for
+such elements. \code{theme(axis.text.y = element_blank())} therefore leaves
+the y tick labels drawn. Use \code{\link[=blank_elements]{blank_elements()}} instead, which blanks an
+element together with all of its children, or blank the
+position-specific child directly. The same applies to \code{strip.text} and
+its children, to the parent \code{axis.title}, and to the secondary-axis
+titles (\code{axis.title.x.top}, \code{axis.title.y.right}). Blanking
+\code{axis.title.x}, \code{axis.title.y}, \code{legend.text} or \code{legend.title} directly
+works as usual.
+}
+
 \examples{
 library(ggplot2)
 # a system-available family sidesteps the "Roboto Condensed" requirement
@@ -186,5 +205,5 @@ ggplot(mtcars, aes(wt, mpg)) +
   theme_mt(base_family = "")
 }
 \seealso{
-\code{\link[=use_theme_mt]{use_theme_mt()}}
+\code{\link[=use_theme_mt]{use_theme_mt()}}, \code{\link[=blank_elements]{blank_elements()}}
 }

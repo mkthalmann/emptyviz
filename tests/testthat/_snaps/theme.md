@@ -397,7 +397,7 @@
         ..@ linejoin     : NULL
         ..@ arrow        : logi FALSE
         ..@ arrow.fill   : chr "gray87"
-        ..@ inherit.blank: logi FALSE
+        ..@ inherit.blank: logi TRUE
        $ axis.line.x                     : NULL
        $ axis.line.x.top                 : NULL
        $ axis.line.x.bottom              : NULL
@@ -427,7 +427,7 @@
         ..@ linewidth    : num 0.3
         ..@ linetype     : NULL
         ..@ linejoin     : NULL
-        ..@ inherit.blank: logi FALSE
+        ..@ inherit.blank: logi TRUE
        $ legend.ticks                    : <ggplot2::element_blank>
        $ legend.ticks.length             : 'rel' num 0.2
        $ legend.axis.line                : NULL

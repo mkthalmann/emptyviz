@@ -3,6 +3,19 @@
 Fixes from the 2026-08-22 code review (see `CODE_REVIEW.md`), plus the
 violin-geom parity fixes below.
 
+* **Fixed:** with `dual_render`, a chunk with a `fig-` label showed its
+  caption twice in Quarto, once from emptyviz and once numbered by Quarto's
+  crossref filter. emptyviz now leaves the caption to Quarto for such
+  chunks; the alt text is unchanged.
+* **Fixed:** `theme(panel.grid = element_blank())`, `axis.line` and other
+  native parent elements had no effect under `theme_mt()`, because its
+  elements were built without `complete = TRUE` and so kept
+  `inherit.blank = FALSE`.
+* **New:** `blank_elements()` hides an element together with all of its
+  children. Blanking a parent such as `axis.text.y` or `strip.text` cannot
+  hide the `element_markdown()` children `theme_mt()` sets, because ggplot2
+  ignores `inherit.blank` for S3 elements; see "Hiding elements" in
+  `?theme_mt` for which elements are affected.
 * **Breaking (visual):** `theme_mt()`'s type scale, spacing and several
   defaults were reworked, so every figure this package produces changes.
   What did *not* change: the palettes, the black `hjust = 1` axis titles,
