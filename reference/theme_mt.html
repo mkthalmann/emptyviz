@@ -248,8 +248,28 @@ for device-independent rendering), or pass a <code>base_family</code> you know i
 available, if reproducing a plot's exact appearance matters.</p>
     </div>
     <div class="section level2">
+    <h2 id="hiding-elements">Hiding elements<a class="anchor" aria-label="anchor" href="#hiding-elements"></a></h2>
+
+
+<p>Native elements (lines, rectangles, plain text) are hidden the usual
+way: <code>theme(panel.grid = element_blank())</code> also hides
+<code>panel.grid.major.y</code>, as under ggplot2's built-in themes. The markdown
+text elements are an exception. ggplot2 4 draws axis labels through the
+position-specific children (<code>axis.text.y.left</code>, <code>axis.text.x.bottom</code>,
+...), which this theme has to set explicitly with
+<code><a href="https://wilkelab.org/ggtext/reference/element_markdown.html" class="external-link">ggtext::element_markdown()</a></code>, and ggplot2 ignores <code>inherit.blank</code> for
+such elements. <code>theme(axis.text.y = element_blank())</code> therefore leaves
+the y tick labels drawn. Use <code><a href="blank_elements.html">blank_elements()</a></code> instead, which blanks an
+element together with all of its children, or blank the
+position-specific child directly. The same applies to <code>strip.text</code> and
+its children, to the parent <code>axis.title</code>, and to the secondary-axis
+titles (<code>axis.title.x.top</code>, <code>axis.title.y.right</code>). Blanking
+<code>axis.title.x</code>, <code>axis.title.y</code>, <code>legend.text</code> or <code>legend.title</code> directly
+works as usual.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="use_theme_mt.html">use_theme_mt()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="use_theme_mt.html">use_theme_mt()</a></code>, <code><a href="blank_elements.html">blank_elements()</a></code></p></div>
     </div>
 
     <div class="section level2">

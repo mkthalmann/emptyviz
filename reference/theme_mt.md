@@ -222,9 +222,30 @@ machines with no warning. Install it (e.g. via a system font manager, or
 `base_family` you know is available, if reproducing a plot's exact
 appearance matters.
 
+## Hiding elements
+
+Native elements (lines, rectangles, plain text) are hidden the usual
+way: `theme(panel.grid = element_blank())` also hides
+`panel.grid.major.y`, as under ggplot2's built-in themes. The markdown
+text elements are an exception. ggplot2 4 draws axis labels through the
+position-specific children (`axis.text.y.left`, `axis.text.x.bottom`,
+...), which this theme has to set explicitly with
+[`ggtext::element_markdown()`](https://wilkelab.org/ggtext/reference/element_markdown.html),
+and ggplot2 ignores `inherit.blank` for such elements.
+`theme(axis.text.y = element_blank())` therefore leaves the y tick
+labels drawn. Use
+[`blank_elements()`](https://mkthalmann.github.io/emptyviz/reference/blank_elements.md)
+instead, which blanks an element together with all of its children, or
+blank the position-specific child directly. The same applies to
+`strip.text` and its children, to the parent `axis.title`, and to the
+secondary-axis titles (`axis.title.x.top`, `axis.title.y.right`).
+Blanking `axis.title.x`, `axis.title.y`, `legend.text` or `legend.title`
+directly works as usual.
+
 ## See also
 
-[`use_theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/use_theme_mt.md)
+[`use_theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/use_theme_mt.md),
+[`blank_elements()`](https://mkthalmann.github.io/emptyviz/reference/blank_elements.md)
 
 ## Examples
 

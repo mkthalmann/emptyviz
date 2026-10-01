@@ -15,6 +15,9 @@
 - [`believe_projection_draws`](https://mkthalmann.github.io/emptyviz/reference/believe_projection_draws.md)
   : Posterior marginal draws from the believe-projection model
 
+- [`blank_elements()`](https://mkthalmann.github.io/emptyviz/reference/blank_elements.md)
+  : Hide theme elements together with everything that inherits from them
+
 - [`dark_mt_colors`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
   [`dark_mt_colors3`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
   [`dark_mt_colors4`](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
