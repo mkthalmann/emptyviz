@@ -88,7 +88,10 @@ violin-geom parity fixes below.
 
 - **Changed:** dual-rendered figures use the chunk’s `dev` when a
   browser can show it (`png`, `ragg_png`, `jpeg`, `svg`, `svglite`);
-  other devices fall back to PNG.
+  other devices fall back to PNG, as does a device that writes no file
+  (such as [`svg()`](https://rdrr.io/r/grDevices/cairo.html) on a Mac
+  without XQuartz, whose cairo library fails to load with only a
+  warning), in which case a warning names the chunk.
 
 - **Changed:** the facet strips of
   [`plot_ridge_hdi()`](https://mkthalmann.github.io/emptyviz/reference/plot_ridge_hdi.md),

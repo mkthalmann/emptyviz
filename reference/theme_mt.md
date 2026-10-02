@@ -208,9 +208,9 @@ isn't installed, most graphics devices silently substitute a fallback
 font rather than erroring, so a plot can look subtly different across
 machines with no warning. Install it (e.g. via a system font manager, or
 `sysfonts::font_add_google("Roboto Condensed")` +
-`showtext::showtext_auto()` for device-independent rendering), or pass a
-`base_family` you know is available, if reproducing a plot's exact
-appearance matters.
+[`showtext::showtext_auto()`](https://rdrr.io/pkg/showtext/man/showtext_auto.html)
+for device-independent rendering), or pass a `base_family` you know is
+available, if reproducing a plot's exact appearance matters.
 
 ## Hiding elements
 
