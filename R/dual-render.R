@@ -124,10 +124,6 @@ knit_print_ggplot_dual <- function(x, options, ...) {
   dpi <- options$dpi %||% 96
   device <- .dual_render_device(options$dev)
 
-  light_path <- paste0(fig_path, label, "-light-", idx, ".", device$ext)
-  dark_path <- paste0(fig_path, label, "-dark-", idx, ".", device$ext)
-  dir.create(dirname(light_path), recursive = TRUE, showWarnings = FALSE)
-
   # For a patchwork, `&` adds the overlay to every sub-plot (`+` would reach
   # only the last). Blanked elements are read from the first sub-plot, which
   # assumes the sub-plots blank the same elements.
@@ -135,16 +131,35 @@ knit_print_ggplot_dual <- function(x, options, ...) {
   overlay <- .dark_mode_overlay(if (is_patchwork) x[[1]] else x)
   x_dark <- if (is_patchwork) x & overlay else x + overlay
 
-  save <- function(path, plot) {
-    ggsave(
-      path, plot,
-      device = device$fun,
-      width = width, height = height, dpi = dpi,
-      bg = "transparent"
-    )
+  save_pair <- function(device) {
+    paths <- paste0(fig_path, label, c("-light-", "-dark-"), idx, ".", device$ext)
+    dir.create(dirname(paths[1]), recursive = TRUE, showWarnings = FALSE)
+    unlink(paths) # so that a file left by an earlier render cannot mask a failure
+    for (i in 1:2) {
+      ggsave(
+        paths[i], if (i == 1) x else x_dark,
+        device = device$fun,
+        width = width, height = height, dpi = dpi,
+        bg = "transparent"
+      )
+    }
+    paths
   }
-  save(light_path, x)
-  save(dark_path, x_dark)
+  paths <- save_pair(device)
+  # A device can fail without an error: R's svg() only warns when its cairo
+  # library cannot be loaded (e.g. CRAN's macOS build without XQuartz). An
+  # image tag pointing at a missing file would show nothing, so fall back to
+  # PNG instead.
+  if (!all(file.exists(paths))) {
+    warning(
+      "knit_print_ggplot_dual(): chunk '", label, "' could not be saved with ",
+      "dev = \"", options$dev[[1]], "\"; using PNG instead.",
+      call. = FALSE
+    )
+    paths <- save_pair(list(fun = NULL, ext = "png"))
+  }
+  light_path <- paths[1]
+  dark_path <- paths[2]
 
   # The <img> tags are built by hand, so `fig.alt` and `fig.cap` are read
   # here. As in knitr, the alt text falls back to the caption, and vector

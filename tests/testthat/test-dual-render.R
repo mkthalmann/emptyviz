@@ -107,7 +107,7 @@ test_that(".dark_mode_overlay() correctly colors axis text even when the chunk h
   # sets.
   old <- theme_get()
   on.exit(theme_set(old), add = TRUE)
-  use_theme_mt() # the light session default
+  use_theme_mt(base_family = "") # the light session default
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point() +
@@ -335,7 +335,7 @@ test_that("repeat renders in one session reuse the same figure filenames instead
   )
 
   emitted <- vapply(1:3, function(i) {
-    use_theme_mt() # what a document's setup chunk does, once per render
+    use_theme_mt(base_family = "") # a document's setup chunk, once per render
     unclass(emptyviz:::knit_print_ggplot_dual(p, options = opts))
   }, character(1))
 
@@ -355,7 +355,7 @@ test_that("multiple plots within one chunk still get distinct filenames", {
 
   old <- theme_get()
   on.exit(theme_set(old), add = TRUE)
-  use_theme_mt()
+  use_theme_mt(base_family = "")
 
   # the counter's actual purpose, which the per-render reset must not break
   p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
@@ -439,8 +439,16 @@ test_that("dual-rendered figures keep knitr's retina sizing and honour the chunk
   out <- render("fig-out", dpi = 72, out.width = "50%")
   expect_match(unclass(out), 'style="width:50%"', fixed = TRUE)
 
-  # a vector device: browsers can show SVG (grDevices::svg() needs cairo)
-  if (capabilities("cairo")) {
+  # a vector device: browsers can show SVG. grDevices::svg() needs a working
+  # cairo, which capabilities("cairo") can report wrongly (CRAN's macOS build
+  # without XQuartz), so check by opening the device.
+  svg_works <- local({
+    f <- tempfile(fileext = ".svg")
+    opened <- tryCatch(suppressWarnings(grDevices::svg(f)), error = function(e) FALSE)
+    if (!isFALSE(opened)) grDevices::dev.off()
+    file.exists(f)
+  })
+  if (svg_works) {
     render("fig-svg", dpi = 72, dev = "svg")
     expect_true(file.exists(file.path(tmp, "fig-svg-dark-1.svg")))
   }
@@ -459,10 +467,10 @@ test_that("use_theme_mt(dual_render = FALSE) leaves knitr's ggplot printing alon
   }
   use_theme_mt()
   expect_identical(registered(), emptyviz:::knit_print_ggplot_dual)
-  use_theme_mt(dual_render = FALSE)
+  use_theme_mt(base_family = "", dual_render = FALSE)
   expect_null(registered())
   # the theme is still set
-  expect_identical(theme_get(), theme_mt())
+  expect_identical(theme_get(), theme_mt(base_family = ""))
   use_theme_mt() # restore the registration other tests expect
 })
 
@@ -484,4 +492,26 @@ test_that("a vector out.width gives each plot of a chunk its own width", {
   expect_match(out1, "width:40%", fixed = TRUE)
   expect_no_match(out1, "width:60%", fixed = TRUE)
   expect_match(out2, "width:60%", fixed = TRUE)
+})
+
+test_that("a device that writes no file falls back to PNG with a warning", {
+  skip_if_not_installed("knitr")
+  local_quarto_html()
+  tmp <- tempfile("dual-render-fallback-device-")
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  # stands in for svg() without a loadable cairo: opens a device, writes nothing
+  local_mocked_bindings(.dual_render_device = function(dev) {
+    list(fun = function(filename, ...) grDevices::pdf(NULL), ext = "svg")
+  })
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  expect_warning(
+    out <- emptyviz:::knit_print_ggplot_dual(p, options = list(
+      dual_render = TRUE, label = "fig-nodev", fig.path = paste0(tmp, "/"),
+      fig.width = 3, fig.height = 2, dpi = 36, fig.alt = "Plot.", dev = "svg"
+    )),
+    "using PNG instead"
+  )
+  expect_true(file.exists(file.path(tmp, "fig-nodev-light-1.png")))
+  expect_true(file.exists(file.path(tmp, "fig-nodev-dark-1.png")))
+  expect_match(unclass(out), "fig-nodev-light-1.png", fixed = TRUE)
 })

@@ -52,7 +52,9 @@ violin-geom parity fixes below.
   browsers ignored it. A vector `out.width` is now applied per plot.
 * **Changed:** dual-rendered figures use the chunk's `dev` when a browser can
   show it (`png`, `ragg_png`, `jpeg`, `svg`, `svglite`); other devices fall
-  back to PNG.
+  back to PNG, as does a device that writes no file (such as `svg()` on a
+  Mac without XQuartz, whose cairo library fails to load with only a
+  warning), in which case a warning names the chunk.
 * **Changed:** the facet strips of `plot_ridge_hdi()`, `plot_coef_grid_hdi()`
   and `plot_location_scale()` render markdown under any theme, not only
   under `theme_mt()`; their styling still comes from the theme.
