@@ -15,7 +15,7 @@ layer_halfeye_hdi() works.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,7 @@ plot-builder - add it to a ggplot you build yourself, the way
 <span>  weak_color <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  direction_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  direction_colors <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  range <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  arrow_range <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  secondary_axis <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  secondary_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">5</span>, <span class="fl">15</span>, <span class="fl">50</span>, <span class="fl">150</span><span class="op">)</span>,</span>
 <span>  secondary_name <span class="op">=</span> <span class="st">"Bayes factor (BF)"</span></span>
@@ -93,8 +93,11 @@ data-dependent position.</p></dd>
 
 
 <dt id="arg-weak-fill-weak-color">weak_fill, weak_color<a class="anchor" aria-label="anchor" href="#arg-weak-fill-weak-color"></a></dt>
-<dd><p>Fill/text color for the shaded band and its
-label; default to <code>mt_colors5[3]</code>.</p></dd>
+<dd><p>Fill of the shaded band and colour of its
+label. <code>NULL</code> (default) uses <code>mt_colors5[3]</code> for the band and a darker
+shade of it for the label, chosen so the label keeps 4.5:1 contrast
+against the band; under a dark theme, such as <code>theme_mt(dark = TRUE)</code>,
+both use <code>dark_mt_colors5[3]</code>.</p></dd>
 
 
 <dt id="arg-direction-labels">direction_labels<a class="anchor" aria-label="anchor" href="#arg-direction-labels"></a></dt>
@@ -105,10 +108,11 @@ positive/negative log-BF supports (e.g. <code>c("supports a real difference", "s
 
 <dt id="arg-direction-colors">direction_colors<a class="anchor" aria-label="anchor" href="#arg-direction-colors"></a></dt>
 <dd><p>Length-2 colors for the positive/negative
-arrows/labels; defaults to <code>mt_colors[1:2]</code>.</p></dd>
+arrows/labels. <code>NULL</code> (default) uses <code>mt_colors[1:2]</code>, or
+<code>dark_mt_colors[1:2]</code> under a dark theme.</p></dd>
 
 
-<dt id="arg-range">range<a class="anchor" aria-label="anchor" href="#arg-range"></a></dt>
+<dt id="arg-arrow-range">arrow_range<a class="anchor" aria-label="anchor" href="#arg-arrow-range"></a></dt>
 <dd><p><code>c(min, max)</code> the arrows should span along the BF axis.
 Only used when <code>direction_labels</code> is given; <code>NULL</code> falls back to a
 generic <code>c(-1, 1) * weak_threshold * 3</code>.</p></dd>

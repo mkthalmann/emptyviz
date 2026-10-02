@@ -84,7 +84,8 @@ A tibble with 2,179 rows and 16 variables:
 
 - which:
 
-  Self-reported languages understood during the debrief.
+  Debrief response, in German: `"Text"` (text), `"Bild"` (picture), or
+  `"beides"` (both).
 
 ## Source
 

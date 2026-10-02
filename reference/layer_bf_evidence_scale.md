@@ -18,7 +18,7 @@ layer_bf_evidence_scale(
   weak_color = NULL,
   direction_labels = NULL,
   direction_colors = NULL,
-  range = NULL,
+  arrow_range = NULL,
   secondary_axis = FALSE,
   secondary_breaks = c(1, 2, 5, 15, 50, 150),
   secondary_name = "Bayes factor (BF)"
@@ -49,8 +49,11 @@ layer_bf_evidence_scale(
 
 - weak_fill, weak_color:
 
-  Fill/text color for the shaded band and its label; default to
-  `mt_colors5[3]`.
+  Fill of the shaded band and colour of its label. `NULL` (default) uses
+  `mt_colors5[3]` for the band and a darker shade of it for the label,
+  chosen so the label keeps 4.5:1 contrast against the band; under a
+  dark theme, such as `theme_mt(dark = TRUE)`, both use
+  `dark_mt_colors5[3]`.
 
 - direction_labels:
 
@@ -62,10 +65,11 @@ layer_bf_evidence_scale(
 
 - direction_colors:
 
-  Length-2 colors for the positive/negative arrows/labels; defaults to
-  `mt_colors[1:2]`.
+  Length-2 colors for the positive/negative arrows/labels. `NULL`
+  (default) uses `mt_colors[1:2]`, or `dark_mt_colors[1:2]` under a dark
+  theme.
 
-- range:
+- arrow_range:
 
   `c(min, max)` the arrows should span along the BF axis. Only used when
   `direction_labels` is given; `NULL` falls back to a generic

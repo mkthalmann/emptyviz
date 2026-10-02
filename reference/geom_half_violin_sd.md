@@ -87,7 +87,9 @@ reserved (used internally by the aura/fill/outline sub-layers) and will
 warn, not error or silently vanish - use
 `base_alpha`/`sd_alpha`/`outline_color`/ `sd_linewidth` instead (there's
 no equivalent substitute for `stat` - swapping it out isn't meaningful
-for this geom's own identity).
+for this geom's own identity). Quantile lines are not supported:
+`draw_quantiles` and the `quantile.*` arguments are dropped with a
+warning.
 
 `side` follows gghalves' own convention: a scalar applies to every
 group, a vector is indexed by sorted factor-level order of the discrete
@@ -121,9 +123,32 @@ low-alpha keys overlaid on top of each other.
 
 When `outline_color` isn't given and `fill` isn't passed as a literal
 (i.e. it's mapped via `aes(fill = ...)`, locally or inherited from the
-plot), the SD-band outline's colour tracks each group's resolved fill
-automatically - it no longer falls back to one flat default color for
-every group.
+plot), the SD-band outline's colour tracks each group's resolved fill.
+
+## Background
+
+The SD band shows how much the observations vary, not how precisely
+their mean is estimated. Readers, experts included, readily take
+intervals of inferential uncertainty for the spread of outcomes (Zhang
+et al. 2023; see also Hoekstra et al. 2014). The geoms draw on these
+results and on Hofmann (2025).
+
+## References
+
+Hoekstra, R., Morey, R. D., Rouder, J. N., & Wagenmakers, E.-J. (2014).
+Robust misinterpretation of confidence intervals. *Psychonomic Bulletin
+& Review*, 21(5), 1157-1164.
+[doi:10.3758/s13423-013-0572-3](https://doi.org/10.3758/s13423-013-0572-3)
+
+Hofmann, L. (2025). Anaphoric accessibility with flat update. *Semantics
+& Pragmatics*, 18(3), 1-69.
+[doi:10.3765/sp.18.3](https://doi.org/10.3765/sp.18.3)
+
+Zhang, S., Heck, P. R., Meyer, M. N., Chabris, C. F., Goldstein, D. G.,
+& Hofman, J. M. (2023). An illusion of predictability in scientific
+results: Even experts confuse inferential uncertainty and outcome
+variability. *Proceedings of the National Academy of Sciences*, 120(33).
+[doi:10.1073/pnas.2302491120](https://doi.org/10.1073/pnas.2302491120)
 
 ## Examples
 

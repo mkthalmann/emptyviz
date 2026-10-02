@@ -11,7 +11,7 @@ by default."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -121,7 +121,9 @@ used).</p></dd>
 
 <dt id="arg-positive-color-negative-color">positive_color, negative_color<a class="anchor" aria-label="anchor" href="#arg-positive-color-negative-color"></a></dt>
 <dd><p>Colors for positive/negative
-contrasts; default to <code>mt_colors[1]</code>/<code>mt_colors[2]</code>.</p></dd>
+contrasts. <code>NULL</code> (default) uses <code>mt_colors[1]</code>/<code>mt_colors[2]</code>, or
+<code>dark_mt_colors[1]</code>/<code>dark_mt_colors[2]</code> under a dark theme such as
+<code>theme_mt(dark = TRUE)</code>.</p></dd>
 
 
 <dt id="arg-positive-shape-negative-shape">positive_shape, negative_shape<a class="anchor" aria-label="anchor" href="#arg-positive-shape-negative-shape"></a></dt>
@@ -136,7 +138,7 @@ stays legible under grayscale printing or for red/green-blind readers.</p></dd>
 
 <dt id="arg-evidence-scale">evidence_scale<a class="anchor" aria-label="anchor" href="#arg-evidence-scale"></a></dt>
 <dd><p><code>TRUE</code> (default) bundles <code><a href="layer_bf_evidence_scale.html">layer_bf_evidence_scale()</a></code>
-in automatically, with <code>range</code> computed from <code>data</code> itself; <code>FALSE</code> for
+in automatically, with <code>arrow_range</code> computed from <code>data</code> itself; <code>FALSE</code> for
 a bare forest plot with no annotation.</p></dd>
 
 

@@ -17,7 +17,7 @@ sorted level, right the second) - pass flip = TRUE to swap them.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -152,6 +152,29 @@ still renders correctly around the thin/missing cell - a below-minimum
 side is silently dropped by the underlying density stat (same as
 <code><a href="geom_half_violin_sd.html">geom_half_violin_sd()</a></code>), it doesn't stop the rest of the plot from
 drawing.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="background">Background<a class="anchor" aria-label="anchor" href="#background"></a></h2>
+
+
+<p>The SD band shows how much the observations vary, not how precisely their
+mean is estimated. Readers, experts included, readily take intervals of
+inferential uncertainty for the spread of outcomes (Zhang et al. 2023; see
+also Hoekstra et al. 2014). The geoms draw on these results and on
+Hofmann (2025).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Hoekstra, R., Morey, R. D., Rouder, J. N., &amp; Wagenmakers, E.-J. (2014).
+Robust misinterpretation of confidence intervals. <em>Psychonomic Bulletin &amp;
+Review</em>, 21(5), 1157-1164. <a href="https://doi.org/10.3758/s13423-013-0572-3" class="external-link">doi:10.3758/s13423-013-0572-3</a></p>
+<p>Hofmann, L. (2025). Anaphoric accessibility with flat update. <em>Semantics &amp;
+Pragmatics</em>, 18(3), 1-69. <a href="https://doi.org/10.3765/sp.18.3" class="external-link">doi:10.3765/sp.18.3</a></p>
+<p>Zhang, S., Heck, P. R., Meyer, M. N., Chabris, C. F., Goldstein, D. G., &amp;
+Hofman, J. M. (2023). An illusion of predictability in scientific results:
+Even experts confuse inferential uncertainty and outcome variability.
+<em>Proceedings of the National Academy of Sciences</em>, 120(33).
+<a href="https://doi.org/10.1073/pnas.2302491120" class="external-link">doi:10.1073/pnas.2302491120</a></p>
     </div>
 
     <div class="section level2">

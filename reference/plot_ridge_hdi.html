@@ -13,7 +13,7 @@ being compared."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +62,7 @@ being compared.</p>
 <span>  facet_ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  facet_scales <span class="op">=</span> <span class="st">"fixed"</span>,</span>
 <span>  hline <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  hline_color <span class="op">=</span> <span class="va">mt_colors</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,</span>
+<span>  hline_color <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  value_transform <span class="op">=</span> <span class="va">identity</span>,</span>
 <span>  value_limits <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  value_breaks <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/waiver.html" class="external-link">waiver</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -106,7 +106,8 @@ omits it).</p></dd>
 
 
 <dt id="arg-hline-color">hline_color<a class="anchor" aria-label="anchor" href="#arg-hline-color"></a></dt>
-<dd><p>Color of the reference line.</p></dd>
+<dd><p>Color of the reference line. <code>NULL</code> (default) uses
+<code>mt_colors[2]</code>, or <code>dark_mt_colors[2]</code> under a dark theme.</p></dd>
 
 
 <dt id="arg-value-transform">value_transform<a class="anchor" aria-label="anchor" href="#arg-value-transform"></a></dt>
@@ -119,9 +120,11 @@ a sigma submodel estimated on the log scale).</p></dd>
 
 
 <dt id="arg-category-reorder">category_reorder<a class="anchor" aria-label="anchor" href="#arg-category-reorder"></a></dt>
-<dd><p><code>TRUE</code> (default) sorts categories by their mean
-transformed <code>value</code> (descending) via <code><a href="https://forcats.tidyverse.org/reference/fct_reorder.html" class="external-link">forcats::fct_reorder()</a></code>; <code>FALSE</code>
-keeps whatever factor-level order <code>category</code> already has.</p></dd>
+<dd><p><code>TRUE</code> (default) sorts categories by the mean of
+their transformed <code>value</code>, the same mean the point-interval marks, with
+the highest mean at the top (as in <code><a href="plot_bf_forest.html">plot_bf_forest()</a></code>). <code>FALSE</code> keeps
+the factor-level order <code>category</code> already has, with the first level at
+the bottom.</p></dd>
 
 
 <dt id="arg-xlab-ylab">xlab, ylab<a class="anchor" aria-label="anchor" href="#arg-xlab-ylab"></a></dt>

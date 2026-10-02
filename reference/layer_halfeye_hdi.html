@@ -23,7 +23,7 @@ standalone for building a custom layout around the same visual grammar."></head>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,8 +128,9 @@ panel height (see Details).</p></dd>
 
 
 <dt id="arg-fill">fill<a class="anchor" aria-label="anchor" href="#arg-fill"></a></dt>
-<dd><p>Base slab color, ramped by HDI width (see <code>fill_range</code>);
-defaults to <code>mt_colors[1]</code>.</p></dd>
+<dd><p>Base slab color, ramped by HDI width (see <code>fill_range</code>).
+<code>NULL</code> (default) uses <code>mt_colors[1]</code>, or <code>dark_mt_colors[1]</code> when the
+plot is drawn with a dark theme such as <code>theme_mt(dark = TRUE)</code>.</p></dd>
 
 
 <dt id="arg-fill-range">fill_range<a class="anchor" aria-label="anchor" href="#arg-fill-range"></a></dt>
@@ -141,8 +142,8 @@ the narrowest (most saturated, <code>fill</code> at full strength). Default
 
 
 <dt id="arg-interval-color">interval_color<a class="anchor" aria-label="anchor" href="#arg-interval-color"></a></dt>
-<dd><p>Color of the point-interval; defaults to
-<code>mt_colors[1]</code>.</p></dd>
+<dd><p>Color of the point-interval. <code>NULL</code> (default)
+follows the theme in the same way as <code>fill</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -154,13 +155,9 @@ the narrowest (most saturated, <code>fill</code> at full strength). Default
     <p><code>scale</code> (slab height) and <code>dodge_width</code> have no single correct default -
 pass whatever fits your panel count and coefficient spread.</p>
 <p><code>gap</code> is how far the point-interval is shifted away from the slab's
-baseline, as a target fraction of <em>panel height</em> (see
-<code>position_dodge_gap()</code>'s own comment for why this - not a row-unit
-fraction - is the right invariant to hold constant across callers with
-different category counts per panel). Default <code>.02</code> (~2% of panel
-height) looks right both for many-categories-sharing-one-panel layouts
-and one-category-per-panel grids; <code>0</code> reproduces a touching layout with
-no gap at all.</p>
+baseline, as a fraction of panel height, so the same value suits a panel
+of many categories and a grid of one category per panel. The default
+<code>.02</code> is about 2% of panel height; <code>0</code> lets slab and interval touch.</p>
     </div>
 
     <div class="section level2">

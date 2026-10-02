@@ -54,10 +54,7 @@ theme_mt(
   Base font size, in points. Every other size argument derives from it
   by default.
   [`use_theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/use_theme_mt.md)
-  passes the same default through, so a plot themed directly with
-  `theme_mt()` and one themed via the session default look the same -
-  they used to disagree by nearly 2x (19 here, 10 there), with neither
-  docstring mentioning the other.
+  has the same default.
 
 - base_family, plot_title_family, subtitle_family, strip_text_family,
   axis_title_family, axis_text_family, caption_family:
@@ -70,8 +67,7 @@ theme_mt(
 
   Font sizes for each text element, all derived from `base_size` by
   default. See Details for how the scale is laid out. `legend_text_size`
-  covers both `legend.text` and `legend.title`, which used to be pinned
-  at `base_size + 2` in the function body with no way to change them.
+  covers both `legend.text` and `legend.title`.
 
 - dark:
 
@@ -91,18 +87,14 @@ theme_mt(
 - minor_grid:
 
   Whether to draw minor gridlines (on the major axis only, matching the
-  major grid). `FALSE` by default; `TRUE` restores the previous
-  behaviour. See Details.
+  major grid). `FALSE` by default. See Details.
 
 - background:
 
   Fill for `plot.background` in light mode: `"white"` (the default),
-  `"transparent"`, or any color. This used to be `alpha("white", .5)`,
-  which is invisible on a white page and a milky half-wash on any
-  other - so a figure dropped onto a tinted slide or a shaded box picked
-  up a haze that was neither the page's color nor the figure's.
-  `dark = TRUE` is always transparent, whatever this is set to, for the
-  reason given above.
+  `"transparent"`, or any opaque color. A semi-transparent fill would
+  tint whatever page the figure is placed on. With `dark = TRUE` the
+  background is always transparent; see Details.
 
 - grid_color:
 
@@ -128,12 +120,8 @@ theme_mt(
   Colors for continuous `colour`/`fill` scales, as the two ends of a
   ramp. Defaults to a lightness ramp of `mt_colors[1]` (or of
   `dark_mt_colors[1]` when `dark = TRUE`) - a single-hue sequential
-  scale in the palette's own teal, running light to dark.
-  `palette.colour.continuous` was previously unset, so a mapped
-  continuous variable fell through to ggplot2's factory blue gradient: a
-  hue that isn't in this palette at all, running *dark to light*, so the
-  largest values drew the faintest marks. Pass `NULL` to go back to that
-  default.
+  scale in the palette's own teal, running from light (low values) to
+  dark (high values). `NULL` leaves ggplot2's own default gradient.
 
 ## Value
 
@@ -144,24 +132,18 @@ A `ggplot2` theme object.
 Call
 [`use_theme_mt()`](https://mkthalmann.github.io/emptyviz/reference/use_theme_mt.md)
 to make this the session's active theme -
-[`library(emptyviz)`](https://github.com/mkthalmann/emptyviz) does not
+[`library(emptyviz)`](https://mkthalmann.github.io/emptyviz/) does not
 do this automatically.
 
-The type scale has exactly one element above the metadata tier. The
-title, subtitle, strip text, axis titles and legend text used to share
-`base_size + 2`, so `face = "bold"` was the only thing distinguishing a
-plot title from an axis label, and the axis titles outranked the tick
-labels they describe. The title is now `base_size + 4` and everything
-else in that tier is `base_size + 1`, above `base_size` tick labels and
-a `base_size - 2` caption. Every size remains an argument.
+Only the title stands above the rest of the type scale, at
+`base_size + 4`. Subtitle, strip text and axis titles are
+`base_size + 1`, tick labels and legend text `base_size`, and the
+caption `base_size - 2`. Every size is an argument.
 
-Spacing is sized off `base_size` rather than fixed: `plot.margin` used
-to be `0.1` lines (about a point), which - with the `hjust = 1` axis
-titles this theme uses - clipped the x-axis title against the device
-edge in most figures, and left a LaTeX caption sitting flush against the
-figure's descenders. Legend keys scale with the legend text instead of
-being pinned at `0.7cm`, and the gap between panel and legend is set
-through `legend.box.spacing` rather than a negative `legend.margin`.
+Margins, legend keys and the gap between panel and legend are sized off
+`base_size`, so they scale with the type. The plot margin is wider on
+the right and top, where the right-aligned axis titles and the title
+would otherwise touch the device edge.
 
 Minor gridlines are off by default (`minor_grid`): at `linewidth = 0.1`
 they are about 0.1 mm, which is where print workflows stop guaranteeing
@@ -182,7 +164,15 @@ it or pass `grid_color`/`axis_text_color`/`axis_line_color` explicitly.
 `geom.paper` follows the same assumption: it is that same `#151515`, so
 a
 [`geom_label()`](https://ggplot2.tidyverse.org/reference/geom_text.html)
-on a dark page reads as opaque rather than as a 30%-transparent hole.
+on a dark page has an opaque background. The default colours of this
+package's plot builders
+([`plot_bf_forest()`](https://mkthalmann.github.io/emptyviz/reference/plot_bf_forest.md),
+[`plot_ridge_hdi()`](https://mkthalmann.github.io/emptyviz/reference/plot_ridge_hdi.md),
+...) follow the theme as well: under a dark theme they switch from
+[mt_colors12](https://mkthalmann.github.io/emptyviz/reference/mt_colors.md)
+to the matching
+[dark_mt_colors12](https://mkthalmann.github.io/emptyviz/reference/dark_mt_colors.md)
+tints.
 
 The discrete palette separates categories by **hue**, with very little
 lightness difference between them: every pair in

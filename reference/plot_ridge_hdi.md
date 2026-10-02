@@ -17,7 +17,7 @@ plot_ridge_hdi(
   facet_ncol = NULL,
   facet_scales = "fixed",
   hline = NULL,
-  hline_color = mt_colors[2],
+  hline_color = NULL,
   value_transform = identity,
   value_limits = NULL,
   value_breaks = waiver(),
@@ -61,7 +61,8 @@ plot_ridge_hdi(
 
 - hline_color:
 
-  Color of the reference line.
+  Color of the reference line. `NULL` (default) uses `mt_colors[2]`, or
+  `dark_mt_colors[2]` under a dark theme.
 
 - value_transform:
 
@@ -75,10 +76,12 @@ plot_ridge_hdi(
 
 - category_reorder:
 
-  `TRUE` (default) sorts categories by their mean transformed `value`
-  (descending) via
-  [`forcats::fct_reorder()`](https://forcats.tidyverse.org/reference/fct_reorder.html);
-  `FALSE` keeps whatever factor-level order `category` already has.
+  `TRUE` (default) sorts categories by the mean of their transformed
+  `value`, the same mean the point-interval marks, with the highest mean
+  at the top (as in
+  [`plot_bf_forest()`](https://mkthalmann.github.io/emptyviz/reference/plot_bf_forest.md)).
+  `FALSE` keeps the factor-level order `category` already has, with the
+  first level at the bottom.
 
 - xlab, ylab:
 

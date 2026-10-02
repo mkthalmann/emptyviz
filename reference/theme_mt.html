@@ -21,7 +21,7 @@ without repeating fill = ... on every layer."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,10 +102,7 @@ without repeating <code>fill = ...</code> on every layer.</p>
 
 <dl><dt id="arg-base-size">base_size<a class="anchor" aria-label="anchor" href="#arg-base-size"></a></dt>
 <dd><p>Base font size, in points. Every other size argument
-derives from it by default. <code><a href="use_theme_mt.html">use_theme_mt()</a></code> passes the same default
-through, so a plot themed directly with <code>theme_mt()</code> and one themed via
-the session default look the same - they used to disagree by nearly 2x
-(19 here, 10 there), with neither docstring mentioning the other.</p></dd>
+derives from it by default. <code><a href="use_theme_mt.html">use_theme_mt()</a></code> has the same default.</p></dd>
 
 
 <dt id="arg-base-family-plot-title-family-subtitle-family-strip-text-family-axis-title-family-axis-text-family-caption-family">base_family, plot_title_family, subtitle_family, strip_text_family, axis_title_family, axis_text_family, caption_family<a class="anchor" aria-label="anchor" href="#arg-base-family-plot-title-family-subtitle-family-strip-text-family-axis-title-family-axis-text-family-caption-family"></a></dt>
@@ -116,8 +113,7 @@ Details for the <code>"Roboto Condensed"</code> default's system requirement.</p
 <dt id="arg-plot-title-size-axis-text-size-strip-text-size-subtitle-size-caption-size-axis-title-size-legend-text-size">plot_title_size, axis_text_size, strip_text_size, subtitle_size, caption_size, axis_title_size, legend_text_size<a class="anchor" aria-label="anchor" href="#arg-plot-title-size-axis-text-size-strip-text-size-subtitle-size-caption-size-axis-title-size-legend-text-size"></a></dt>
 <dd><p>Font sizes for each text element, all derived from <code>base_size</code> by
 default. See Details for how the scale is laid out. <code>legend_text_size</code>
-covers both <code>legend.text</code> and <code>legend.title</code>, which used to be pinned
-at <code>base_size + 2</code> in the function body with no way to change them.</p></dd>
+covers both <code>legend.text</code> and <code>legend.title</code>.</p></dd>
 
 
 <dt id="arg-dark">dark<a class="anchor" aria-label="anchor" href="#arg-dark"></a></dt>
@@ -134,18 +130,14 @@ individually either way.</p></dd>
 
 <dt id="arg-minor-grid">minor_grid<a class="anchor" aria-label="anchor" href="#arg-minor-grid"></a></dt>
 <dd><p>Whether to draw minor gridlines (on the major axis
-only, matching the major grid). <code>FALSE</code> by default; <code>TRUE</code> restores
-the previous behaviour. See Details.</p></dd>
+only, matching the major grid). <code>FALSE</code> by default. See Details.</p></dd>
 
 
 <dt id="arg-background">background<a class="anchor" aria-label="anchor" href="#arg-background"></a></dt>
 <dd><p>Fill for <code>plot.background</code> in light mode: <code>"white"</code>
-(the default), <code>"transparent"</code>, or any color. This used to be
-<code>alpha("white", .5)</code>, which is invisible on a white page and a milky
-half-wash on any other - so a figure dropped onto a tinted slide or a
-shaded box picked up a haze that was neither the page's color nor the
-figure's. <code>dark = TRUE</code> is always transparent, whatever this is set to,
-for the reason given above.</p></dd>
+(the default), <code>"transparent"</code>, or any opaque color. A semi-transparent
+fill would tint whatever page the figure is placed on. With
+<code>dark = TRUE</code> the background is always transparent; see Details.</p></dd>
 
 
 <dt id="arg-grid-color">grid_color<a class="anchor" aria-label="anchor" href="#arg-grid-color"></a></dt>
@@ -171,12 +163,9 @@ grid's own brightness.</p></dd>
 <dd><p>Colors for continuous <code>colour</code>/<code>fill</code> scales,
 as the two ends of a ramp. Defaults to a lightness ramp of
 <code>mt_colors[1]</code> (or of <code>dark_mt_colors[1]</code> when <code>dark = TRUE</code>) - a
-single-hue sequential scale in the palette's own teal, running light to
-dark. <code>palette.colour.continuous</code> was previously unset, so a mapped
-continuous variable fell through to ggplot2's factory blue gradient:
-a hue that isn't in this palette at all, running <em>dark to light</em>, so
-the largest values drew the faintest marks. Pass <code>NULL</code> to go back to
-that default.</p></dd>
+single-hue sequential scale in the palette's own teal, running from
+light (low values) to dark (high values). <code>NULL</code> leaves ggplot2's own
+default gradient.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -186,21 +175,15 @@ that default.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Call <code><a href="use_theme_mt.html">use_theme_mt()</a></code> to make this the session's active theme -
-<code><a href="https://github.com/mkthalmann/emptyviz" class="external-link">library(emptyviz)</a></code> does not do this automatically.</p>
-<p>The type scale has exactly one element above the metadata tier. The
-title, subtitle, strip text, axis titles and legend text used to share
-<code>base_size + 2</code>, so <code>face = "bold"</code> was the only thing distinguishing a
-plot title from an axis label, and the axis titles outranked the tick
-labels they describe. The title is now <code>base_size + 4</code> and everything
-else in that tier is <code>base_size + 1</code>, above <code>base_size</code> tick labels and
-a <code>base_size - 2</code> caption. Every size remains an argument.</p>
-<p>Spacing is sized off <code>base_size</code> rather than fixed: <code>plot.margin</code> used
-to be <code>0.1</code> lines (about a point), which - with the <code>hjust = 1</code> axis
-titles this theme uses - clipped the x-axis title against the device
-edge in most figures, and left a LaTeX caption sitting flush against the
-figure's descenders. Legend keys scale with the legend text instead of
-being pinned at <code>0.7cm</code>, and the gap between panel and legend is set
-through <code>legend.box.spacing</code> rather than a negative <code>legend.margin</code>.</p>
+<code><a href="https://mkthalmann.github.io/emptyviz/">library(emptyviz)</a></code> does not do this automatically.</p>
+<p>Only the title stands above the rest of the type scale, at
+<code>base_size + 4</code>. Subtitle, strip text and axis titles are <code>base_size + 1</code>,
+tick labels and legend text <code>base_size</code>, and the caption <code>base_size - 2</code>.
+Every size is an argument.</p>
+<p>Margins, legend keys and the gap between panel and legend are sized off
+<code>base_size</code>, so they scale with the type. The plot margin is wider on the
+right and top, where the right-aligned axis titles and the title would
+otherwise touch the device edge.</p>
 <p>Minor gridlines are off by default (<code>minor_grid</code>): at <code>linewidth = 0.1</code>
 they are about 0.1 mm, which is where print workflows stop guaranteeing
 a line, and they double the grid's ink without adding information.</p>
@@ -217,8 +200,10 @@ near-invisible grid could invert against a light-ish "dark" background.
 If your site's dark background differs much from <code>#151515</code>, either match
 it or pass <code>grid_color</code>/<code>axis_text_color</code>/<code>axis_line_color</code> explicitly.
 <code>geom.paper</code> follows the same assumption: it is that same <code>#151515</code>, so
-a <code><a href="https://ggplot2.tidyverse.org/reference/geom_text.html" class="external-link">geom_label()</a></code> on a dark page reads as opaque rather than as a
-30%-transparent hole.</p>
+a <code><a href="https://ggplot2.tidyverse.org/reference/geom_text.html" class="external-link">geom_label()</a></code> on a dark page has an opaque background. The default
+colours of this package's plot builders (<code><a href="plot_bf_forest.html">plot_bf_forest()</a></code>,
+<code><a href="plot_ridge_hdi.html">plot_ridge_hdi()</a></code>, ...) follow the theme as well: under a dark theme
+they switch from <a href="mt_colors.html">mt_colors12</a> to the matching <a href="dark_mt_colors.html">dark_mt_colors12</a> tints.</p>
 <p>The discrete palette separates categories by <strong>hue</strong>, with very little
 lightness difference between them: every pair in <a href="mt_colors.html">mt_colors5</a> falls below
 the 3:1 WCAG 1.4.11 contrast threshold for distinguishable graphical

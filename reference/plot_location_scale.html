@@ -21,7 +21,7 @@ that location."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -107,14 +107,9 @@ and (together with <code>shape</code>, if given) the ellipse/point grouping.</p>
 
 <dt id="arg-location-sigma">location, sigma<a class="anchor" aria-label="anchor" href="#arg-location-sigma"></a></dt>
 <dd><p>Unquoted columns holding the per-draw location and
-scale values. No default - unlike <code><a href="layer_halfeye_hdi.html">layer_halfeye_hdi()</a></code>'s <code>value = .value</code> (a real tidybayes convention), there's no equivalent
-widely-used column name for a paired location/sigma draw, so a
-same-named default (<code>location = location</code>) would only "work" by
-coincidence when the caller's data happens to have columns literally
-called <code>location</code>/<code>sigma</code> - and crash with a cryptic R-level
-"recursive default argument reference" error otherwise, since looking
-up the unmatched symbol falls through to the function's own unforced
-argument promise of the same name. Always pass both explicitly.</p></dd>
+scale values. They have no default because, unlike tidybayes' <code>.value</code>,
+there is no conventional column name for paired location and scale
+draws.</p></dd>
 
 
 <dt id="arg-shape">shape<a class="anchor" aria-label="anchor" href="#arg-shape"></a></dt>
@@ -200,8 +195,9 @@ for full manual control.</p></dd>
 
 
 <dt id="arg-curve-color">curve_color<a class="anchor" aria-label="anchor" href="#arg-curve-color"></a></dt>
-<dd><p>Color of the sigma_max reference curve; defaults to
-<code>mt_colors[2]</code>.</p></dd>
+<dd><p>Color of the sigma_max reference curve. <code>NULL</code>
+(default) uses <code>mt_colors[2]</code>, or <code>dark_mt_colors[2]</code> under a dark theme
+such as <code>theme_mt(dark = TRUE)</code>.</p></dd>
 
 
 <dt id="arg-xlab-ylab">xlab, ylab<a class="anchor" aria-label="anchor" href="#arg-xlab-ylab"></a></dt>

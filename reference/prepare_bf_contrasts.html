@@ -15,7 +15,7 @@ the pairs the caller actually wants to show."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -81,12 +81,18 @@ format).</p></dd>
 
 
 <dt id="arg-value">value<a class="anchor" aria-label="anchor" href="#arg-value"></a></dt>
-<dd><p>Optional unquoted column - typically the log-BF/BF column
-itself - to sign-flip on any row matched via a swapped pair (see
-<code>pairs</code>), so a positive value still means whatever the caller's
-first-named condition supports. <code>NULL</code> (default) leaves every column
-as-is; if any pair needed swapping and no <code>value</code> is given, a warning
-names how many rows were affected.</p></dd>
+<dd><p>Optional column(s) to negate on any row matched via a swapped
+pair (see <code>pairs</code>), so that a positive value still favours the caller's
+first-named condition. Takes a bare column name or a tidyselect
+selection such as <code>c(log_BF, estimate)</code>. Every selected column must be
+on a log or difference scale, where reversing a contrast flips the
+sign: a log Bayes factor, an estimated difference. A ratio-scale Bayes
+factor is inverted, not negated, by a reversal; take its <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log()</a></code> first.
+Interval bounds need swapping as well as negating, so negating them
+here would produce a reversed interval. Columns not selected keep their
+original direction. <code>NULL</code> (default) selects nothing; if any pair needed
+swapping and no <code>value</code> is given, a warning names how many rows were
+affected.</p></dd>
 
 
 <dt id="arg-strip">strip<a class="anchor" aria-label="anchor" href="#arg-strip"></a></dt>

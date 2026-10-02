@@ -33,12 +33,18 @@ prepare_bf_contrasts(
 
 - value:
 
-  Optional unquoted column - typically the log-BF/BF column itself - to
-  sign-flip on any row matched via a swapped pair (see `pairs`), so a
-  positive value still means whatever the caller's first-named condition
-  supports. `NULL` (default) leaves every column as-is; if any pair
-  needed swapping and no `value` is given, a warning names how many rows
-  were affected.
+  Optional column(s) to negate on any row matched via a swapped pair
+  (see `pairs`), so that a positive value still favours the caller's
+  first-named condition. Takes a bare column name or a tidyselect
+  selection such as `c(log_BF, estimate)`. Every selected column must be
+  on a log or difference scale, where reversing a contrast flips the
+  sign: a log Bayes factor, an estimated difference. A ratio-scale Bayes
+  factor is inverted, not negated, by a reversal; take its
+  [`log()`](https://rdrr.io/r/base/Log.html) first. Interval bounds need
+  swapping as well as negating, so negating them here would produce a
+  reversed interval. Columns not selected keep their original direction.
+  `NULL` (default) selects nothing; if any pair needed swapping and no
+  `value` is given, a warning names how many rows were affected.
 
 - strip:
 

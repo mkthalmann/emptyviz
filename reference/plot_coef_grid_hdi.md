@@ -14,7 +14,7 @@ plot_coef_grid_hdi(
   ncol = 4,
   nrow = NULL,
   hline = 0,
-  hline_color = mt_colors[2],
+  hline_color = NULL,
   ylab = "Posterior coefficients ±HDI<sub>95</sub> ±ETI<sub>50;90;95</sub>",
   ...
 )
@@ -47,7 +47,8 @@ plot_coef_grid_hdi(
 
 - hline_color:
 
-  Color of the reference line.
+  Color of the reference line. `NULL` (default) uses `mt_colors[2]`, or
+  `dark_mt_colors[2]` under a dark theme.
 
 - ylab:
 

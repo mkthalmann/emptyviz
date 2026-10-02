@@ -79,8 +79,9 @@ layer_halfeye_hdi(
 
 - fill:
 
-  Base slab color, ramped by HDI width (see `fill_range`); defaults to
-  `mt_colors[1]`.
+  Base slab color, ramped by HDI width (see `fill_range`). `NULL`
+  (default) uses `mt_colors[1]`, or `dark_mt_colors[1]` when the plot is
+  drawn with a dark theme such as `theme_mt(dark = TRUE)`.
 
 - fill_range:
 
@@ -92,7 +93,8 @@ layer_halfeye_hdi(
 
 - interval_color:
 
-  Color of the point-interval; defaults to `mt_colors[1]`.
+  Color of the point-interval. `NULL` (default) follows the theme in the
+  same way as `fill`.
 
 ## Value
 
@@ -104,13 +106,9 @@ A list of `ggplot2`/`ggdist` layers, scales, and guides.
 pass whatever fits your panel count and coefficient spread.
 
 `gap` is how far the point-interval is shifted away from the slab's
-baseline, as a target fraction of *panel height* (see
-`position_dodge_gap()`'s own comment for why this - not a row-unit
-fraction - is the right invariant to hold constant across callers with
-different category counts per panel). Default `.02` (~2% of panel
-height) looks right both for many-categories-sharing-one-panel layouts
-and one-category-per-panel grids; `0` reproduces a touching layout with
-no gap at all.
+baseline, as a fraction of panel height, so the same value suits a panel
+of many categories and a grid of one category per panel. The default
+`.02` is about 2% of panel height; `0` lets slab and interval touch.
 
 ## Examples
 

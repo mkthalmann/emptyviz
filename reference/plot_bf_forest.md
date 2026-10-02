@@ -79,8 +79,10 @@ plot_bf_forest(
 
 - positive_color, negative_color:
 
-  Colors for positive/negative contrasts; default to
-  `mt_colors[1]`/`mt_colors[2]`.
+  Colors for positive/negative contrasts. `NULL` (default) uses
+  `mt_colors[1]`/`mt_colors[2]`, or
+  `dark_mt_colors[1]`/`dark_mt_colors[2]` under a dark theme such as
+  `theme_mt(dark = TRUE)`.
 
 - positive_shape, negative_shape:
 
@@ -96,8 +98,8 @@ plot_bf_forest(
 
   `TRUE` (default) bundles
   [`layer_bf_evidence_scale()`](https://mkthalmann.github.io/emptyviz/reference/layer_bf_evidence_scale.md)
-  in automatically, with `range` computed from `data` itself; `FALSE`
-  for a bare forest plot with no annotation.
+  in automatically, with `arrow_range` computed from `data` itself;
+  `FALSE` for a bare forest plot with no annotation.
 
 - weak_threshold, weak_label:
 

@@ -101,20 +101,20 @@ plot_ridge_hdi(
 ![A ridgeline of posterior marginal means for the eight
 scenario-by-negation conditions, faceted into a stop panel on top and an
 again panel below. Each row is a density curve with a point-interval
-underneath it, and rows are sorted by mean. Both panels show the same
-ordering: critical-without, false-without and true-with sit around -1.5
-at the low end, undef-with and undef-without cluster near -0.5 in the
-middle, and critical-with, false-with and true-without run from about
-0.7 up to 2. The again panel's densities are slightly narrower and its
-extremes slightly further apart than the stop
+underneath it, and rows are sorted by mean, highest at the top. Both
+panels show the same ordering: critical-without, false-without and
+true-with sit around -1.5 at the low end, undef-with and undef-without
+cluster near -0.5 in the middle, and critical-with, false-with and
+true-without run from about 0.7 up to 2. The again panel's densities are
+slightly narrower and its extremes slightly further apart than the stop
 panel's.](bayesian-plots_files/figure-html/ridge-basic-1.png)
 
 ### `category_reorder`
 
-Default `TRUE` sorts rows by mean value (descending); `FALSE` keeps
-`category`’s existing factor-level order instead — useful when the order
-itself is meaningful (e.g. matching a fixed condition sequence elsewhere
-in a paper).
+Default `TRUE` sorts rows by their mean (highest at the top); `FALSE`
+keeps `category`’s existing factor-level order instead — useful when the
+order itself is meaningful (e.g. matching a fixed condition sequence
+elsewhere in a paper).
 
 ``` r
 
@@ -137,8 +137,8 @@ p_reorder_on + p_reorder_off
 ```
 
 ![The same eight posterior densities drawn twice. Left, labelled
-Reordered (default): rows run monotonically from the lowest mean at the
-top to the highest at the bottom, so the densities form a clean
+Reordered (default): rows run monotonically from the highest mean at the
+top to the lowest at the bottom, so the densities form a clean
 staircase. Right, labelled Original factor order: the identical
 densities in the category column's own factor order, which interleaves
 high and low conditions and leaves the rows scattered across the axis
@@ -519,7 +519,7 @@ sweep_data <- data.frame(
 ggplot(sweep_data, aes(x = prior_sd, y = log_bf)) +
   layer_bf_evidence_scale(
     orientation = "y",
-    range = c(-3, 8),
+    arrow_range = c(-3, 8),
     direction_labels = c("supports difference", "supports equivalence")
   ) +
   geom_line(color = mt_colors[1]) +

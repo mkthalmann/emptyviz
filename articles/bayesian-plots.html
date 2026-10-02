@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,7 @@
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mkthalmann/emptyviz" class="external-link">emptyviz</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mkthalmann.github.io/emptyviz/">emptyviz</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span></span>
@@ -156,15 +156,15 @@ submodels, extracted via
 <span>  value_limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2.3</span>, <span class="fl">2.3</span><span class="op">)</span>,</span>
 <span>  value_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>, <span class="op">-</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/ridge-basic-1.png" class="r-plt" alt="A ridgeline of posterior marginal means for the eight scenario-by-negation conditions, faceted into a stop panel on top and an again panel below. Each row is a density curve with a point-interval underneath it, and rows are sorted by mean. Both panels show the same ordering: critical-without, false-without and true-with sit around -1.5 at the low end, undef-with and undef-without cluster near -0.5 in the middle, and critical-with, false-with and true-without run from about 0.7 up to 2. The again panel's densities are slightly narrower and its extremes slightly further apart than the stop panel's." width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/ridge-basic-1.png" class="r-plt" alt="A ridgeline of posterior marginal means for the eight scenario-by-negation conditions, faceted into a stop panel on top and an again panel below. Each row is a density curve with a point-interval underneath it, and rows are sorted by mean, highest at the top. Both panels show the same ordering: critical-without, false-without and true-with sit around -1.5 at the low end, undef-with and undef-without cluster near -0.5 in the middle, and critical-with, false-with and true-without run from about 0.7 up to 2. The again panel's densities are slightly narrower and its extremes slightly further apart than the stop panel's." width="960"></p>
 </div>
 <div class="section level3">
 <h3 id="category_reorder">
 <code>category_reorder</code><a class="anchor" aria-label="anchor" href="#category_reorder"></a>
 </h3>
-<p>Default <code>TRUE</code> sorts rows by mean value (descending);
-<code>FALSE</code> keeps <code>category</code>’s existing factor-level
-order instead — useful when the order itself is meaningful
+<p>Default <code>TRUE</code> sorts rows by their mean (highest at the
+top); <code>FALSE</code> keeps <code>category</code>’s existing
+factor-level order instead — useful when the order itself is meaningful
 (e.g. matching a fixed condition sequence elsewhere in a paper).</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p_reorder_on</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_ridge_hdi.html">plot_ridge_hdi</a></span><span class="op">(</span></span>
@@ -183,7 +183,7 @@ order instead — useful when the order itself is meaningful
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Original factor order"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">p_reorder_on</span> <span class="op">+</span> <span class="va">p_reorder_off</span></span></code></pre></div>
-<p><img src="bayesian-plots_files/figure-html/ridge-reorder-1.png" class="r-plt" alt="The same eight posterior densities drawn twice. Left, labelled Reordered (default): rows run monotonically from the lowest mean at the top to the highest at the bottom, so the densities form a clean staircase. Right, labelled Original factor order: the identical densities in the category column's own factor order, which interleaves high and low conditions and leaves the rows scattered across the axis with no visual trend." width="960"></p>
+<p><img src="bayesian-plots_files/figure-html/ridge-reorder-1.png" class="r-plt" alt="The same eight posterior densities drawn twice. Left, labelled Reordered (default): rows run monotonically from the highest mean at the top to the lowest at the bottom, so the densities form a clean staircase. Right, labelled Original factor order: the identical densities in the category column's own factor order, which interleaves high and low conditions and leaves the rows scattered across the axis with no visual trend." width="960"></p>
 </div>
 <div class="section level3">
 <h3 id="value_transform">
@@ -465,7 +465,7 @@ panel instead of the top.</p>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">sweep_data</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">prior_sd</span>, y <span class="op">=</span> <span class="va">log_bf</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/layer_bf_evidence_scale.html">layer_bf_evidence_scale</a></span><span class="op">(</span></span>
 <span>    orientation <span class="op">=</span> <span class="st">"y"</span>,</span>
-<span>    range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">3</span>, <span class="fl">8</span><span class="op">)</span>,</span>
+<span>    arrow_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">3</span>, <span class="fl">8</span><span class="op">)</span>,</span>
 <span>    direction_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"supports difference"</span>, <span class="st">"supports equivalence"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>color <span class="op">=</span> <span class="va">mt_colors</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span> <span class="op">+</span></span>

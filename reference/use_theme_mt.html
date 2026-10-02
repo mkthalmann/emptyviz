@@ -13,7 +13,7 @@ global ggplot2 state on load is a bad default."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,14 +46,14 @@ global ggplot2 state on load is a bad default."></head><body>
 
     <div class="ref-description section level2">
     <p>Calls <code><a href="https://ggplot2.tidyverse.org/reference/get_theme.html" class="external-link">ggplot2::theme_set()</a></code> with <code>theme_mt(base_size = base_size)</code>. Call
-this once per session/script after <code><a href="https://github.com/mkthalmann/emptyviz" class="external-link">library(emptyviz)</a></code> - loading the
+this once per session/script after <code><a href="https://mkthalmann.github.io/emptyviz/">library(emptyviz)</a></code> - loading the
 package does not do this automatically, since a package silently mutating
 global <code>ggplot2</code> state on load is a bad default.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">use_theme_mt</span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">10</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">use_theme_mt</span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">10</span>, <span class="va">...</span>, dual_render <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -62,12 +62,17 @@ global <code>ggplot2</code> state on load is a bad default.</p>
 
 <dl><dt id="arg-base-size">base_size<a class="anchor" aria-label="anchor" href="#arg-base-size"></a></dt>
 <dd><p>Passed to <code><a href="theme_mt.html">theme_mt()</a></code>, whose own default is the same
-value - the two used to disagree by nearly 2x.</p></dd>
+value.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Passed to <code><a href="theme_mt.html">theme_mt()</a></code> as well - e.g. <code>base_family</code> or <code>dark</code>,
 for callers that want an activated theme other than the plain default.</p></dd>
+
+
+<dt id="arg-dual-render">dual_render<a class="anchor" aria-label="anchor" href="#arg-dual-render"></a></dt>
+<dd><p>Whether to register the dual light/dark <code>knit_print</code>
+method described in Details (default <code>TRUE</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -76,20 +81,23 @@ for callers that want an activated theme other than the plain default.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>This used to also call <code>update_geom_defaults("density", list(adjust = 5))</code>,
-documented as a heavier smoothing bandwidth. It never worked: <code>adjust</code> is a
-<code><a href="https://ggplot2.tidyverse.org/reference/geom_density.html" class="external-link">ggplot2::stat_density()</a></code> parameter, not a geom aesthetic, so the call only
-wrote a phantom <code>adjust</code> entry into <code>GeomDensity$default_aes</code> where nothing
-reads it, session-wide and with no way to undo it short of restarting R.
-Bandwidth was ggplot2's default throughout. Pass <code>adjust</code> to
-<code><a href="https://ggplot2.tidyverse.org/reference/geom_density.html" class="external-link">geom_density()</a></code>/<code><a href="https://ggplot2.tidyverse.org/reference/geom_density.html" class="external-link">stat_density()</a></code> directly if you want heavier smoothing.</p>
+    <p>It changes no geom defaults. For heavier density smoothing, pass <code>adjust</code>
+to <code><a href="https://ggplot2.tidyverse.org/reference/geom_density.html" class="external-link">geom_density()</a></code>/<code><a href="https://ggplot2.tidyverse.org/reference/geom_density.html" class="external-link">stat_density()</a></code> directly.</p>
 <p>If <code>knitr</code> is installed, this also registers a <code>knit_print</code> method for
 <code>ggplot</code>/<code>patchwork</code> objects that renders a chunk twice - once normally,
 once with a dark-mode color overlay - whenever that chunk sets the
 <code>dual_render</code> chunk option to <code>TRUE</code> (directly, or via a project-wide
 <code>knitr: opts_chunk: dual_render: true</code> default), emitting both images
-wrapped for Quarto's light/dark toggle. Chunks that don't set the option
-are completely unaffected.</p>
+wrapped for Quarto's light/dark toggle. This applies only to HTML output
+rendered by Quarto. For PDF or Word output, figures are rendered normally;
+for HTML not rendered by Quarto they are too, with a warning. Chunks
+that don't set the option are unaffected. Pass <code>dual_render = FALSE</code> to
+leave knitr's printing of ggplot objects untouched; this also removes the
+method if an earlier call registered it.</p>
+<p>A dual-rendered chunk's <code>fig.alt</code> becomes the alt text of both images. A
+<code>fig.cap</code> is shown as plain text: markdown and math in it are not
+rendered, unless the chunk has a <code>fig-</code> label, in which case Quarto
+captions the figure itself.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

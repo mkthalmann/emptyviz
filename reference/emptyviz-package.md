@@ -12,6 +12,8 @@ published to make the analyses that depend on it reproducible.
 
 Useful links:
 
+- <https://mkthalmann.github.io/emptyviz/>
+
 - <https://github.com/mkthalmann/emptyviz>
 
 - Report bugs at <https://github.com/mkthalmann/emptyviz/issues>

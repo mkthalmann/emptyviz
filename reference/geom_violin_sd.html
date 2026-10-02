@@ -23,7 +23,7 @@ outline_color/sd_linewidth.
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,13 +134,38 @@ the legend key at full opacity - see Details).</p>
 (used internally by the aura/fill/outline sub-layers) and will warn, not
 error or silently vanish - use <code>base_alpha</code>/<code>sd_alpha</code>/<code>outline_color</code>/
 <code>sd_linewidth</code> instead (there's no equivalent substitute for <code>stat</code> -
-swapping it out isn't meaningful for this geom's own identity).</p>
+swapping it out isn't meaningful for this geom's own identity). Quantile
+lines are not supported: <code>draw_quantiles</code> and the <code>quantile.*</code> arguments
+are dropped with a warning.</p>
 <p>SD bounds are always the <em>unweighted</em> mean/sd of the raw y values, even
 if <code>aes(weight = ...)</code> is mapped.</p>
 <p>As with <code><a href="geom_half_violin_sd.html">geom_half_violin_sd()</a></code>: only the aura sub-layer ever
 contributes a legend key, and the SD-band outline's colour tracks each
 group's resolved fill automatically when <code>outline_color</code>/<code>fill</code> aren't
 given as literals.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="background">Background<a class="anchor" aria-label="anchor" href="#background"></a></h2>
+
+
+<p>The SD band shows how much the observations vary, not how precisely their
+mean is estimated. Readers, experts included, readily take intervals of
+inferential uncertainty for the spread of outcomes (Zhang et al. 2023; see
+also Hoekstra et al. 2014). The geoms draw on these results and on
+Hofmann (2025).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Hoekstra, R., Morey, R. D., Rouder, J. N., &amp; Wagenmakers, E.-J. (2014).
+Robust misinterpretation of confidence intervals. <em>Psychonomic Bulletin &amp;
+Review</em>, 21(5), 1157-1164. <a href="https://doi.org/10.3758/s13423-013-0572-3" class="external-link">doi:10.3758/s13423-013-0572-3</a></p>
+<p>Hofmann, L. (2025). Anaphoric accessibility with flat update. <em>Semantics &amp;
+Pragmatics</em>, 18(3), 1-69. <a href="https://doi.org/10.3765/sp.18.3" class="external-link">doi:10.3765/sp.18.3</a></p>
+<p>Zhang, S., Heck, P. R., Meyer, M. N., Chabris, C. F., Goldstein, D. G., &amp;
+Hofman, J. M. (2023). An illusion of predictability in scientific results:
+Even experts confuse inferential uncertainty and outcome variability.
+<em>Proceedings of the National Academy of Sciences</em>, 120(33).
+<a href="https://doi.org/10.1073/pnas.2302491120" class="external-link">doi:10.1073/pnas.2302491120</a></p>
     </div>
 
     <div class="section level2">

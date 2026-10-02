@@ -118,6 +118,31 @@ side is silently dropped by the underlying density stat (same as
 [`geom_half_violin_sd()`](https://mkthalmann.github.io/emptyviz/reference/geom_half_violin_sd.md)),
 it doesn't stop the rest of the plot from drawing.
 
+## Background
+
+The SD band shows how much the observations vary, not how precisely
+their mean is estimated. Readers, experts included, readily take
+intervals of inferential uncertainty for the spread of outcomes (Zhang
+et al. 2023; see also Hoekstra et al. 2014). The geoms draw on these
+results and on Hofmann (2025).
+
+## References
+
+Hoekstra, R., Morey, R. D., Rouder, J. N., & Wagenmakers, E.-J. (2014).
+Robust misinterpretation of confidence intervals. *Psychonomic Bulletin
+& Review*, 21(5), 1157-1164.
+[doi:10.3758/s13423-013-0572-3](https://doi.org/10.3758/s13423-013-0572-3)
+
+Hofmann, L. (2025). Anaphoric accessibility with flat update. *Semantics
+& Pragmatics*, 18(3), 1-69.
+[doi:10.3765/sp.18.3](https://doi.org/10.3765/sp.18.3)
+
+Zhang, S., Heck, P. R., Meyer, M. N., Chabris, C. F., Goldstein, D. G.,
+& Hofman, J. M. (2023). An illusion of predictability in scientific
+results: Even experts confuse inferential uncertainty and outcome
+variability. *Proceedings of the National Academy of Sciences*, 120(33).
+[doi:10.1073/pnas.2302491120](https://doi.org/10.1073/pnas.2302491120)
+
 ## Examples
 
 ``` r

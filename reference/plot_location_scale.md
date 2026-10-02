@@ -53,17 +53,9 @@ plot_location_scale(
 
 - location, sigma:
 
-  Unquoted columns holding the per-draw location and scale values. No
-  default - unlike
-  [`layer_halfeye_hdi()`](https://mkthalmann.github.io/emptyviz/reference/layer_halfeye_hdi.md)'s
-  `value = .value` (a real tidybayes convention), there's no equivalent
-  widely-used column name for a paired location/sigma draw, so a
-  same-named default (`location = location`) would only "work" by
-  coincidence when the caller's data happens to have columns literally
-  called `location`/`sigma` - and crash with a cryptic R-level
-  "recursive default argument reference" error otherwise, since looking
-  up the unmatched symbol falls through to the function's own unforced
-  argument promise of the same name. Always pass both explicitly.
+  Unquoted columns holding the per-draw location and scale values. They
+  have no default because, unlike tidybayes' `.value`, there is no
+  conventional column name for paired location and scale draws.
 
 - shape:
 
@@ -153,7 +145,9 @@ plot_location_scale(
 
 - curve_color:
 
-  Color of the sigma_max reference curve; defaults to `mt_colors[2]`.
+  Color of the sigma_max reference curve. `NULL` (default) uses
+  `mt_colors[2]`, or `dark_mt_colors[2]` under a dark theme such as
+  `theme_mt(dark = TRUE)`.
 
 - xlab, ylab:
 
