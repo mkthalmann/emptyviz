@@ -79,11 +79,8 @@ dark_mt_colors12 <- c(
 # line is a real boundary and reads as too faint at the same brightness as
 # the grid.
 #
-# The axis line's 3.14:1 is not a round number by accident: WCAG 1.4.11 sets
-# 3:1 as the floor for a meaningful (non-decorative) graphical object, and
-# "a real boundary" is exactly that. It used to be #545b63, which measures
-# 2.655:1 - just under. The grid is left at 1.19:1 on purpose: it IS
-# decorative, and raising it would fight the design intent.
+# The axis line is a meaningful graphical object, so it meets the 3:1 floor
+# of WCAG 1.4.11; the grid is decorative and stays well below it.
 .dark_ink <- "#e4e4e4"
 .dark_grid <- "#22252a"
 .dark_axis_line <- "#5f666e"
@@ -117,21 +114,15 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #' Call [use_theme_mt()] to make this the session's active theme -
 #' `library(emptyviz)` does not do this automatically.
 #'
-#' The type scale has exactly one element above the metadata tier. The
-#' title, subtitle, strip text, axis titles and legend text used to share
-#' `base_size + 2`, so `face = "bold"` was the only thing distinguishing a
-#' plot title from an axis label, and the axis titles outranked the tick
-#' labels they describe. The title is now `base_size + 4` and everything
-#' else in that tier is `base_size + 1`, above `base_size` tick labels and
-#' a `base_size - 2` caption. Every size remains an argument.
+#' Only the title stands above the rest of the type scale, at
+#' `base_size + 4`. Subtitle, strip text and axis titles are `base_size + 1`,
+#' tick labels and legend text `base_size`, and the caption `base_size - 2`.
+#' Every size is an argument.
 #'
-#' Spacing is sized off `base_size` rather than fixed: `plot.margin` used
-#' to be `0.1` lines (about a point), which - with the `hjust = 1` axis
-#' titles this theme uses - clipped the x-axis title against the device
-#' edge in most figures, and left a LaTeX caption sitting flush against the
-#' figure's descenders. Legend keys scale with the legend text instead of
-#' being pinned at `0.7cm`, and the gap between panel and legend is set
-#' through `legend.box.spacing` rather than a negative `legend.margin`.
+#' Margins, legend keys and the gap between panel and legend are sized off
+#' `base_size`, so they scale with the type. The plot margin is wider on the
+#' right and top, where the right-aligned axis titles and the title would
+#' otherwise touch the device edge.
 #'
 #' Minor gridlines are off by default (`minor_grid`): at `linewidth = 0.1`
 #' they are about 0.1 mm, which is where print workflows stop guaranteeing
@@ -150,8 +141,10 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #' If your site's dark background differs much from `#151515`, either match
 #' it or pass `grid_color`/`axis_text_color`/`axis_line_color` explicitly.
 #' `geom.paper` follows the same assumption: it is that same `#151515`, so
-#' a `geom_label()` on a dark page reads as opaque rather than as a
-#' 30%-transparent hole.
+#' a `geom_label()` on a dark page has an opaque background. The default
+#' colours of this package's plot builders ([plot_bf_forest()],
+#' [plot_ridge_hdi()], ...) follow the theme as well: under a dark theme
+#' they switch from [mt_colors12] to the matching [dark_mt_colors12] tints.
 #'
 #' The discrete palette separates categories by **hue**, with very little
 #' lightness difference between them: every pair in [mt_colors5] falls below
@@ -201,31 +194,23 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #' works as usual.
 #'
 #' @param base_size Base font size, in points. Every other size argument
-#'   derives from it by default. [use_theme_mt()] passes the same default
-#'   through, so a plot themed directly with `theme_mt()` and one themed via
-#'   the session default look the same - they used to disagree by nearly 2x
-#'   (19 here, 10 there), with neither docstring mentioning the other.
+#'   derives from it by default. [use_theme_mt()] has the same default.
 #' @param base_family,plot_title_family,subtitle_family,strip_text_family,axis_title_family,axis_text_family,caption_family
 #'   Font families for each text element; all default to `base_family`. See
 #'   Details for the `"Roboto Condensed"` default's system requirement.
 #' @param plot_title_size,axis_text_size,strip_text_size,subtitle_size,caption_size,axis_title_size,legend_text_size
 #'   Font sizes for each text element, all derived from `base_size` by
 #'   default. See Details for how the scale is laid out. `legend_text_size`
-#'   covers both `legend.text` and `legend.title`, which used to be pinned
-#'   at `base_size + 2` in the function body with no way to change them.
+#'   covers both `legend.text` and `legend.title`.
 #' @param grid_color Color of the panel grid lines, and of the axis line
 #'   unless `axis_line_color` says otherwise. Defaults to a near-invisible
 #'   light gray, or a near-invisible dark gray when `dark = TRUE`.
 #' @param minor_grid Whether to draw minor gridlines (on the major axis
-#'   only, matching the major grid). `FALSE` by default; `TRUE` restores
-#'   the previous behaviour. See Details.
+#'   only, matching the major grid). `FALSE` by default. See Details.
 #' @param background Fill for `plot.background` in light mode: `"white"`
-#'   (the default), `"transparent"`, or any color. This used to be
-#'   `alpha("white", .5)`, which is invisible on a white page and a milky
-#'   half-wash on any other - so a figure dropped onto a tinted slide or a
-#'   shaded box picked up a haze that was neither the page's color nor the
-#'   figure's. `dark = TRUE` is always transparent, whatever this is set to,
-#'   for the reason given above.
+#'   (the default), `"transparent"`, or any opaque color. A semi-transparent
+#'   fill would tint whatever page the figure is placed on. With
+#'   `dark = TRUE` the background is always transparent; see Details.
 #' @param axis_text_color Color of the axis tick labels. Defaults to a dark
 #'   gray, or a light gray when `dark = TRUE`.
 #' @param axis_line_color Color of the axis line, which is always drawn.
@@ -236,12 +221,9 @@ mt_colors_many <- colorRampPalette(c(mt_colors[1], mt_colors[2]))
 #' @param continuous_palette Colors for continuous `colour`/`fill` scales,
 #'   as the two ends of a ramp. Defaults to a lightness ramp of
 #'   `mt_colors[1]` (or of `dark_mt_colors[1]` when `dark = TRUE`) - a
-#'   single-hue sequential scale in the palette's own teal, running light to
-#'   dark. `palette.colour.continuous` was previously unset, so a mapped
-#'   continuous variable fell through to ggplot2's factory blue gradient:
-#'   a hue that isn't in this palette at all, running *dark to light*, so
-#'   the largest values drew the faintest marks. Pass `NULL` to go back to
-#'   that default.
+#'   single-hue sequential scale in the palette's own teal, running from
+#'   light (low values) to dark (high values). `NULL` leaves ggplot2's own
+#'   default gradient.
 #' @param dark Build a dark-mode-appropriate variant instead: transparent
 #'   plot/panel background (rather than the opaque white "paper" used in
 #'   light mode), light text/gridline/ink colors, and [dark_mt_colors12]
@@ -271,15 +253,13 @@ theme_mt <- function(
   axis_title_family = base_family,
   axis_text_family = base_family,
   caption_family = base_family,
-  # The type scale: the title is the only element above the metadata tier,
-  # and the metadata tier no longer outranks the tick labels it describes.
-  # See this function's Details for the full rationale.
+  # The type scale; see Details.
   plot_title_size = base_size + 4,
   axis_text_size = base_size,
   strip_text_size = base_size + 1,
   subtitle_size = base_size + 1,
-  # base_size - 3 is 7pt at the default base_size, which is under the
-  # readable floor once a journal typesets a 6-inch figure at 3.3 inches.
+  # 8pt at the default base_size; 7pt would fall below the readable minimum
+  # once a journal reduces a 6-inch figure to a 3.3-inch column.
   caption_size = base_size - 2,
   axis_title_size = base_size + 1,
   legend_text_size = base_size,
@@ -298,28 +278,20 @@ theme_mt <- function(
   ink <- if (dark) .dark_ink else "black"
   paper <- if (dark || identical(background, "transparent")) NA else background
   subtitle_color <- if (dark) .dark_subtitle else "gray40"
-  # gray45 measures 4.74:1 against white, up from gray50's 3.94:1. The
-  # caption is the smallest text in the figure and the first thing to
-  # dissolve when a journal scales the figure down, so it gets the extra
-  # contrast rather than the least.
+  # gray45 measures 4.74:1 against white: the caption is the smallest text in
+  # the figure, so it still meets the 4.5:1 text minimum.
   caption_color <- if (dark) .dark_caption else "gray45"
   geom_fill <- if (dark) dark_mt_colors[1] else mt_colors[1]
-  # `geom.paper` is what geom_label()'s fill resolves from in ggplot2 >= 4
-  # (GeomLabel$default_aes maps fill to `from_theme(fill %||% paper)`).
-  # This used to be alpha("white", 0.3) / alpha("black", 0.3), so every
-  # label drew a 30%-transparent background and the marks underneath showed
-  # through the text - an opaque background being the entire point of a
-  # label. Dark mode uses the same #151515 the rest of dark mode assumes;
-  # .dark_mode_overlay() in R/dual-render.R mirrors this and must stay in
-  # sync.
+  # geom_label() takes its fill from `geom.paper` (ggplot2 >= 4). It is
+  # opaque so that marks behind a label do not show through the text. Dark
+  # mode uses the #151515 page colour it is tuned for; .dark_mode_overlay()
+  # in R/dual-render.R mirrors this.
   geom_paper <- if (dark) "#151515" else "white"
   # A continuous colourbar has no edges against the page. Recessive enough
   # not to compete with the ramp it frames, dark enough to survive print.
   legend_frame_color <- if (dark) .dark_axis_line else "gray70"
   discrete_palette <- if (dark) dark_mt_colors12 else mt_colors12
-  # A small gap between axis tick labels and the axis line/panel, in both
-  # light and dark mode - text sitting flush against the line read as too
-  # cramped.
+  # Gap between the tick labels and the axis line, in points.
   axis_text_gap <- 4
 
   minor_line <- if (minor_grid) {
@@ -414,14 +386,11 @@ theme_mt <- function(
       legend.background = element_blank(),
       legend.direction = "horizontal",
       legend.key = element_blank(),
-      # 0.7cm keys were about twice the cap height of their own labels.
-      # These scale with the text they sit beside instead.
+      # Keys scale with the legend text they sit beside.
       legend.key.size = unit(base_size * 1.1, "pt"),
       legend.key.spacing.x = unit(base_size * 0.7, "pt"),
-      # legend.box.spacing is the argument that actually controls the gap
-      # between the panel and the legend; this used to be done with
-      # legend.margin = margin(-base_size, 0, 0, 0, "pt"), a negative
-      # margin standing in for it, which could clip the legend's own top.
+      # The gap between panel and legend is set by legend.box.spacing; a
+      # negative legend.margin would clip the top of the legend.
       legend.margin = margin(0, 0, 0, 0),
       legend.box.spacing = unit(base_size * 0.6, "pt"),
       legend.position = "bottom",
@@ -442,11 +411,9 @@ theme_mt <- function(
       panel.grid.minor.y = minor_line,
       panel.spacing = unit(1, "lines"),
       panel.spacing.y = unit(1, "lines"),
-      # This used to be margin(.1, .1, .1, .1, "lines") - about a point -
-      # so the hjust = 1 x-axis title and the last x tick label ran into
-      # the device edge, and a LaTeX caption sat flush against the
-      # figure's descenders. Biased right and top, where the clipping
-      # actually happens, and sized off base_size so it tracks the type.
+      # Wider on the right and top, where the right-aligned x-axis title,
+      # the last tick label and the title would otherwise reach the device
+      # edge.
       plot.margin = margin(
         t = base_size * 0.5,
         r = base_size * 0.7,
@@ -494,9 +461,8 @@ theme_mt <- function(
       plot.tag.position = "topleft",
       strip.background = element_blank(),
       strip.placement = "outside",
-      # These used to be margin() - zero on every side - so with
-      # strip.placement = "outside" a facet label sat flush against the
-      # panel it labels.
+      # With strip.placement = "outside", these margins keep a facet label
+      # off the panel it labels.
       strip.text.x = element_markdown(
         margin = margin(t = base_size * 0.2, b = base_size * 0.5),
         size = strip_text_size,
@@ -540,8 +506,10 @@ theme_mt <- function(
       geom.area = element_geom(fill = geom_fill),
       geom.col = element_geom(fill = geom_fill),
       geom.ribbon = element_geom(fill = geom_fill),
-      geom.text = element_geom(family = base_family, fontsize = 5),
-      geom.label = element_geom(family = base_family, fontsize = 5),
+      # `fontsize` is in points: geom text and labels are set at base_size,
+      # the size of the tick labels by default.
+      geom.text = element_geom(family = base_family, fontsize = base_size),
+      geom.label = element_geom(family = base_family, fontsize = base_size),
       # theme-level palettes (used by scales internally)
       palette.colour.discrete = discrete_palette,
       palette.fill.discrete = discrete_palette,
@@ -563,26 +531,32 @@ theme_mt <- function(
 #' package does not do this automatically, since a package silently mutating
 #' global `ggplot2` state on load is a bad default.
 #'
-#' This used to also call `update_geom_defaults("density", list(adjust = 5))`,
-#' documented as a heavier smoothing bandwidth. It never worked: `adjust` is a
-#' [ggplot2::stat_density()] parameter, not a geom aesthetic, so the call only
-#' wrote a phantom `adjust` entry into `GeomDensity$default_aes` where nothing
-#' reads it, session-wide and with no way to undo it short of restarting R.
-#' Bandwidth was ggplot2's default throughout. Pass `adjust` to
-#' `geom_density()`/`stat_density()` directly if you want heavier smoothing.
+#' It changes no geom defaults. For heavier density smoothing, pass `adjust`
+#' to `geom_density()`/`stat_density()` directly.
 #'
 #' If `knitr` is installed, this also registers a `knit_print` method for
 #' `ggplot`/`patchwork` objects that renders a chunk twice - once normally,
 #' once with a dark-mode color overlay - whenever that chunk sets the
 #' `dual_render` chunk option to `TRUE` (directly, or via a project-wide
 #' `knitr: opts_chunk: dual_render: true` default), emitting both images
-#' wrapped for Quarto's light/dark toggle. Chunks that don't set the option
-#' are completely unaffected.
+#' wrapped for Quarto's light/dark toggle. This applies only to HTML output
+#' rendered by Quarto. For PDF or Word output, figures are rendered normally;
+#' for HTML not rendered by Quarto they are too, with a warning. Chunks
+#' that don't set the option are unaffected. Pass `dual_render = FALSE` to
+#' leave knitr's printing of ggplot objects untouched; this also removes the
+#' method if an earlier call registered it.
+#'
+#' A dual-rendered chunk's `fig.alt` becomes the alt text of both images. A
+#' `fig.cap` is shown as plain text: markdown and math in it are not
+#' rendered, unless the chunk has a `fig-` label, in which case Quarto
+#' captions the figure itself.
 #'
 #' @param base_size Passed to `theme_mt()`, whose own default is the same
-#'   value - the two used to disagree by nearly 2x.
+#'   value.
 #' @param ... Passed to `theme_mt()` as well - e.g. `base_family` or `dark`,
 #'   for callers that want an activated theme other than the plain default.
+#' @param dual_render Whether to register the dual light/dark `knit_print`
+#'   method described in Details (default `TRUE`).
 #' @return `invisible(NULL)`, called for its side effect.
 #' @seealso [theme_mt()]
 #' @examples
@@ -590,8 +564,12 @@ theme_mt <- function(
 #' use_theme_mt()
 #' ggplot2::theme_set(old) # not required in a real script/session
 #' @export
-use_theme_mt <- function(base_size = 10, ...) {
+use_theme_mt <- function(base_size = 10, ..., dual_render = TRUE) {
   theme_set(theme_mt(base_size = base_size, ...))
-  .register_dual_render()
+  if (isTRUE(dual_render)) {
+    .register_dual_render()
+  } else {
+    .unregister_dual_render()
+  }
   invisible(NULL)
 }

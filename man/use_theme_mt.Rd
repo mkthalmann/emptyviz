@@ -4,14 +4,17 @@
 \alias{use_theme_mt}
 \title{Activate \code{theme_mt()} as the session's default theme}
 \usage{
-use_theme_mt(base_size = 10, ...)
+use_theme_mt(base_size = 10, ..., dual_render = TRUE)
 }
 \arguments{
 \item{base_size}{Passed to \code{theme_mt()}, whose own default is the same
-value - the two used to disagree by nearly 2x.}
+value.}
 
 \item{...}{Passed to \code{theme_mt()} as well - e.g. \code{base_family} or \code{dark},
 for callers that want an activated theme other than the plain default.}
+
+\item{dual_render}{Whether to register the dual light/dark \code{knit_print}
+method described in Details (default \code{TRUE}).}
 }
 \value{
 \code{invisible(NULL)}, called for its side effect.
@@ -23,21 +26,25 @@ package does not do this automatically, since a package silently mutating
 global \code{ggplot2} state on load is a bad default.
 }
 \details{
-This used to also call \code{update_geom_defaults("density", list(adjust = 5))},
-documented as a heavier smoothing bandwidth. It never worked: \code{adjust} is a
-\code{\link[ggplot2:stat_density]{ggplot2::stat_density()}} parameter, not a geom aesthetic, so the call only
-wrote a phantom \code{adjust} entry into \code{GeomDensity$default_aes} where nothing
-reads it, session-wide and with no way to undo it short of restarting R.
-Bandwidth was ggplot2's default throughout. Pass \code{adjust} to
-\code{geom_density()}/\code{stat_density()} directly if you want heavier smoothing.
+It changes no geom defaults. For heavier density smoothing, pass \code{adjust}
+to \code{geom_density()}/\code{stat_density()} directly.
 
 If \code{knitr} is installed, this also registers a \code{knit_print} method for
 \code{ggplot}/\code{patchwork} objects that renders a chunk twice - once normally,
 once with a dark-mode color overlay - whenever that chunk sets the
 \code{dual_render} chunk option to \code{TRUE} (directly, or via a project-wide
 \code{knitr: opts_chunk: dual_render: true} default), emitting both images
-wrapped for Quarto's light/dark toggle. Chunks that don't set the option
-are completely unaffected.
+wrapped for Quarto's light/dark toggle. This applies only to HTML output
+rendered by Quarto. For PDF or Word output, figures are rendered normally;
+for HTML not rendered by Quarto they are too, with a warning. Chunks
+that don't set the option are unaffected. Pass \code{dual_render = FALSE} to
+leave knitr's printing of ggplot objects untouched; this also removes the
+method if an earlier call registered it.
+
+A dual-rendered chunk's \code{fig.alt} becomes the alt text of both images. A
+\code{fig.cap} is shown as plain text: markdown and math in it are not
+rendered, unless the chunk has a \verb{fig-} label, in which case Quarto
+captions the figure itself.
 }
 \examples{
 old <- ggplot2::theme_get() # so the example can restore it afterward

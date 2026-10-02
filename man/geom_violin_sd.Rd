@@ -64,7 +64,9 @@ by \code{style}). Same calling convention as \code{\link[ggplot2:geom_violin]{gg
 (used internally by the aura/fill/outline sub-layers) and will warn, not
 error or silently vanish - use \code{base_alpha}/\code{sd_alpha}/\code{outline_color}/
 \code{sd_linewidth} instead (there's no equivalent substitute for \code{stat} -
-swapping it out isn't meaningful for this geom's own identity).
+swapping it out isn't meaningful for this geom's own identity). Quantile
+lines are not supported: \code{draw_quantiles} and the \verb{quantile.*} arguments
+are dropped with a warning.
 
 SD bounds are always the \emph{unweighted} mean/sd of the raw y values, even
 if \code{aes(weight = ...)} is mapped.
@@ -74,6 +76,15 @@ contributes a legend key, and the SD-band outline's colour tracks each
 group's resolved fill automatically when \code{outline_color}/\code{fill} aren't
 given as literals.
 }
+\section{Background}{
+
+The SD band shows how much the observations vary, not how precisely their
+mean is estimated. Readers, experts included, readily take intervals of
+inferential uncertainty for the spread of outcomes (Zhang et al. 2023; see
+also Hoekstra et al. 2014). The geoms draw on these results and on
+Hofmann (2025).
+}
+
 \examples{
 library(ggplot2)
 set.seed(1)
@@ -84,4 +95,18 @@ df <- data.frame(
 ggplot(df, aes(grp, y, fill = grp)) +
   geom_violin_sd() +
   guides(fill = "none")
+}
+\references{
+Hoekstra, R., Morey, R. D., Rouder, J. N., & Wagenmakers, E.-J. (2014).
+Robust misinterpretation of confidence intervals. \emph{Psychonomic Bulletin &
+Review}, 21(5), 1157-1164. \doi{10.3758/s13423-013-0572-3}
+
+Hofmann, L. (2025). Anaphoric accessibility with flat update. \emph{Semantics &
+Pragmatics}, 18(3), 1-69. \doi{10.3765/sp.18.3}
+
+Zhang, S., Heck, P. R., Meyer, M. N., Chabris, C. F., Goldstein, D. G., &
+Hofman, J. M. (2023). An illusion of predictability in scientific results:
+Even experts confuse inferential uncertainty and outcome variability.
+\emph{Proceedings of the National Academy of Sciences}, 120(33).
+\doi{10.1073/pnas.2302491120}
 }

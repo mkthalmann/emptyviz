@@ -20,12 +20,18 @@ format).}
 \item{contrast}{Unquoted column holding that raw string (default
 \code{contrast}, matching bayestestR's own column name).}
 
-\item{value}{Optional unquoted column - typically the log-BF/BF column
-itself - to sign-flip on any row matched via a swapped pair (see
-\code{pairs}), so a positive value still means whatever the caller's
-first-named condition supports. \code{NULL} (default) leaves every column
-as-is; if any pair needed swapping and no \code{value} is given, a warning
-names how many rows were affected.}
+\item{value}{Optional column(s) to negate on any row matched via a swapped
+pair (see \code{pairs}), so that a positive value still favours the caller's
+first-named condition. Takes a bare column name or a tidyselect
+selection such as \code{c(log_BF, estimate)}. Every selected column must be
+on a log or difference scale, where reversing a contrast flips the
+sign: a log Bayes factor, an estimated difference. A ratio-scale Bayes
+factor is inverted, not negated, by a reversal; take its \code{log()} first.
+Interval bounds need swapping as well as negating, so negating them
+here would produce a reversed interval. Columns not selected keep their
+original direction. \code{NULL} (default) selects nothing; if any pair needed
+swapping and no \code{value} is given, a warning names how many rows were
+affected.}
 
 \item{strip}{A regular expression removed from each side after splitting
 (default \code{" NA$"}, since a reference grid that marginalizes over a

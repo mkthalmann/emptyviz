@@ -28,3 +28,14 @@ test_that("calling with neither data nor mapping and no parent ggplot() aes buil
   expect_no_error(ggplot_build(ggplot() + gghalves::geom_half_violin()))
   expect_no_error(ggplot_build(ggplot() + geom_half_violin_sd()))
 })
+
+test_that("data given as a function or a lambda formula is applied to the plot data, as for any layer", {
+  keep_ab <- function(d) d[d$grp != "c", ]
+  for (geom in list(geom_violin_sd, geom_half_violin_sd)) {
+    built <- ggplot_build(ggplot(sd_fixture, aes(grp, y)) + geom(data = keep_ab))
+    expect_true(all(vapply(built$data, function(d) length(unique(d$x)) == 2, logical(1))))
+    built <- ggplot_build(ggplot(sd_fixture, aes(grp, y)) + geom(data = ~ subset(.x, grp != "c")))
+    expect_true(all(vapply(built$data, function(d) length(unique(d$x)) == 2, logical(1))))
+  }
+  expect_error(geom_split_violin_sd(data = keep_ab, split = grp), "data frame")
+})

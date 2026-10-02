@@ -136,8 +136,7 @@ capture_applied_sides <- function(p) {
 
 # WCAG 2.x relative-luminance contrast ratio between two colors, per
 # https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio. Used by the palette and
-# dark-mode tests to state contrast claims as numbers rather than prose -
-# the specific habit finding #14 of the code review asked for.
+# dark-mode tests to state contrast claims as numbers rather than prose.
 wcag_contrast <- function(a, b) {
   relative_luminance <- function(hex) {
     channels <- grDevices::col2rgb(hex)[, 1] / 255
@@ -150,4 +149,65 @@ wcag_contrast <- function(a, b) {
   }
   lums <- c(relative_luminance(a), relative_luminance(b))
   (max(lums) + 0.05) / (min(lums) + 0.05)
+}
+
+# knit_print_ggplot_dual() only takes its dual path for HTML output knitted by
+# Quarto. Calling it directly in a test has neither, so this sets the two
+# knitr options it checks for the rest of the calling test.
+local_quarto_html <- function(env = parent.frame()) {
+  old <- knitr::opts_knit$get(c("rmarkdown.pandoc.to", "quarto.version"))
+  knitr::opts_knit$set(rmarkdown.pandoc.to = "html", quarto.version = "1.6.0")
+  do.call(
+    on.exit,
+    list(bquote(knitr::opts_knit$set(.(old))), add = TRUE),
+    envir = env
+  )
+  invisible(NULL)
+}
+
+# Plain-text description of the elements theme_mt(dark = dark) sets
+# differently from the theme_minimal() it builds on: one line per element,
+# listing its class and non-NULL properties. Built from base R so that the
+# snapshot does not depend on how ggplot2 prints themes.
+describe_theme_changes <- function(dark = FALSE) {
+  mt <- theme_mt(dark = dark, base_family = "")
+  base <- theme_minimal(
+    ink = if (dark) emptyviz:::.dark_ink else "black",
+    paper = if (dark) NA else "white",
+    base_family = "",
+    header_family = "",
+    base_size = 10
+  )
+  format_value <- function(v) {
+    if (is.null(v)) {
+      return("NULL")
+    }
+    if (inherits(v, "unit")) {
+      return(paste0(paste(signif(as.numeric(v), 4), collapse = ","), grid::unitType(v)[1]))
+    }
+    if (is.numeric(v)) {
+      return(paste(signif(v, 4), collapse = ","))
+    }
+    paste(as.character(v), collapse = ",")
+  }
+  describe <- function(el) {
+    if (inherits(el, "element_blank")) {
+      return("<blank>")
+    }
+    if (inherits(el, "unit") || (!inherits(el, "element") && !inherits(el, "S7_object"))) {
+      return(format_value(el))
+    }
+    # S7 elements keep their properties as attributes, S3 ones as list items
+    props <- if (is.list(el) && !is.null(names(el))) unclass(el) else attributes(el)
+    props <- props[setdiff(names(props), c("class", "S7_class"))]
+    props <- Filter(Negate(is.null), props)
+    props <- props[order(names(props))]
+    paste0(
+      "<", class(el)[1], "> ",
+      paste(names(props), vapply(props, format_value, character(1)), sep = "=", collapse = "; ")
+    )
+  }
+  changed <- names(mt)[!vapply(names(mt), function(n) identical(mt[[n]], base[[n]]), logical(1))]
+  changed <- sort(changed)
+  paste0(changed, ": ", vapply(changed, function(n) describe(mt[[n]]), character(1)))
 }

@@ -36,18 +36,14 @@ theme_mt(
 }
 \arguments{
 \item{base_size}{Base font size, in points. Every other size argument
-derives from it by default. \code{\link[=use_theme_mt]{use_theme_mt()}} passes the same default
-through, so a plot themed directly with \code{theme_mt()} and one themed via
-the session default look the same - they used to disagree by nearly 2x
-(19 here, 10 there), with neither docstring mentioning the other.}
+derives from it by default. \code{\link[=use_theme_mt]{use_theme_mt()}} has the same default.}
 
 \item{base_family, plot_title_family, subtitle_family, strip_text_family, axis_title_family, axis_text_family, caption_family}{Font families for each text element; all default to \code{base_family}. See
 Details for the \code{"Roboto Condensed"} default's system requirement.}
 
 \item{plot_title_size, axis_text_size, strip_text_size, subtitle_size, caption_size, axis_title_size, legend_text_size}{Font sizes for each text element, all derived from \code{base_size} by
 default. See Details for how the scale is laid out. \code{legend_text_size}
-covers both \code{legend.text} and \code{legend.title}, which used to be pinned
-at \code{base_size + 2} in the function body with no way to change them.}
+covers both \code{legend.text} and \code{legend.title}.}
 
 \item{dark}{Build a dark-mode-appropriate variant instead: transparent
 plot/panel background (rather than the opaque white "paper" used in
@@ -60,16 +56,12 @@ alongside a \code{dark = FALSE} (default) render for the light-themed page.
 individually either way.}
 
 \item{minor_grid}{Whether to draw minor gridlines (on the major axis
-only, matching the major grid). \code{FALSE} by default; \code{TRUE} restores
-the previous behaviour. See Details.}
+only, matching the major grid). \code{FALSE} by default. See Details.}
 
 \item{background}{Fill for \code{plot.background} in light mode: \code{"white"}
-(the default), \code{"transparent"}, or any color. This used to be
-\code{alpha("white", .5)}, which is invisible on a white page and a milky
-half-wash on any other - so a figure dropped onto a tinted slide or a
-shaded box picked up a haze that was neither the page's color nor the
-figure's. \code{dark = TRUE} is always transparent, whatever this is set to,
-for the reason given above.}
+(the default), \code{"transparent"}, or any opaque color. A semi-transparent
+fill would tint whatever page the figure is placed on. With
+\code{dark = TRUE} the background is always transparent; see Details.}
 
 \item{grid_color}{Color of the panel grid lines, and of the axis line
 unless \code{axis_line_color} says otherwise. Defaults to a near-invisible
@@ -87,12 +79,9 @@ grid's own brightness.}
 \item{continuous_palette}{Colors for continuous \code{colour}/\code{fill} scales,
 as the two ends of a ramp. Defaults to a lightness ramp of
 \code{mt_colors[1]} (or of \code{dark_mt_colors[1]} when \code{dark = TRUE}) - a
-single-hue sequential scale in the palette's own teal, running light to
-dark. \code{palette.colour.continuous} was previously unset, so a mapped
-continuous variable fell through to ggplot2's factory blue gradient:
-a hue that isn't in this palette at all, running \emph{dark to light}, so
-the largest values drew the faintest marks. Pass \code{NULL} to go back to
-that default.}
+single-hue sequential scale in the palette's own teal, running from
+light (low values) to dark (high values). \code{NULL} leaves ggplot2's own
+default gradient.}
 }
 \value{
 A \code{ggplot2} theme object.
@@ -111,21 +100,15 @@ without repeating \code{fill = ...} on every layer.
 Call \code{\link[=use_theme_mt]{use_theme_mt()}} to make this the session's active theme -
 \code{library(emptyviz)} does not do this automatically.
 
-The type scale has exactly one element above the metadata tier. The
-title, subtitle, strip text, axis titles and legend text used to share
-\code{base_size + 2}, so \code{face = "bold"} was the only thing distinguishing a
-plot title from an axis label, and the axis titles outranked the tick
-labels they describe. The title is now \code{base_size + 4} and everything
-else in that tier is \code{base_size + 1}, above \code{base_size} tick labels and
-a \code{base_size - 2} caption. Every size remains an argument.
+Only the title stands above the rest of the type scale, at
+\code{base_size + 4}. Subtitle, strip text and axis titles are \code{base_size + 1},
+tick labels and legend text \code{base_size}, and the caption \code{base_size - 2}.
+Every size is an argument.
 
-Spacing is sized off \code{base_size} rather than fixed: \code{plot.margin} used
-to be \code{0.1} lines (about a point), which - with the \code{hjust = 1} axis
-titles this theme uses - clipped the x-axis title against the device
-edge in most figures, and left a LaTeX caption sitting flush against the
-figure's descenders. Legend keys scale with the legend text instead of
-being pinned at \verb{0.7cm}, and the gap between panel and legend is set
-through \code{legend.box.spacing} rather than a negative \code{legend.margin}.
+Margins, legend keys and the gap between panel and legend are sized off
+\code{base_size}, so they scale with the type. The plot margin is wider on the
+right and top, where the right-aligned axis titles and the title would
+otherwise touch the device edge.
 
 Minor gridlines are off by default (\code{minor_grid}): at \code{linewidth = 0.1}
 they are about 0.1 mm, which is where print workflows stop guaranteeing
@@ -144,8 +127,10 @@ near-invisible grid could invert against a light-ish "dark" background.
 If your site's dark background differs much from \verb{#151515}, either match
 it or pass \code{grid_color}/\code{axis_text_color}/\code{axis_line_color} explicitly.
 \code{geom.paper} follows the same assumption: it is that same \verb{#151515}, so
-a \code{geom_label()} on a dark page reads as opaque rather than as a
-30\%-transparent hole.
+a \code{geom_label()} on a dark page has an opaque background. The default
+colours of this package's plot builders (\code{\link[=plot_bf_forest]{plot_bf_forest()}},
+\code{\link[=plot_ridge_hdi]{plot_ridge_hdi()}}, ...) follow the theme as well: under a dark theme
+they switch from \link{mt_colors12} to the matching \link{dark_mt_colors12} tints.
 
 The discrete palette separates categories by \strong{hue}, with very little
 lightness difference between them: every pair in \link{mt_colors5} falls below

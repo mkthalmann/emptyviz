@@ -12,7 +12,7 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }}${{ matrix.config.min-deps && ', minimum deps' || '' }})
 
     strategy:
       fail-fast: false
@@ -29,6 +29,9 @@ jobs:
           - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,  r: 'release'}
           - {os: ubuntu-latest,  r: 'oldrel-1'}
+          # The lowest versions DESCRIPTION's Imports allow, so that the
+          # declared bounds stay true. Update these alongside the bounds.
+          - {os: ubuntu-latest,  r: 'release', min-deps: true}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +49,9 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          extra-packages: |
+            any::rcmdcheck
+            ${{ matrix.config.min-deps && 'ggplot2@4.0.0, ggdist@3.3.3, ggarrow@0.1.1, ggtext@0.1.2' || '' }}
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2

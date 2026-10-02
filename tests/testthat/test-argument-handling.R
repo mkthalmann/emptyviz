@@ -128,3 +128,31 @@ test_that("show.legend via ... reaches only the aura sub-layer; the SD sub-layer
     for (l in layers[-1]) expect_false(isTRUE(l$show.legend))
   }
 })
+
+test_that("quantile arguments are dropped with a warning naming them", {
+  for (geom in list(geom_violin_sd, geom_half_violin_sd)) {
+    expect_warning(
+      layers <- geom(quantile.linetype = 1, quantile.colour = "red"),
+      "quantile lines are not supported"
+    )
+    params <- unlist(lapply(Filter(function(l) inherits(l, "LayerInstance"), layers), function(l) {
+      names(c(l$geom_params, l$aes_params))
+    }))
+    expect_false(any(c("quantile.linetype", "quantile.colour") %in% params))
+  }
+  # computing quantiles in the stat is harmless and still passes through
+  expect_no_warning(geom_violin_sd(quantiles = c(.25, .75)))
+})
+
+test_that("aesthetic aliases passed via ... are caught like their standard names", {
+  expect_warning(
+    layers <- geom_violin_sd(col = "red", lwd = 2, bg = "blue"),
+    "`col`, `lwd`, `bg`"
+  )
+  params <- unlist(lapply(Filter(function(l) inherits(l, "LayerInstance"), layers), function(l) {
+    names(c(l$geom_params, l$aes_params))
+  }))
+  expect_false(any(c("col", "lwd", "bg") %in% params))
+  # ggplot2's own duplicate-aesthetic warning no longer reaches the user
+  expect_no_warning(ggplot_build(ggplot(sd_fixture, aes(grp, y)) + suppressWarnings(geom_violin_sd(lwd = 2))))
+})

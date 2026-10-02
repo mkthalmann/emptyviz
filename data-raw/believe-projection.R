@@ -3,8 +3,11 @@
 # https://platform.openjournals.nl/PAC/article/view/21865). Source CSV lives
 # outside this repo, in the sibling `believe-projection` project.
 #
-# Anonymization applied (agreed with participants' consent already covering
-# publication of the aggregate/item-level results, not the raw identifiers):
+# Participants' consent covers publishing the trial-level data, including
+# the demographic columns kept here (age, gender, the debrief response
+# `which`) and response times; it does not cover raw identifiers.
+#
+# Anonymization applied:
 #   - `payment_code` (real participant payment identifier), `handed`,
 #     `lang`, `study`, `caff` dropped entirely - not needed for any plot in
 #     this package and (for `payment_code`) not fit to share regardless.

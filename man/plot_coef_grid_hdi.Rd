@@ -11,7 +11,7 @@ plot_coef_grid_hdi(
   ncol = 4,
   nrow = NULL,
   hline = 0,
-  hline_color = mt_colors[2],
+  hline_color = NULL,
   ylab = "Posterior coefficients ±HDI<sub>95</sub> ±ETI<sub>50;90;95</sub>",
   ...
 )
@@ -29,7 +29,8 @@ panel per level).}
 \item{hline}{Y-intercept for a dashed reference line; defaults to \code{0}
 (the null-effect reference line), pass \code{NULL} to omit it.}
 
-\item{hline_color}{Color of the reference line.}
+\item{hline_color}{Color of the reference line. \code{NULL} (default) uses
+\code{mt_colors[2]}, or \code{dark_mt_colors[2]} under a dark theme.}
 
 \item{ylab}{Axis label.}
 

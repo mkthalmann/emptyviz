@@ -158,9 +158,19 @@ test_that("a thin x-level not last, with a vector side, doesn't shift surviving 
   thin_df_ordered <- thin_df
   thin_df_ordered$grp <- factor(thin_df_ordered$grp, levels = c("a", "b", "c"))
 
-  applied <- capture_applied_sides(
-    ggplot(thin_df_ordered, aes(grp, y)) + geom_half_violin_sd(side = c("l", "r", "l"))
+  # the dropped group warns once per sub-layer; nothing else should
+  warnings <- character()
+  applied <- withCallingHandlers(
+    capture_applied_sides(
+      ggplot(thin_df_ordered, aes(grp, y)) + geom_half_violin_sd(side = c("l", "r", "l"))
+    ),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
   )
+  expect_gt(length(warnings), 0)
+  expect_true(all(grepl("fewer than two datapoints", warnings)))
   applied <- applied[!duplicated(applied$group), ]
   applied <- applied[order(applied$group), ]
 

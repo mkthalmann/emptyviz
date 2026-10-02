@@ -1,497 +1,120 @@
-# theme_mt(dark = FALSE)'s complete output matches its recorded snapshot
+# the elements theme_mt() sets match their recorded snapshot
 
     Code
-      print(theme_mt())
+      cat(describe_theme_changes(dark), sep = "\n")
     Output
-      <theme> List of 155
-       $ line                            : <ggplot2::element_line>
-        ..@ colour       : chr "black"
-        ..@ linewidth    : num 0.455
-        ..@ linetype     : num 1
-        ..@ lineend      : chr "butt"
-        ..@ linejoin     : chr "round"
-        ..@ arrow        : logi FALSE
-        ..@ arrow.fill   : chr "black"
-        ..@ inherit.blank: logi TRUE
-       $ rect                            : <ggplot2::element_rect>
-        ..@ fill         : chr "white"
-        ..@ colour       : chr "black"
-        ..@ linewidth    : num 0.455
-        ..@ linetype     : num 1
-        ..@ linejoin     : chr "round"
-        ..@ inherit.blank: logi TRUE
-       $ text                            : <ggplot2::element_text>
-        ..@ family       : chr "Roboto Condensed"
-        ..@ face         : chr "plain"
-        ..@ italic       : chr NA
-        ..@ fontweight   : num NA
-        ..@ fontwidth    : num NA
-        ..@ colour       : chr "black"
-        ..@ size         : num 10
-        ..@ hjust        : num 0.5
-        ..@ vjust        : num 0.5
-        ..@ angle        : num 0
-        ..@ lineheight   : num 0.9
-        ..@ margin       : <ggplot2::margin> num [1:4] 0 0 0 0
-        ..@ debug        : logi FALSE
-        ..@ inherit.blank: logi TRUE
-       $ title                           : <ggplot2::element_text>
-        ..@ family       : chr "Roboto Condensed"
-        ..@ face         : NULL
-        ..@ italic       : chr NA
-        ..@ fontweight   : num NA
-        ..@ fontwidth    : num NA
-        ..@ colour       : NULL
-        ..@ size         : NULL
-        ..@ hjust        : NULL
-        ..@ vjust        : NULL
-        ..@ angle        : NULL
-        ..@ lineheight   : NULL
-        ..@ margin       : NULL
-        ..@ debug        : NULL
-        ..@ inherit.blank: logi TRUE
-       $ point                           : <ggplot2::element_point>
-        ..@ colour       : chr "black"
-        ..@ shape        : num 19
-        ..@ size         : num 1.36
-        ..@ fill         : chr "white"
-        ..@ stroke       : num 0.455
-        ..@ inherit.blank: logi TRUE
-       $ polygon                         : <ggplot2::element_polygon>
-        ..@ fill         : chr "white"
-        ..@ colour       : chr "black"
-        ..@ linewidth    : num 0.455
-        ..@ linetype     : num 1
-        ..@ linejoin     : chr "round"
-        ..@ inherit.blank: logi TRUE
-       $ geom                            : <ggplot2::element_geom>
-        ..@ ink        : chr "black"
-        ..@ paper      : chr "white"
-        ..@ accent     : NULL
-        ..@ linewidth  : NULL
-        ..@ borderwidth: NULL
-        ..@ linetype   : NULL
-        ..@ bordertype : NULL
-        ..@ family     : NULL
-        ..@ fontsize   : NULL
-        ..@ pointsize  : NULL
-        ..@ pointshape : NULL
-        ..@ colour     : NULL
-        ..@ fill       : NULL
-       $ spacing                         : 'simpleUnit' num 5points
-        ..- attr(*, "unit")= int 8
-       $ margins                         : <ggplot2::margin> num [1:4] 5 5 5 5
-       $ aspect.ratio                    : NULL
-       $ axis.title                      : NULL
-       $ axis.title.x                    :List of 22
-        ..$ family        : chr "Roboto Condensed"
-        ..$ face          : chr "plain"
-        ..$ size          : num 11
-        ..$ colour        : NULL
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : num 1
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : NULL
-        ..$ lineheight    : NULL
-        ..$ margin        : NULL
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ axis.title.x.top                :List of 22
-        ..$ family        : chr "Roboto Condensed"
-        ..$ face          : chr "plain"
-        ..$ size          : num 11
-        ..$ colour        : NULL
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : num 1
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : NULL
-        ..$ lineheight    : NULL
-        ..$ margin        : NULL
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ axis.title.x.bottom             : NULL
-       $ axis.title.y                    :List of 22
-        ..$ family        : chr "Roboto Condensed"
-        ..$ face          : chr "plain"
-        ..$ size          : num 11
-        ..$ colour        : NULL
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : num 1
-        ..$ vjust         : num 1.5
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : num 90
-        ..$ lineheight    : NULL
-        ..$ margin        : NULL
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ axis.title.y.left               : NULL
-       $ axis.title.y.right              :List of 22
-        ..$ family        : chr "Roboto Condensed"
-        ..$ face          : chr "plain"
-        ..$ size          : num 11
-        ..$ colour        : NULL
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : num 1
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : num 90
-        ..$ lineheight    : NULL
-        ..$ margin        : NULL
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ axis.text                       : <ggplot2::element_text>
-        ..@ family       : NULL
-        ..@ face         : NULL
-        ..@ italic       : chr NA
-        ..@ fontweight   : num NA
-        ..@ fontwidth    : num NA
-        ..@ colour       : chr "#4D4D4DFF"
-        ..@ size         : 'rel' num 0.8
-        ..@ hjust        : NULL
-        ..@ vjust        : NULL
-        ..@ angle        : NULL
-        ..@ lineheight   : NULL
-        ..@ margin       : NULL
-        ..@ debug        : NULL
-        ..@ inherit.blank: logi TRUE
-       $ axis.text.x                     :List of 22
-        ..$ family        : chr "Roboto Condensed"
-        ..$ face          : NULL
-        ..$ size          : num 10
-        ..$ colour        : chr "gray30"
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : NULL
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : NULL
-        ..$ lineheight    : NULL
-        ..$ margin        : <ggplot2::margin> num [1:4] 4 0 0 0
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ axis.text.x.top                 :List of 22
-        ..$ family        : chr "Roboto Condensed"
-        ..$ face          : NULL
-        ..$ size          : num 10
-        ..$ colour        : chr "gray30"
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : NULL
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : NULL
-        ..$ lineheight    : NULL
-        ..$ margin        : <ggplot2::margin> num [1:4] 0 0 4 0
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ axis.text.x.bottom              :List of 22
-        ..$ family        : chr "Roboto Condensed"
-        ..$ face          : NULL
-        ..$ size          : num 10
-        ..$ colour        : chr "gray30"
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : NULL
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : NULL
-        ..$ lineheight    : NULL
-        ..$ margin        : <ggplot2::margin> num [1:4] 4 0 0 0
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ axis.text.y                     :List of 22
-        ..$ family        : chr "Roboto Condensed"
-        ..$ face          : NULL
-        ..$ size          : num 10
-        ..$ colour        : chr "gray30"
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : NULL
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : NULL
-        ..$ lineheight    : NULL
-        ..$ margin        : <ggplot2::margin> num [1:4] 0 4 0 0
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ axis.text.y.left                :List of 22
-        ..$ family        : chr "Roboto Condensed"
-        ..$ face          : NULL
-        ..$ size          : num 10
-        ..$ colour        : chr "gray30"
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : NULL
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : NULL
-        ..$ lineheight    : NULL
-        ..$ margin        : <ggplot2::margin> num [1:4] 0 4 0 0
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ axis.text.y.right               :List of 22
-        ..$ family        : chr "Roboto Condensed"
-        ..$ face          : NULL
-        ..$ size          : num 10
-        ..$ colour        : chr "gray30"
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : NULL
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : NULL
-        ..$ lineheight    : NULL
-        ..$ margin        : <ggplot2::margin> num [1:4] 0 0 0 4
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ axis.text.theta                 : NULL
-       $ axis.text.r                     : <ggplot2::element_text>
-        ..@ family       : NULL
-        ..@ face         : NULL
-        ..@ italic       : chr NA
-        ..@ fontweight   : num NA
-        ..@ fontwidth    : num NA
-        ..@ colour       : NULL
-        ..@ size         : NULL
-        ..@ hjust        : num 0.5
-        ..@ vjust        : NULL
-        ..@ angle        : NULL
-        ..@ lineheight   : NULL
-        ..@ margin       : <ggplot2::margin> num [1:4] 0 2 0 2
-        ..@ debug        : NULL
-        ..@ inherit.blank: logi TRUE
-       $ axis.ticks                      : <ggplot2::element_blank>
-       $ axis.ticks.x                    : <ggplot2::element_blank>
-       $ axis.ticks.x.top                : NULL
-       $ axis.ticks.x.bottom             : NULL
-       $ axis.ticks.y                    : <ggplot2::element_blank>
-       $ axis.ticks.y.left               : NULL
-       $ axis.ticks.y.right              : NULL
-       $ axis.ticks.theta                : NULL
-       $ axis.ticks.r                    : NULL
-       $ axis.minor.ticks.x.top          : NULL
-       $ axis.minor.ticks.x.bottom       : NULL
-       $ axis.minor.ticks.y.left         : NULL
-       $ axis.minor.ticks.y.right        : NULL
-       $ axis.minor.ticks.theta          : NULL
-       $ axis.minor.ticks.r              : NULL
-       $ axis.ticks.length               : 'rel' num 0.5
-       $ axis.ticks.length.x             : NULL
-       $ axis.ticks.length.x.top         : NULL
-       $ axis.ticks.length.x.bottom      : NULL
-       $ axis.ticks.length.y             : NULL
-       $ axis.ticks.length.y.left        : NULL
-       $ axis.ticks.length.y.right       : NULL
-       $ axis.ticks.length.theta         : NULL
-       $ axis.ticks.length.r             : NULL
-       $ axis.minor.ticks.length         : 'rel' num 0.75
-       $ axis.minor.ticks.length.x       : NULL
-       $ axis.minor.ticks.length.x.top   : NULL
-       $ axis.minor.ticks.length.x.bottom: NULL
-       $ axis.minor.ticks.length.y       : NULL
-       $ axis.minor.ticks.length.y.left  : NULL
-       $ axis.minor.ticks.length.y.right : NULL
-       $ axis.minor.ticks.length.theta   : NULL
-       $ axis.minor.ticks.length.r       : NULL
-       $ axis.line                       : <ggplot2::element_line>
-        ..@ colour       : chr "gray87"
-        ..@ linewidth    : num 0.6
-        ..@ linetype     : NULL
-        ..@ lineend      : NULL
-        ..@ linejoin     : NULL
-        ..@ arrow        : logi FALSE
-        ..@ arrow.fill   : chr "gray87"
-        ..@ inherit.blank: logi TRUE
-       $ axis.line.x                     : NULL
-       $ axis.line.x.top                 : NULL
-       $ axis.line.x.bottom              : NULL
-       $ axis.line.y                     : NULL
-       $ axis.line.y.left                : NULL
-       $ axis.line.y.right               : NULL
-       $ axis.line.theta                 : NULL
-       $ axis.line.r                     : NULL
-       $ legend.background               : <ggplot2::element_blank>
-       $ legend.margin                   : <ggplot2::margin> num [1:4] 0 0 0 0
-       $ legend.spacing                  : 'rel' num 2
-       $ legend.spacing.x                : NULL
-       $ legend.spacing.y                : NULL
-       $ legend.key                      : <ggplot2::element_blank>
-       $ legend.key.size                 : 'simpleUnit' num 11points
-        ..- attr(*, "unit")= int 8
-       $ legend.key.height               : NULL
-       $ legend.key.width                : NULL
-       $ legend.key.spacing              : NULL
-       $ legend.key.spacing.x            : 'simpleUnit' num 7points
-        ..- attr(*, "unit")= int 8
-       $ legend.key.spacing.y            : NULL
-       $ legend.key.justification        : NULL
-       $ legend.frame                    : <ggplot2::element_rect>
-        ..@ fill         : NULL
-        ..@ colour       : chr "gray70"
-        ..@ linewidth    : num 0.3
-        ..@ linetype     : NULL
-        ..@ linejoin     : NULL
-        ..@ inherit.blank: logi TRUE
-       $ legend.ticks                    : <ggplot2::element_blank>
-       $ legend.ticks.length             : 'rel' num 0.2
-       $ legend.axis.line                : NULL
-       $ legend.text                     :List of 22
-        ..$ family        : NULL
-        ..$ face          : NULL
-        ..$ size          : num 10
-        ..$ colour        : NULL
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : NULL
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : NULL
-        ..$ lineheight    : NULL
-        ..$ margin        : NULL
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ legend.text.position            : NULL
-       $ legend.title                    :List of 22
-        ..$ family        : NULL
-        ..$ face          : NULL
-        ..$ size          : num 10
-        ..$ colour        : NULL
-        ..$ fill          : NULL
-        ..$ box.colour    : NULL
-        ..$ linetype      : NULL
-        ..$ linewidth     : NULL
-        ..$ hjust         : NULL
-        ..$ vjust         : NULL
-        ..$ halign        : NULL
-        ..$ valign        : NULL
-        ..$ angle         : NULL
-        ..$ lineheight    : NULL
-        ..$ margin        : NULL
-        ..$ padding       : NULL
-        ..$ r             : NULL
-        ..$ align_widths  : NULL
-        ..$ align_heights : NULL
-        ..$ rotate_margins: NULL
-        ..$ debug         : logi FALSE
-        ..$ inherit.blank : logi FALSE
-        ..- attr(*, "class")= chr [1:3] "element_markdown" "element_text" "element"
-       $ legend.title.position           : NULL
-       $ legend.position                 : chr "bottom"
-       $ legend.position.inside          : NULL
-       $ legend.direction                : chr "horizontal"
-       $ legend.byrow                    : NULL
-       $ legend.justification            : chr "center"
-       $ legend.justification.top        : NULL
-       $ legend.justification.bottom     : NULL
-       $ legend.justification.left       : NULL
-       $ legend.justification.right      : NULL
-       $ legend.justification.inside     : NULL
-        [list output truncated]
-       @ complete: logi TRUE
-       @ validate: logi TRUE
+      axis.line: <ggplot2::element_line> arrow=FALSE; arrow.fill=gray87; colour=gray87; inherit.blank=TRUE; linewidth=0.6
+      axis.text.x: <element_markdown> colour=gray30; debug=FALSE; family=; inherit.blank=FALSE; margin=4,0,0,0points; size=10
+      axis.text.x.bottom: <element_markdown> colour=gray30; debug=FALSE; family=; inherit.blank=FALSE; margin=4,0,0,0points; size=10
+      axis.text.x.top: <element_markdown> colour=gray30; debug=FALSE; family=; inherit.blank=FALSE; margin=0,0,4,0points; size=10
+      axis.text.y: <element_markdown> colour=gray30; debug=FALSE; family=; inherit.blank=FALSE; margin=0,4,0,0points; size=10
+      axis.text.y.left: <element_markdown> colour=gray30; debug=FALSE; family=; inherit.blank=FALSE; margin=0,4,0,0points; size=10
+      axis.text.y.right: <element_markdown> colour=gray30; debug=FALSE; family=; inherit.blank=FALSE; margin=0,0,0,4points; size=10
+      axis.ticks.x: <blank>
+      axis.ticks.y: <blank>
+      axis.title.x: <element_markdown> debug=FALSE; face=plain; family=; hjust=1; inherit.blank=FALSE; size=11
+      axis.title.x.top: <element_markdown> debug=FALSE; face=plain; family=; hjust=1; inherit.blank=FALSE; size=11
+      axis.title.y: <element_markdown> angle=90; debug=FALSE; face=plain; family=; hjust=1; inherit.blank=FALSE; size=11; vjust=1.5
+      axis.title.y.right: <element_markdown> angle=90; debug=FALSE; face=plain; family=; hjust=1; inherit.blank=FALSE; size=11
+      geom: <ggplot2::element_geom> ink=black; paper=white
+      geom.area: <ggplot2::element_geom> fill=#066b8a
+      geom.bar: <ggplot2::element_geom> fill=#066b8a
+      geom.col: <ggplot2::element_geom> fill=#066b8a
+      geom.density: <ggplot2::element_geom> colour=NA; fill=#066B8A80
+      geom.label: <ggplot2::element_geom> family=; fontsize=3.515
+      geom.ribbon: <ggplot2::element_geom> fill=#066b8a
+      geom.text: <ggplot2::element_geom> family=; fontsize=3.515
+      legend.box.spacing: 6points
+      legend.direction: horizontal
+      legend.frame: <ggplot2::element_rect> colour=gray70; inherit.blank=TRUE; linewidth=0.3
+      legend.key.size: 11points
+      legend.key.spacing.x: 7points
+      legend.margin: 0,0,0,0points
+      legend.position: bottom
+      legend.text: <element_markdown> debug=FALSE; inherit.blank=FALSE; size=10
+      legend.ticks: <blank>
+      legend.title: <element_markdown> debug=FALSE; inherit.blank=FALSE; size=10
+      palette.colour.continuous: #b7d4e0,#066b8a
+      palette.colour.discrete: #066b8a,#8a064a,#d56f09,#9109d5,#142f8f,#e40add,#ea280a,#6e4cf8,#068a7f,#b30732,#ac8307,#064d8c
+      palette.fill.continuous: #b7d4e0,#066b8a
+      palette.fill.discrete: #066b8a,#8a064a,#d56f09,#9109d5,#142f8f,#e40add,#ea280a,#6e4cf8,#068a7f,#b30732,#ac8307,#064d8c
+      panel.grid: <ggplot2::element_line> arrow=FALSE; arrow.fill=gray87; colour=gray87; inherit.blank=TRUE; linewidth=0.25
+      panel.grid.major: <ggplot2::element_line> arrow=FALSE; arrow.fill=gray87; colour=gray87; inherit.blank=TRUE; linewidth=0.25
+      panel.grid.major.x: <blank>
+      panel.grid.minor: <blank>
+      panel.grid.minor.x: <blank>
+      panel.grid.minor.y: <blank>
+      panel.spacing: 1lines
+      panel.spacing.y: 1lines
+      plot.caption: <element_markdown> colour=gray45; debug=FALSE; face=plain; family=; hjust=1; inherit.blank=FALSE; margin=12,0,0,0points; size=8
+      plot.caption.position: plot
+      plot.margin: 5,7,4,4points
+      plot.subtitle: <element_markdown> colour=gray40; debug=FALSE; face=plain; family=; hjust=0; inherit.blank=FALSE; margin=0,0,12,0points; size=11
+      plot.tag: <element_markdown> colour=black; debug=FALSE; face=bold; family=; hjust=0; inherit.blank=FALSE; size=14
+      plot.title: <element_markdown> debug=FALSE; face=bold; family=; hjust=0; inherit.blank=FALSE; margin=0,0,5,0points; size=14
+      plot.title.position: plot
+      strip.placement: outside
+      strip.text.x: <element_markdown> debug=FALSE; face=plain; family=; inherit.blank=FALSE; margin=2,0,5,0points; size=11
+      strip.text.y: <element_markdown> angle=270; debug=FALSE; face=plain; family=; inherit.blank=FALSE; margin=0,2,0,5points; size=11
+      strip.text.y.left: <element_markdown> angle=90; debug=FALSE; face=plain; family=; inherit.blank=FALSE; margin=0,2,0,5points; size=11
+
+---
+
+    Code
+      cat(describe_theme_changes(dark), sep = "\n")
+    Output
+      axis.line: <ggplot2::element_line> arrow=FALSE; arrow.fill=#5f666e; colour=#5f666e; inherit.blank=TRUE; linewidth=0.6
+      axis.text.x: <element_markdown> colour=#d3d7da; debug=FALSE; family=; inherit.blank=FALSE; margin=4,0,0,0points; size=10
+      axis.text.x.bottom: <element_markdown> colour=#d3d7da; debug=FALSE; family=; inherit.blank=FALSE; margin=4,0,0,0points; size=10
+      axis.text.x.top: <element_markdown> colour=#d3d7da; debug=FALSE; family=; inherit.blank=FALSE; margin=0,0,4,0points; size=10
+      axis.text.y: <element_markdown> colour=#d3d7da; debug=FALSE; family=; inherit.blank=FALSE; margin=0,4,0,0points; size=10
+      axis.text.y.left: <element_markdown> colour=#d3d7da; debug=FALSE; family=; inherit.blank=FALSE; margin=0,4,0,0points; size=10
+      axis.text.y.right: <element_markdown> colour=#d3d7da; debug=FALSE; family=; inherit.blank=FALSE; margin=0,0,0,4points; size=10
+      axis.ticks.x: <blank>
+      axis.ticks.y: <blank>
+      axis.title.x: <element_markdown> debug=FALSE; face=plain; family=; hjust=1; inherit.blank=FALSE; size=11
+      axis.title.x.top: <element_markdown> debug=FALSE; face=plain; family=; hjust=1; inherit.blank=FALSE; size=11
+      axis.title.y: <element_markdown> angle=90; debug=FALSE; face=plain; family=; hjust=1; inherit.blank=FALSE; size=11; vjust=1.5
+      axis.title.y.right: <element_markdown> angle=90; debug=FALSE; face=plain; family=; hjust=1; inherit.blank=FALSE; size=11
+      geom: <ggplot2::element_geom> ink=#e4e4e4; paper=#151515
+      geom.area: <ggplot2::element_geom> fill=#70ceeb
+      geom.bar: <ggplot2::element_geom> fill=#70ceeb
+      geom.col: <ggplot2::element_geom> fill=#70ceeb
+      geom.density: <ggplot2::element_geom> colour=NA; fill=#70CEEB80
+      geom.label: <ggplot2::element_geom> family=; fontsize=3.515
+      geom.ribbon: <ggplot2::element_geom> fill=#70ceeb
+      geom.text: <ggplot2::element_geom> family=; fontsize=3.515
+      legend.box.spacing: 6points
+      legend.direction: horizontal
+      legend.frame: <ggplot2::element_rect> colour=#5f666e; inherit.blank=TRUE; linewidth=0.3
+      legend.key.size: 11points
+      legend.key.spacing.x: 7points
+      legend.margin: 0,0,0,0points
+      legend.position: bottom
+      legend.text: <element_markdown> debug=FALSE; inherit.blank=FALSE; size=10
+      legend.ticks: <blank>
+      legend.title: <element_markdown> debug=FALSE; inherit.blank=FALSE; size=10
+      palette.colour.continuous: #13414f,#70ceeb
+      palette.colour.discrete: #70ceeb,#eb70af,#ebad70,#c270eb,#7b91e0,#e755e2,#e76855,#9f8bef,#8befe6,#ef8ba4,#efd68b,#55a3e7
+      palette.fill.continuous: #13414f,#70ceeb
+      palette.fill.discrete: #70ceeb,#eb70af,#ebad70,#c270eb,#7b91e0,#e755e2,#e76855,#9f8bef,#8befe6,#ef8ba4,#efd68b,#55a3e7
+      panel.grid: <ggplot2::element_line> arrow=FALSE; arrow.fill=#22252a; colour=#22252a; inherit.blank=TRUE; linewidth=0.25
+      panel.grid.major: <ggplot2::element_line> arrow=FALSE; arrow.fill=#22252a; colour=#22252a; inherit.blank=TRUE; linewidth=0.25
+      panel.grid.major.x: <blank>
+      panel.grid.minor: <blank>
+      panel.grid.minor.x: <blank>
+      panel.grid.minor.y: <blank>
+      panel.spacing: 1lines
+      panel.spacing.y: 1lines
+      plot.caption: <element_markdown> colour=#9aa0a6; debug=FALSE; face=plain; family=; hjust=1; inherit.blank=FALSE; margin=12,0,0,0points; size=8
+      plot.caption.position: plot
+      plot.margin: 5,7,4,4points
+      plot.subtitle: <element_markdown> colour=#c8ccd0; debug=FALSE; face=plain; family=; hjust=0; inherit.blank=FALSE; margin=0,0,12,0points; size=11
+      plot.tag: <element_markdown> colour=#e4e4e4; debug=FALSE; face=bold; family=; hjust=0; inherit.blank=FALSE; size=14
+      plot.title: <element_markdown> debug=FALSE; face=bold; family=; hjust=0; inherit.blank=FALSE; margin=0,0,5,0points; size=14
+      plot.title.position: plot
+      strip.placement: outside
+      strip.text.x: <element_markdown> debug=FALSE; face=plain; family=; inherit.blank=FALSE; margin=2,0,5,0points; size=11
+      strip.text.y: <element_markdown> angle=270; debug=FALSE; face=plain; family=; inherit.blank=FALSE; margin=0,2,0,5points; size=11
+      strip.text.y.left: <element_markdown> angle=90; debug=FALSE; face=plain; family=; inherit.blank=FALSE; margin=0,2,0,5points; size=11
 

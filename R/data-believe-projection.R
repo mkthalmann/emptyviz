@@ -37,7 +37,8 @@
 #'   \item{item_image}{Identifier for the accompanying scenario image.}
 #'   \item{judgment}{Truth-value judgment on a continuous 0-100 slider.}
 #'   \item{submit_time}{Response time in seconds.}
-#'   \item{which}{Self-reported languages understood during the debrief.}
+#'   \item{which}{Debrief response, in German: `"Text"` (text),
+#'     `"Bild"` (picture), or `"beides"` (both).}
 #' }
 #' @source Thalmann, Maik & Matticchio, Andrea (2024). On Being Certain that
 #'   Presuppositions don't Project Universally. *Proceedings of the

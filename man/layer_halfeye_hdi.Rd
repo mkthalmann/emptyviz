@@ -43,8 +43,9 @@ panel height (see Details).}
 
 \item{point_size}{Size of the point-interval's point.}
 
-\item{fill}{Base slab color, ramped by HDI width (see \code{fill_range});
-defaults to \code{mt_colors[1]}.}
+\item{fill}{Base slab color, ramped by HDI width (see \code{fill_range}).
+\code{NULL} (default) uses \code{mt_colors[1]}, or \code{dark_mt_colors[1]} when the
+plot is drawn with a dark theme such as \code{theme_mt(dark = TRUE)}.}
 
 \item{fill_range}{Two-value alpha/lightness range (passed to
 \code{\link[ggdist:scale_fill_ramp_discrete]{ggdist::scale_fill_ramp_discrete()}}'s \code{range}) the slab's HDI widths
@@ -52,8 +53,8 @@ are shaded across, from the widest (most faded, closer to white) to
 the narrowest (most saturated, \code{fill} at full strength). Default
 \code{c(.4, 1)}.}
 
-\item{interval_color}{Color of the point-interval; defaults to
-\code{mt_colors[1]}.}
+\item{interval_color}{Color of the point-interval. \code{NULL} (default)
+follows the theme in the same way as \code{fill}.}
 }
 \value{
 A list of \code{ggplot2}/\code{ggdist} layers, scales, and guides.
@@ -74,13 +75,9 @@ standalone for building a custom layout around the same visual grammar.
 pass whatever fits your panel count and coefficient spread.
 
 \code{gap} is how far the point-interval is shifted away from the slab's
-baseline, as a target fraction of \emph{panel height} (see
-\code{position_dodge_gap()}'s own comment for why this - not a row-unit
-fraction - is the right invariant to hold constant across callers with
-different category counts per panel). Default \code{.02} (~2\% of panel
-height) looks right both for many-categories-sharing-one-panel layouts
-and one-category-per-panel grids; \code{0} reproduces a touching layout with
-no gap at all.
+baseline, as a fraction of panel height, so the same value suits a panel
+of many categories and a grid of one category per panel. The default
+\code{.02} is about 2\% of panel height; \code{0} lets slab and interval touch.
 }
 \examples{
 library(ggplot2)

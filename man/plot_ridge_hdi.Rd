@@ -13,7 +13,7 @@ plot_ridge_hdi(
   facet_ncol = NULL,
   facet_scales = "fixed",
   hline = NULL,
-  hline_color = mt_colors[2],
+  hline_color = NULL,
   value_transform = identity,
   value_limits = NULL,
   value_breaks = waiver(),
@@ -40,16 +40,19 @@ matching \code{tidybayes::gather_emmeans_draws()}'s own column name).}
 \item{hline}{Optional y-intercept for a dashed reference line (\code{NULL}
 omits it).}
 
-\item{hline_color}{Color of the reference line.}
+\item{hline_color}{Color of the reference line. \code{NULL} (default) uses
+\code{mt_colors[2]}, or \code{dark_mt_colors[2]} under a dark theme.}
 
 \item{value_transform}{Applied to \code{value} before plotting (e.g. \code{exp} for
 a sigma submodel estimated on the log scale).}
 
 \item{value_limits, value_breaks}{Passed to \code{scale_y_continuous()}.}
 
-\item{category_reorder}{\code{TRUE} (default) sorts categories by their mean
-transformed \code{value} (descending) via \code{\link[forcats:fct_reorder]{forcats::fct_reorder()}}; \code{FALSE}
-keeps whatever factor-level order \code{category} already has.}
+\item{category_reorder}{\code{TRUE} (default) sorts categories by the mean of
+their transformed \code{value}, the same mean the point-interval marks, with
+the highest mean at the top (as in \code{\link[=plot_bf_forest]{plot_bf_forest()}}). \code{FALSE} keeps
+the factor-level order \code{category} already has, with the first level at
+the bottom.}
 
 \item{xlab, ylab}{Axis labels.}
 

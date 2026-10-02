@@ -35,16 +35,13 @@ test_that("plot_bf_forest() maps shape to sign (redundant with color), default s
   p <- plot_bf_forest(bf_forest_fixture, contrast = contrast, log_bf = log_bf)
   expect_true("shape" %in% names(rlang::get_expr(p$mapping)))
 
-  b <- ggplot_build(p)
-  point_idx <- which(sapply(p$layers, function(l) inherits(l$geom, "GeomPoint")))
-  point_layer <- b$data[[point_idx]]
-  pos_shapes <- unique(point_layer$shape[bf_forest_fixture$log_bf >= 0])
-  neg_shapes <- unique(point_layer$shape[bf_forest_fixture$log_bf < 0])
+  points <- built_points(p)
+  pos_shapes <- unique(points$shape[points$x >= 0])
+  neg_shapes <- unique(points$shape[points$x < 0])
   expect_equal(pos_shapes, 16)
   expect_equal(neg_shapes, 17)
 
-  # legend suppressed for both redundant-encoding aesthetics
-  expect_equal(p$guides$guides$colour, "none")
+  # the shape legend is suppressed; colour is set per layer, not mapped
   expect_equal(p$guides$guides$shape, "none")
 })
 
@@ -56,11 +53,9 @@ test_that("`positive_shape`/`negative_shape` override the default point shapes",
     positive_shape = 15,
     negative_shape = 18
   )
-  b <- ggplot_build(p)
-  point_idx <- which(sapply(p$layers, function(l) inherits(l$geom, "GeomPoint")))
-  point_layer <- b$data[[point_idx]]
-  expect_equal(unique(point_layer$shape[bf_forest_fixture$log_bf >= 0]), 15)
-  expect_equal(unique(point_layer$shape[bf_forest_fixture$log_bf < 0]), 18)
+  points <- built_points(p)
+  expect_equal(unique(points$shape[points$x >= 0]), 15)
+  expect_equal(unique(points$shape[points$x < 0]), 18)
 })
 
 test_that("`weak_threshold` changes the rect bounds", {
@@ -84,7 +79,7 @@ test_that("`direction_labels = NULL` (default) omits arrows/labels entirely", {
   expect_false(any(geom_classes == "GeomText"))
 })
 
-test_that("`direction_labels` without an explicit `range` falls back to a generic extent", {
+test_that("`direction_labels` without an explicit `arrow_range` falls back to a generic extent", {
   layers <- layer_bf_evidence_scale(
     orientation = "x",
     direction_labels = c("A", "B"),
@@ -99,7 +94,7 @@ test_that("`direction_labels` adds 2 arrow layers + 2 text layers, Inf-anchored 
   layers <- layer_bf_evidence_scale(
     orientation = "x",
     direction_labels = c("A", "B"),
-    range = c(-5, 5)
+    arrow_range = c(-5, 5)
   )
   geom_classes <- sapply(layers, function(l) class(l$geom)[1])
   expect_equal(sum(geom_classes == "GeomArrow"), 2)
@@ -125,7 +120,7 @@ test_that("orientation = 'y' direction labels are offset clear of their arrow (n
   layers <- layer_bf_evidence_scale(
     orientation = "y",
     direction_labels = c("A", "B"),
-    range = c(-5, 5)
+    arrow_range = c(-5, 5)
   )
   text_layers <- Filter(function(l) inherits(l$geom, "GeomText"), layers)
   expect_length(text_layers, 2)
@@ -161,7 +156,7 @@ test_that("layer_bf_evidence_scale() renders without error against both discrete
     layer_bf_evidence_scale(
       orientation = "x",
       direction_labels = c("A", "B"),
-      range = c(-5, 5)
+      arrow_range = c(-5, 5)
     ) +
     geom_point()
   expect_no_error(ggplot_build(p_discrete))
@@ -171,7 +166,7 @@ test_that("layer_bf_evidence_scale() renders without error against both discrete
     layer_bf_evidence_scale(
       orientation = "y",
       direction_labels = c("A", "B"),
-      range = c(-5, 5)
+      arrow_range = c(-5, 5)
     ) +
     geom_point()
   expect_no_error(ggplot_build(p_continuous))
@@ -182,10 +177,11 @@ test_that("plot_bf_forest() builds without error and colors points by sign", {
   expect_true(inherits(p, "ggplot"))
   expect_no_error(ggplot_build(p))
 
-  b <- ggplot_build(p)
-  point_layer <- b$data[[length(b$data)]] # geom_point is always last
-  # 2 positive, 2 negative (see fixture) -> exactly 2 distinct colors used
-  expect_length(unique(point_layer$colour), 2)
+  points <- built_points(p)
+  # 3 positive, 1 negative (see fixture): one colour per sign
+  expect_equal(nrow(points), nrow(bf_forest_fixture))
+  expect_equal(unique(points$colour[points$x >= 0]), mt_colors[1])
+  expect_equal(unique(points$colour[points$x < 0]), mt_colors[2])
 })
 
 test_that("errorbar layer is present only when `se` is given", {
@@ -407,8 +403,8 @@ test_that("plot_bf_forest()'s `pairs` sign-flips a reversed-order pair automatic
     pairs = list(c("true without", "true with")),
     contrast_reorder = FALSE
   )
-  x_direct <- ggplot_build(p_direct)$data[[length(p_direct$layers)]]$x
-  x_reversed <- ggplot_build(p_reversed)$data[[length(p_reversed$layers)]]$x
+  x_direct <- built_points(p_direct)$x
+  x_reversed <- built_points(p_reversed)$x
   expect_equal(x_direct, 8.2)
   expect_equal(x_reversed, -8.2)
 })
@@ -571,4 +567,46 @@ test_that("prepare_bf_contrasts() warns when two requested pairs resolve to the 
     contrast = contrast, value = log_BF,
     pairs = list(c("a", "b"), c("c", "d"))
   ))
+})
+
+test_that("prepare_bf_contrasts() negates every column `value` selects on a reversed pair", {
+  bf <- data.frame(contrast = "a - b NA", log_BF = 1.5, estimate = 0.4, se = 0.1)
+  out <- prepare_bf_contrasts(bf, value = c(log_BF, estimate), pairs = list(c("b", "a")))
+  expect_equal(out$log_BF, -1.5)
+  expect_equal(out$estimate, -0.4)
+  expect_equal(out$se, 0.1)
+})
+
+test_that("prepare_bf_contrasts() rejects a non-numeric `value` column", {
+  bf <- data.frame(contrast = "a - b NA", note = "x")
+  expect_error(
+    prepare_bf_contrasts(bf, value = note, pairs = list(c("b", "a"))),
+    "numeric"
+  )
+})
+
+test_that("the weak-evidence label keeps 4.5:1 against its band in light and dark mode", {
+  blend <- function(fg, bg, alpha) {
+    mix <- alpha * grDevices::col2rgb(fg) + (1 - alpha) * grDevices::col2rgb(bg)
+    grDevices::rgb(t(round(mix)), maxColorValue = 255)
+  }
+  df <- data.frame(x = 1, log_bf = 0)
+  for (dark in c(FALSE, TRUE)) {
+    page <- if (dark) "#151515" else "#ffffff"
+    p <- ggplot(df, aes(x, log_bf)) +
+      layer_bf_evidence_scale(orientation = "y") +
+      theme_mt(dark = dark, base_family = "")
+    built <- ggplot_build(p)
+    band <- blend(built$data[[1]]$fill, page, built$data[[1]]$alpha)
+    expect_gte(wcag_contrast(built$data[[2]]$colour, band), 4.5)
+  }
+})
+
+test_that("plot_bf_forest() warns when one label names several rows", {
+  bf <- data.frame(contrast = c("A vs. B", "A vs. B", "C vs. D"), log_bf = c(3, -2, 1))
+  expect_warning(
+    plot_bf_forest(bf, contrast = contrast, log_bf = log_bf),
+    "'A vs. B' labels more than one row"
+  )
+  expect_no_warning(plot_bf_forest(bf_forest_fixture, contrast = contrast, log_bf = log_bf))
 })

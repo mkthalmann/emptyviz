@@ -11,6 +11,7 @@ A ggplot2 theme (theme_mt()) plus a set of composable geoms and plot builders us
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://mkthalmann.github.io/emptyviz/}
   \item \url{https://github.com/mkthalmann/emptyviz}
   \item Report bugs at \url{https://github.com/mkthalmann/emptyviz/issues}
 }

@@ -21,15 +21,19 @@
 #' @param weak_label Text for the shaded band (`NULL` omits it). Anchored
 #'   via `Inf` + hjust/vjust to the relevant panel edge rather than a
 #'   data-dependent position.
-#' @param weak_fill,weak_color Fill/text color for the shaded band and its
-#'   label; default to `mt_colors5[3]`.
+#' @param weak_fill,weak_color Fill of the shaded band and colour of its
+#'   label. `NULL` (default) uses `mt_colors5[3]` for the band and a darker
+#'   shade of it for the label, chosen so the label keeps 4.5:1 contrast
+#'   against the band; under a dark theme, such as `theme_mt(dark = TRUE)`,
+#'   both use `dark_mt_colors5[3]`.
 #' @param direction_labels `c(positive, negative)` - text naming what a
 #'   positive/negative log-BF supports (e.g. `c("supports a real
 #'   difference", "supports practical equivalence")` for a ROPE comparison).
 #'   `NULL` (default) omits the arrows and labels entirely.
 #' @param direction_colors Length-2 colors for the positive/negative
-#'   arrows/labels; defaults to `mt_colors[1:2]`.
-#' @param range `c(min, max)` the arrows should span along the BF axis.
+#'   arrows/labels. `NULL` (default) uses `mt_colors[1:2]`, or
+#'   `dark_mt_colors[1:2]` under a dark theme.
+#' @param arrow_range `c(min, max)` the arrows should span along the BF axis.
 #'   Only used when `direction_labels` is given; `NULL` falls back to a
 #'   generic `c(-1, 1) * weak_threshold * 3`.
 #' @param secondary_axis `FALSE` (default) or `TRUE` to add a linear-BF
@@ -55,139 +59,143 @@ layer_bf_evidence_scale <- function(
   weak_color = NULL,
   direction_labels = NULL,
   direction_colors = NULL,
-  range = NULL,
+  arrow_range = NULL,
   secondary_axis = FALSE,
   secondary_breaks = c(1, 2, 5, 15, 50, 150),
   secondary_name = "Bayes factor (BF)"
 ) {
   orientation <- match.arg(orientation)
-  weak_fill <- weak_fill %||% mt_colors5[3]
-  weak_color <- weak_color %||% mt_colors5[3]
-  direction_colors <- direction_colors %||% mt_colors[1:2]
+  weak_fill_spec <- .colour_spec(
+    weak_fill, "fill", mt_colors5[3], dark_mt_colors5[3]
+  )
+  weak_colour_spec <- .colour_spec(
+    weak_color, "colour", .weak_label_light, dark_mt_colors5[3]
+  )
+  direction_specs <- list(
+    .colour_spec(direction_colors[1], "colour", mt_colors[1], dark_mt_colors[1]),
+    .colour_spec(direction_colors[2], "colour", mt_colors[2], dark_mt_colors[2])
+  )
 
   layers <- list()
 
-  rect_args <- if (orientation == "x") {
-    list(xmin = -weak_threshold, xmax = weak_threshold, ymin = -Inf, ymax = Inf)
+  rect_data <- if (orientation == "x") {
+    data.frame(xmin = -weak_threshold, xmax = weak_threshold, ymin = -Inf, ymax = Inf)
   } else {
-    list(ymin = -weak_threshold, ymax = weak_threshold, xmin = -Inf, xmax = Inf)
+    data.frame(ymin = -weak_threshold, ymax = weak_threshold, xmin = -Inf, xmax = Inf)
   }
-  layers[[length(layers) + 1]] <- do.call(
-    annotate,
-    c(list("rect", fill = weak_fill, alpha = .2), rect_args)
+  layers[[length(layers) + 1]] <- .annotation_layer(
+    GeomRect,
+    data = rect_data,
+    mapping = .merge_aes(
+      aes(
+        xmin = .data$xmin, xmax = .data$xmax,
+        ymin = .data$ymin, ymax = .data$ymax
+      ),
+      weak_fill_spec$mapping
+    ),
+    params = c(list(alpha = .2), weak_fill_spec$params)
   )
 
   if (!is.null(weak_label)) {
-    label_args <- if (orientation == "x") {
-      list(x = 0, y = Inf, vjust = 1.3)
+    label_data <- if (orientation == "x") {
+      data.frame(x = 0, y = Inf)
     } else {
-      list(x = Inf, y = 0, hjust = 1.05, vjust = 0.5)
+      data.frame(x = Inf, y = 0)
     }
-    # annotate("richtext", ...) resolves the string "richtext" to
-    # ggtext::GeomRichtext via ggplot2's validate_subclass()/find_global(),
-    # which searches lexically from annotate()'s OWN enclosing environment
-    # (ggplot2's namespace) - never the caller's. That's always ggtext-blind
-    # from inside another package, regardless of what that package imports
-    # (confirmed: still fails against a real installed build even with
-    # `@importFrom ggtext GeomRichtext`, though it happens to work under
-    # devtools::load_all()'s more permissive scoping - a trap). Passing the
-    # actual GeomRichtext ggproto object instead of the string sidesteps the
-    # lookup entirely: validate_subclass() returns an already-a-Geom object
-    # as-is, no name resolution involved.
-    layers[[length(layers) + 1]] <- do.call(
-      annotate,
-      c(
+    label_just <- if (orientation == "x") {
+      list(vjust = 1.3)
+    } else {
+      list(hjust = 1.05, vjust = 0.5)
+    }
+    # The GeomRichtext object itself, not the string "richtext": ggplot2
+    # resolves a geom name from its own namespace, where ggtext is not
+    # visible once this package is installed.
+    layers[[length(layers) + 1]] <- .annotation_layer(
+      ggtext::GeomRichtext,
+      data = label_data,
+      mapping = .merge_aes(aes(x = .data$x, y = .data$y), weak_colour_spec$mapping),
+      params = c(
         list(
-          ggtext::GeomRichtext,
           label = weak_label,
-          label.color = NA,
+          label.colour = NA,
           size = 3.2,
           label.padding = unit(rep(0.02, 4), "lines"),
           lineheight = .8,
-          fill = NA,
-          color = weak_color
+          fill = NA
         ),
-        label_args
+        label_just,
+        weak_colour_spec$params
       )
     )
   }
 
   if (!is.null(direction_labels)) {
-    range <- range %||% (c(-1, 1) * weak_threshold * 3)
+    arrow_range <- arrow_range %||% (c(-1, 1) * weak_threshold * 3)
 
-    arrow_coords <- if (orientation == "x") {
+    arrow_data <- if (orientation == "x") {
       list(
-        pos = list(x = c(0, range[2]), y = c(Inf, Inf)),
-        neg = list(x = c(0, range[1]), y = c(Inf, Inf))
+        data.frame(x = c(0, arrow_range[2]), y = c(Inf, Inf)),
+        data.frame(x = c(0, arrow_range[1]), y = c(Inf, Inf))
       )
     } else {
       list(
-        pos = list(x = c(Inf, Inf), y = c(0, range[2])),
-        neg = list(x = c(Inf, Inf), y = c(0, range[1]))
+        data.frame(x = c(Inf, Inf), y = c(0, arrow_range[2])),
+        data.frame(x = c(Inf, Inf), y = c(0, arrow_range[1]))
       )
     }
 
-    layers[[length(layers) + 1]] <- ggarrow::annotate_arrow(
-      x = arrow_coords$pos$x,
-      y = arrow_coords$pos$y,
-      linewidth = 1.2,
-      color = direction_colors[1],
-      arrow_head = ggarrow::arrow_head_wings(),
-      length_head = unit(2.5, "mm")
-    )
-    layers[[length(layers) + 1]] <- ggarrow::annotate_arrow(
-      x = arrow_coords$neg$x,
-      y = arrow_coords$neg$y,
-      linewidth = 1.2,
-      color = direction_colors[2],
-      arrow_head = ggarrow::arrow_head_wings(),
-      length_head = unit(2.5, "mm")
-    )
-
-    # vjust/hjust > 1 push the label just past its Inf anchor, in text-size
-    # (not data-unit) increments, so this stays proportionate across plot
-    # sizes without needing a data-driven offset.
-    if (orientation == "x") {
-      pos_text <- list(x = range[2], y = Inf, hjust = 1, vjust = 2.6)
-      neg_text <- list(x = range[1], y = Inf, hjust = 0, vjust = 2.6)
+    # The labels sit at the arrow tips. vjust > 1 pushes a label just past
+    # its Inf anchor in text-size increments, so the offset stays
+    # proportionate across plot sizes. With orientation = "y" the text is
+    # rotated, so vjust moves it sideways, clear of the vertical arrow, and
+    # hjust anchors each label's end (positive) or start (negative) at the
+    # tip so that it reads back towards zero instead of running off the
+    # panel.
+    text_data <- if (orientation == "x") {
+      list(data.frame(x = arrow_range[2], y = Inf), data.frame(x = arrow_range[1], y = Inf))
     } else {
-      # vjust, not hjust, is the perpendicular-offset knob here: at angle =
-      # 90 the text's own baseline runs vertically, so it's vjust that
-      # pushes the label sideways, clear of the vertical arrow it's
-      # labeling. hjust anchors the string's *end* (pos, hjust = 1) or
-      # *start* (neg, hjust = 0) at the arrow tip, so each label reads
-      # inward, back toward zero - not outward past the tip, which gets
-      # clipped at the device edge regardless of plot.margin, since that
-      # space isn't backed by any axis expansion.
-      pos_text <- list(
-        x = Inf,
-        y = range[2],
-        hjust = 1,
-        vjust = 2.6,
-        angle = 90
-      )
-      neg_text <- list(
-        x = Inf,
-        y = range[1],
-        hjust = 0,
-        vjust = 2.6,
-        angle = 90
+      list(data.frame(x = Inf, y = arrow_range[2]), data.frame(x = Inf, y = arrow_range[1]))
+    }
+    text_params <- if (orientation == "x") {
+      list(list(hjust = 1, vjust = 2.6), list(hjust = 0, vjust = 2.6))
+    } else {
+      list(
+        list(hjust = 1, vjust = 2.6, angle = 90),
+        list(hjust = 0, vjust = 2.6, angle = 90)
       )
     }
-    layers[[length(layers) + 1]] <- do.call(
-      annotate,
-      c(
-        list("text", label = direction_labels[1], color = direction_colors[1], size = 3),
-        pos_text
+
+    for (i in 1:2) {
+      # geom_arrow() rather than .annotation_layer(): it translates
+      # `arrow_head`/`length_head` into GeomArrow's own parameters.
+      layers[[length(layers) + 1]] <- do.call(
+        ggarrow::geom_arrow,
+        c(
+          list(
+            data = arrow_data[[i]],
+            mapping = .merge_aes(aes(x = .data$x, y = .data$y), direction_specs[[i]]$mapping),
+            inherit.aes = FALSE,
+            show.legend = FALSE,
+            linewidth = 1.2,
+            arrow_head = ggarrow::arrow_head_wings(),
+            length_head = unit(2.5, "mm")
+          ),
+          direction_specs[[i]]$params
+        )
       )
-    )
-    layers[[length(layers) + 1]] <- do.call(
-      annotate,
-      c(
-        list("text", label = direction_labels[2], color = direction_colors[2], size = 3),
-        neg_text
+    }
+    for (i in 1:2) {
+      layers[[length(layers) + 1]] <- .annotation_layer(
+        GeomText,
+        data = text_data[[i]],
+        mapping = .merge_aes(aes(x = .data$x, y = .data$y), direction_specs[[i]]$mapping),
+        params = c(
+          list(label = direction_labels[i], size = 3),
+          text_params[[i]],
+          direction_specs[[i]]$params
+        )
       )
-    )
+    }
   }
 
   if (secondary_axis) {
@@ -219,12 +227,18 @@ layer_bf_evidence_scale <- function(
 #'   format).
 #' @param contrast Unquoted column holding that raw string (default
 #'   `contrast`, matching bayestestR's own column name).
-#' @param value Optional unquoted column - typically the log-BF/BF column
-#'   itself - to sign-flip on any row matched via a swapped pair (see
-#'   `pairs`), so a positive value still means whatever the caller's
-#'   first-named condition supports. `NULL` (default) leaves every column
-#'   as-is; if any pair needed swapping and no `value` is given, a warning
-#'   names how many rows were affected.
+#' @param value Optional column(s) to negate on any row matched via a swapped
+#'   pair (see `pairs`), so that a positive value still favours the caller's
+#'   first-named condition. Takes a bare column name or a tidyselect
+#'   selection such as `c(log_BF, estimate)`. Every selected column must be
+#'   on a log or difference scale, where reversing a contrast flips the
+#'   sign: a log Bayes factor, an estimated difference. A ratio-scale Bayes
+#'   factor is inverted, not negated, by a reversal; take its `log()` first.
+#'   Interval bounds need swapping as well as negating, so negating them
+#'   here would produce a reversed interval. Columns not selected keep their
+#'   original direction. `NULL` (default) selects nothing; if any pair needed
+#'   swapping and no `value` is given, a warning names how many rows were
+#'   affected.
 #' @param strip A regular expression removed from each side after splitting
 #'   (default `" NA$"`, since a reference grid that marginalizes over a
 #'   grouping variable leaves a literal trailing "NA" token in emmeans'
@@ -272,7 +286,19 @@ prepare_bf_contrasts <- function(
   contrast_str <- trimws(as.character(rlang::eval_tidy(contrast_sym, data)))
   value_quo <- rlang::enquo(value)
   has_value <- !rlang::quo_is_null(value_quo)
-  value_name <- if (has_value) rlang::as_name(value_quo) else NULL
+  value_names <- if (has_value) {
+    names(dplyr::select(as.data.frame(data), !!value_quo))
+  }
+  not_numeric <- value_names[!vapply(
+    value_names, function(col) is.numeric(data[[col]]), logical(1)
+  )]
+  if (length(not_numeric) > 0) {
+    stop(
+      "prepare_bf_contrasts(): `value` must select numeric columns; ",
+      paste0("`", not_numeric, "`", collapse = ", "), " is not.",
+      call. = FALSE
+    )
+  }
 
   split <- strsplit(contrast_str, " - ", fixed = TRUE)
   n_pieces <- lengths(split)
@@ -367,7 +393,9 @@ prepare_bf_contrasts <- function(
 
     if (any(reversed)) {
       if (has_value) {
-        data[[value_name]][reversed] <- -data[[value_name]][reversed]
+        for (col in value_names) {
+          data[[col]][reversed] <- -data[[col]][reversed]
+        }
       } else {
         warning(
           "prepare_bf_contrasts(): ", sum(reversed), " of ", length(pairs),
@@ -413,13 +441,15 @@ prepare_bf_contrasts <- function(
 #'   keeps `pairs`' own order (or `data`'s own order, if `pairs` wasn't
 #'   used).
 #' @param positive_color,negative_color Colors for positive/negative
-#'   contrasts; default to `mt_colors[1]`/`mt_colors[2]`.
+#'   contrasts. `NULL` (default) uses `mt_colors[1]`/`mt_colors[2]`, or
+#'   `dark_mt_colors[1]`/`dark_mt_colors[2]` under a dark theme such as
+#'   `theme_mt(dark = TRUE)`.
 #' @param positive_shape,negative_shape Point shapes for positive/negative
 #'   contrasts. Color and shape both carry sign, redundantly, so direction
 #'   stays legible under grayscale printing or for red/green-blind readers.
 #' @param point_size Size of the contrast points.
 #' @param evidence_scale `TRUE` (default) bundles [layer_bf_evidence_scale()]
-#'   in automatically, with `range` computed from `data` itself; `FALSE` for
+#'   in automatically, with `arrow_range` computed from `data` itself; `FALSE` for
 #'   a bare forest plot with no annotation.
 #' @param weak_threshold,weak_label Passed to `layer_bf_evidence_scale()`
 #'   when `evidence_scale = TRUE`.
@@ -483,9 +513,6 @@ plot_bf_forest <- function(
     contrast_sym <- rlang::sym(".contrast_label")
   }
 
-  positive_color <- positive_color %||% mt_colors[1]
-  negative_color <- negative_color %||% mt_colors[2]
-
   plot_data <- data
   plot_data$.log_bf <- rlang::eval_tidy(log_bf_sym, data)
   plot_data$.sign <- ifelse(plot_data$.log_bf >= 0, "positive", "negative")
@@ -493,14 +520,8 @@ plot_bf_forest <- function(
     plot_data$.se <- rlang::eval_tidy(se_quo, data)
   }
 
-  # Unconditional, unlike the reorder guard below: `contrast_reorder = FALSE`
-  # is the documented escape hatch from *ordering* by log_bf, not a way to
-  # plot a column that has nothing plottable in it. With the check living
-  # only inside the reorder branch, following that advice on all-NA data
-  # reached max(..., na.rm = TRUE) with nothing to compare, so `abs_extent`
-  # became -Inf, `arrow_range` became c(-Inf, Inf), and the plot "built"
-  # with meaningless arrow geometry - the only signal a base-R warning
-  # naming max(), not this package.
+  # Checked whether or not rows are reordered: without a finite value, the
+  # arrow range below would become infinite.
   if (!any(is.finite(plot_data$.log_bf))) {
     stop(
       "plot_bf_forest(): `log_bf` has no finite values - nothing to plot.",
@@ -508,24 +529,34 @@ plot_bf_forest <- function(
     )
   }
 
-  x_expr <- if (contrast_reorder) {
-    # See plot_ridge_hdi()'s identical guard, and .check_reorder_values()
-    # itself for what fct_reorder() actually chokes on: any contrast with no
-    # non-NA log_bf, which - since each contrast here is a single row - means
-    # any NA row at all. Checked eagerly (plot_data$.log_bf is already
-    # materialized above, not lazy) so the error names this function rather
-    # than surfacing as forcats' lvls_reorder() message from deep inside
-    # ggplot2's aesthetic evaluation.
+  # The row order is fixed here, on the full data, because the points are
+  # drawn by one layer per sign (see below), each of which sees only its own
+  # rows. .check_reorder_values() turns forcats' error for a contrast without
+  # a non-NA log_bf (with one row per contrast: any NA row) into one that
+  # names this function.
+  contrast_values <- rlang::eval_tidy(contrast_sym, plot_data)
+  # With `pairs`, prepare_bf_contrasts() has already warned about repeats.
+  repeated <- unique(contrast_values[duplicated(contrast_values) & !is.na(contrast_values)])
+  if (is.null(pairs) && length(repeated) > 0) {
+    warning(
+      "plot_bf_forest(): ",
+      paste(sQuote(as.character(repeated), q = FALSE), collapse = ", "),
+      if (length(repeated) == 1) " labels" else " label",
+      " more than one row; those rows share one line of the plot.",
+      call. = FALSE
+    )
+  }
+  plot_data$.contrast <- if (contrast_reorder) {
     .check_reorder_values(
       values = plot_data$.log_bf,
-      categories = rlang::eval_tidy(contrast_sym, plot_data),
+      categories = contrast_values,
       fn = "plot_bf_forest",
       value_arg = "log_bf",
       reorder_arg = "contrast_reorder"
     )
-    rlang::expr(forcats::fct_reorder(!!contrast_sym, .data$.log_bf))
+    forcats::fct_reorder(contrast_values, plot_data$.log_bf)
   } else {
-    contrast_sym
+    contrast_values
   }
 
   xlab <- xlab %||%
@@ -533,18 +564,11 @@ plot_bf_forest <- function(
 
   p <- ggplot(
     plot_data,
-    aes(y = !!x_expr, x = .data$.log_bf, color = .data$.sign, shape = .data$.sign)
+    aes(y = .data$.contrast, x = .data$.log_bf, shape = .data$.sign)
   ) +
-    # establishes the y scale as discrete *before* any annotate()-based
-    # layer below (which have inherit.aes = FALSE and, for the
-    # evidence-scale layer's arrows/labels, a raw numeric y position) gets
-    # a chance to. Without this, an annotate() layer with a bare numeric y,
-    # if processed before any layer supplying the real discrete factor,
-    # makes ggplot2 infer a *continuous* y scale, and every subsequent
-    # discrete-y layer then fails with "Discrete value supplied to a
-    # continuous scale." A blank layer trains the scale without affecting
-    # the visual stacking order, so the evidence-scale annotation can still
-    # be added right after and still render behind the real data points.
+    # Trains the y scale as discrete before the evidence-scale layers, whose
+    # numeric Inf positions would otherwise make it continuous. A blank layer
+    # does not change what is drawn on top of what.
     geom_blank()
 
   if (evidence_scale) {
@@ -565,36 +589,51 @@ plot_bf_forest <- function(
         orientation = "x",
         weak_threshold = weak_threshold,
         weak_label = weak_label,
-        range = arrow_range,
+        arrow_range = arrow_range,
         direction_labels = direction_labels,
         secondary_axis = secondary_axis,
         secondary_breaks = secondary_breaks
       )
   }
 
+  # One layer per sign rather than a colour scale, so that each default
+  # colour can follow the theme (a scale's values are fixed literals).
+  sign_colours <- list(
+    positive = .colour_spec(positive_color, "colour", mt_colors[1], dark_mt_colors[1]),
+    negative = .colour_spec(negative_color, "colour", mt_colors[2], dark_mt_colors[2])
+  )
+  sign_layers <- function(geom, mapping = aes(), params = list()) {
+    lapply(names(sign_colours), function(sign) {
+      spec <- sign_colours[[sign]]
+      do.call(geom, c(
+        list(
+          data = function(d) d[d$.sign %in% sign, , drop = FALSE],
+          mapping = .merge_aes(mapping, spec$mapping)
+        ),
+        params,
+        spec$params
+      ))
+    })
+  }
+
   if (has_se) {
     p <- p +
-      geom_errorbar(
+      sign_layers(
+        geom_errorbar,
         aes(xmin = .data$.log_bf - .data$.se, xmax = .data$.log_bf + .data$.se),
-        width = 0
+        list(width = 0)
       )
   }
 
   p +
-    geom_point(size = point_size) +
-    scale_color_manual(
-      values = c(positive = positive_color, negative = negative_color)
-    ) +
+    sign_layers(geom_point, params = list(size = point_size)) +
     scale_shape_manual(
       values = c(positive = positive_shape, negative = negative_shape)
     ) +
-    guides(color = "none", shape = "none") +
+    guides(shape = "none") +
     labs(x = xlab, y = ylab) +
-    # right-align the contrast labels against the axis line, matching
-    # plot_ridge_hdi()'s axis.text.y (see its own comment on why both the
-    # base and position-suffixed elements need setting). Axis titles are
-    # guarded the same way (see plot_location_scale()'s own comment) since,
-    # like that function, there's no coord_flip() here.
+    # Right-aligned contrast labels and markdown-aware axis titles, set on
+    # base and position-specific elements as in plot_ridge_hdi().
     theme(
       axis.text.y = element_markdown(hjust = 1),
       axis.text.y.left = element_markdown(hjust = 1),

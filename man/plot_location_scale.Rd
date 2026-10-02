@@ -37,14 +37,9 @@ plot_location_scale(
 and (together with \code{shape}, if given) the ellipse/point grouping.}
 
 \item{location, sigma}{Unquoted columns holding the per-draw location and
-scale values. No default - unlike \code{\link[=layer_halfeye_hdi]{layer_halfeye_hdi()}}'s \code{value = .value} (a real tidybayes convention), there's no equivalent
-widely-used column name for a paired location/sigma draw, so a
-same-named default (\code{location = location}) would only "work" by
-coincidence when the caller's data happens to have columns literally
-called \code{location}/\code{sigma} - and crash with a cryptic R-level
-"recursive default argument reference" error otherwise, since looking
-up the unmatched symbol falls through to the function's own unforced
-argument promise of the same name. Always pass both explicitly.}
+scale values. They have no default because, unlike tidybayes' \code{.value},
+there is no conventional column name for paired location and scale
+draws.}
 
 \item{shape}{Optional unquoted column (or expression) for a second
 crossed factor (e.g. negation) - mapped to the point glyph only
@@ -102,8 +97,9 @@ for full manual control.}
 
 \item{point_size}{Size of the per-condition point.}
 
-\item{curve_color}{Color of the sigma_max reference curve; defaults to
-\code{mt_colors[2]}.}
+\item{curve_color}{Color of the sigma_max reference curve. \code{NULL}
+(default) uses \code{mt_colors[2]}, or \code{dark_mt_colors[2]} under a dark theme
+such as \code{theme_mt(dark = TRUE)}.}
 
 \item{xlab, ylab}{\code{NULL} (default) builds a label naming both the
 quantity and the uncertainty measure(s) shown; pass a string to

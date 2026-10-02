@@ -29,7 +29,8 @@ training items).}
 \item{item_image}{Identifier for the accompanying scenario image.}
 \item{judgment}{Truth-value judgment on a continuous 0-100 slider.}
 \item{submit_time}{Response time in seconds.}
-\item{which}{Self-reported languages understood during the debrief.}
+\item{which}{Debrief response, in German: \code{"Text"} (text),
+\code{"Bild"} (picture), or \code{"beides"} (both).}
 }
 }
 \source{

@@ -56,7 +56,9 @@ keeps \code{pairs}' own order (or \code{data}'s own order, if \code{pairs} wasn'
 used).}
 
 \item{positive_color, negative_color}{Colors for positive/negative
-contrasts; default to \code{mt_colors[1]}/\code{mt_colors[2]}.}
+contrasts. \code{NULL} (default) uses \code{mt_colors[1]}/\code{mt_colors[2]}, or
+\code{dark_mt_colors[1]}/\code{dark_mt_colors[2]} under a dark theme such as
+\code{theme_mt(dark = TRUE)}.}
 
 \item{positive_shape, negative_shape}{Point shapes for positive/negative
 contrasts. Color and shape both carry sign, redundantly, so direction
@@ -65,7 +67,7 @@ stays legible under grayscale printing or for red/green-blind readers.}
 \item{point_size}{Size of the contrast points.}
 
 \item{evidence_scale}{\code{TRUE} (default) bundles \code{\link[=layer_bf_evidence_scale]{layer_bf_evidence_scale()}}
-in automatically, with \code{range} computed from \code{data} itself; \code{FALSE} for
+in automatically, with \code{arrow_range} computed from \code{data} itself; \code{FALSE} for
 a bare forest plot with no annotation.}
 
 \item{weak_threshold, weak_label}{Passed to \code{layer_bf_evidence_scale()}

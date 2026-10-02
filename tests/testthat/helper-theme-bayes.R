@@ -1,3 +1,6 @@
+# Fixtures are built with base R only, so the suite does not depend on
+# suggested packages to load.
+
 # Synthetic long-format posterior draws, standing in for the output of
 # tidybayes::gather_emmeans_draws()/spread_draws() - one row per draw per
 # category, deliberately with unequal spread across categories (some tight,
@@ -9,16 +12,16 @@ bayes_draws_fixture <- (function() {
   cats <- c("true-without", "false-with", "undefined-without", "critical-with")
   mus <- c(1.5, 1.5, 0, 0)
   sigmas <- c(.3, .3, .8, .8)
-  purrr::pmap_dfr(
-    list(cats, mus, sigmas),
+  do.call(rbind, Map(
     function(cat, mu, sigma) {
       data.frame(
         cond = cat,
         facet_grp = rep(c("a", "b"), each = 100),
         .value = rnorm(200, mu, sigma)
       )
-    }
-  )
+    },
+    cats, mus, sigmas
+  ))
 })()
 
 # Synthetic coefficient draws, standing in for tidybayes::spread_draws() +
@@ -27,13 +30,12 @@ bayes_coef_fixture <- (function() {
   set.seed(2)
   coefs <- forcats::fct_inorder(c("Intercept", "negation", "scenario_false"))
   mus <- c(1, -.4, .2)
-  purrr::pmap_dfr(
-    list(as.character(coefs), mus),
-    function(coef, mu) {
-      data.frame(coef = coef, .value = rnorm(300, mu, .3))
-    }
-  ) |>
-    dplyr::mutate(coef = forcats::fct_relevel(coef, levels(coefs)))
+  draws <- do.call(rbind, Map(
+    function(coef, mu) data.frame(coef = coef, .value = rnorm(300, mu, .3)),
+    as.character(coefs), mus
+  ))
+  draws$coef <- factor(draws$coef, levels = levels(coefs))
+  draws
 })()
 
 # Synthetic PAIRED (location, sigma) draws - one row per (category,
@@ -48,29 +50,23 @@ bayes_coef_fixture <- (function() {
 # point into every panel).
 location_scale_fixture <- (function() {
   set.seed(4)
-  specs <- tidyr::expand_grid(
+  specs <- expand.grid(
+    trigger = c("t1", "t2"),
     category = c("narrow", "wide"),
-    trigger = c("t1", "t2")
-  ) |>
-    dplyr::mutate(
-      mu = dplyr::case_when(
-        category == "narrow" & trigger == "t1" ~ -1,
-        category == "narrow" & trigger == "t2" ~ 1,
-        category == "wide" & trigger == "t1" ~ -1.5,
-        category == "wide" & trigger == "t2" ~ 1.5
-      ),
-      sig = dplyr::if_else(category == "narrow", .3, .8)
+    stringsAsFactors = FALSE
+  )[, c("category", "trigger")]
+  mus <- c(narrow.t1 = -1, narrow.t2 = 1, wide.t1 = -1.5, wide.t2 = 1.5)
+  sigs <- c(narrow = .3, wide = .8)
+  do.call(rbind, lapply(seq_len(nrow(specs)), function(i) {
+    category <- specs$category[i]
+    trigger <- specs$trigger[i]
+    location <- rnorm(300, mus[[paste(category, trigger, sep = ".")]], .1)
+    sigma <- rnorm(300, sigs[[category]], .05)
+    data.frame(
+      category = category, trigger = trigger,
+      .draw = 1:300, location = location, sigma = sigma
     )
-  specs |>
-    dplyr::rowwise() |>
-    dplyr::mutate(draws = list(data.frame(
-      .draw = 1:300,
-      location = rnorm(300, mu, .1),
-      sigma = rnorm(300, sig, .05)
-    ))) |>
-    dplyr::ungroup() |>
-    dplyr::select(category, trigger, draws) |>
-    tidyr::unnest(draws)
+  }))
 })()
 
 # Synthetic per-contrast log-BF table, standing in for a coerced
@@ -93,7 +89,7 @@ bf_forest_fixture <- data.frame(
 # Synthetic RAW bayestestR::bayesfactor_rope()-style output - a `contrast`
 # column in emmeans' own auto-generated "<left> - <right> NA" format (the
 # trailing " NA" artifact from marginalizing over a grouping variable, e.g.
-# `at = list(trigger = NA)`, as belproj-paper.R does), with no SE column at
+# `at = list(trigger = NA)`), with no SE column at
 # all (a bayesfactor_rope() call, unlike a repeated bridge-sampling
 # estimate, has no natural per-contrast SE) and one extra row
 # ("true with - false with NA") deliberately NOT requested by
@@ -116,3 +112,11 @@ bf_pairs_fixture <- list(
   c("critical with", "critical without"),
   c("false with", "critical with")
 )
+
+# plot_bf_forest() draws its points in one layer per sign; this binds the
+# built data of all point layers together.
+built_points <- function(p) {
+  built <- ggplot_build(p)
+  idx <- which(vapply(p$layers, function(l) inherits(l$geom, "GeomPoint"), logical(1)))
+  dplyr::bind_rows(built$data[idx])
+}

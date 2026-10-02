@@ -37,15 +37,9 @@
 #' @param category Unquoted column identifying each condition - drives color
 #'   and (together with `shape`, if given) the ellipse/point grouping.
 #' @param location,sigma Unquoted columns holding the per-draw location and
-#'   scale values. No default - unlike [layer_halfeye_hdi()]'s `value =
-#'   .value` (a real tidybayes convention), there's no equivalent
-#'   widely-used column name for a paired location/sigma draw, so a
-#'   same-named default (`location = location`) would only "work" by
-#'   coincidence when the caller's data happens to have columns literally
-#'   called `location`/`sigma` - and crash with a cryptic R-level
-#'   "recursive default argument reference" error otherwise, since looking
-#'   up the unmatched symbol falls through to the function's own unforced
-#'   argument promise of the same name. Always pass both explicitly.
+#'   scale values. They have no default because, unlike tidybayes' `.value`,
+#'   there is no conventional column name for paired location and scale
+#'   draws.
 #' @param shape Optional unquoted column (or expression) for a second
 #'   crossed factor (e.g. negation) - mapped to the point glyph only
 #'   (ellipses have no shape aesthetic); grouping becomes the interaction of
@@ -90,8 +84,9 @@
 #'   every level, or a vector the same length as the deduped `ellipse_level`
 #'   for full manual control.
 #' @param point_size Size of the per-condition point.
-#' @param curve_color Color of the sigma_max reference curve; defaults to
-#'   `mt_colors[2]`.
+#' @param curve_color Color of the sigma_max reference curve. `NULL`
+#'   (default) uses `mt_colors[2]`, or `dark_mt_colors[2]` under a dark theme
+#'   such as `theme_mt(dark = TRUE)`.
 #' @param xlab,ylab `NULL` (default) builds a label naming both the
 #'   quantity and the uncertainty measure(s) shown; pass a string to
 #'   override either.
@@ -143,13 +138,8 @@ plot_location_scale <- function(
     stop("plot_location_scale(): `sigma` is required.", call. = FALSE)
   }
   ellipse_geom <- match.arg(ellipse_geom)
-  # `bounds` used to flow straight into seq() and sqrt() unchecked. Reversed
-  # bounds (c(100, 0)) made sqrt() of a negative product, i.e. an all-NaN
-  # curve that built with no error and no warning - the reference curve just
-  # wasn't there, with nothing to tell the reader why. A scalar produced
-  # seq()'s "'to' must be a finite number", naming an argument the caller
-  # never passed. The sigma_max curve is a ceiling reference a reader draws
-  # real conclusions from, so silently omitting it is worse than erroring.
+  # Reversed or non-finite bounds would produce an all-NaN, invisible
+  # sigma_max curve; a reader relies on that curve, so this errors instead.
   if (!is.null(bounds)) {
     if (!is.numeric(bounds) || length(bounds) != 2 ||
           any(!is.finite(bounds)) || bounds[1] >= bounds[2]) {
@@ -160,19 +150,29 @@ plot_location_scale <- function(
       )
     }
   }
-  # sorted ascending for the label text below, but drawn widest-first (see
-  # the stat_ellipse() loop below) so the narrowest (highest-alpha) interval
-  # ends up on top, nested visually inside the wider ones rather than any
-  # random draw-order overlap.
+  if (!is.numeric(ellipse_level) || length(ellipse_level) == 0 ||
+        any(!is.finite(ellipse_level)) ||
+        any(ellipse_level <= 0 | ellipse_level >= 1)) {
+    stop(
+      "plot_location_scale(): `ellipse_level` must be one or more ",
+      "probabilities between 0 and 1 (e.g. c(.5, .95)), not percentages.",
+      call. = FALSE
+    )
+  }
+  if (!is.numeric(bounds_n) || length(bounds_n) != 1 || !is.finite(bounds_n) ||
+        bounds_n < 2) {
+    stop(
+      "plot_location_scale(): `bounds_n` must be a single number of at ",
+      "least 2.",
+      call. = FALSE
+    )
+  }
+  # Sorted ascending for the axis labels; drawn widest-first (below).
   ellipse_level <- sort(unique(ellipse_level))
   n_levels <- length(ellipse_level)
 
-  # multiple levels are told apart by alpha alone (same per-category hue for
-  # all of them) - default fades from a solid-ish core at the narrowest
-  # level out to a faint outer band at the widest, evenly spaced; a single
-  # level keeps the old flat .25. Pass a scalar to apply one alpha to every
-  # level, or a vector the same length as (the deduped, sorted)
-  # `ellipse_level` for full manual control.
+  # Levels differ by alpha alone: by default from .3 at the narrowest to .12
+  # at the widest, or .25 for a single level.
   ellipse_alpha <- ellipse_alpha %||%
     (if (n_levels == 1) .25 else seq(.3, .12, length.out = n_levels))
   if (length(ellipse_alpha) == 1) {
@@ -213,17 +213,9 @@ plot_location_scale <- function(
   facet_quo <- rlang::enquo(facet)
   has_facet <- !rlang::quo_is_null(facet_quo)
 
-  curve_color <- curve_color %||% mt_colors[2]
-
-  # `shape`/`facet` are materialized into their own columns rather than
-  # referenced by name. rlang::as_name() (used below for the grouping) needs
-  # a bare symbol, so an inline expression - `shape = factor(neg)`, which
-  # every other tidyeval argument in this package accepts - died with
-  # rlang's "Can't convert a call to a string", naming neither this function
-  # nor the argument. Evaluating once here means the grouping, the point
-  # mapping and facet_wrap() all refer to a real column, whatever the caller
-  # passed; rlang::as_label() then builds the legend/strip title from
-  # arbitrary expressions where as_name() throws.
+  # `shape` and `facet` are evaluated once into columns, so that inline
+  # expressions (`shape = factor(neg)`) work for the grouping, the point
+  # mapping and facet_wrap() alike; as_label() names them in legend and strip.
   plot_data <- data
   plot_data$.location <- location_transform(rlang::eval_tidy(location_sym, data))
   plot_data$.sigma <- sigma_transform(rlang::eval_tidy(sigma_sym, data))
@@ -243,14 +235,9 @@ plot_location_scale <- function(
     category_sym
   }
 
-  # must also group by the facet variable (when given), or the aggregated
-  # point collapses across facet levels and then gets replicated
-  # identically into every panel - ggplot2 facets a layer by whatever facet
-  # column(s) exist in *that layer's own* data, and point_data is a
-  # separate data set from the main (already-faceted-correctly) plot data.
-  # Confirmed via ggplot_build(): without this, two facets with genuinely
-  # different per-facet means for the same category both showed the same
-  # (wrong, cross-facet-averaged) point.
+  # Also grouped by the facet variable: point_data is separate layer data,
+  # and without its facet column each point would be averaged across facets
+  # and repeated in every panel.
   group_cols <- c(
     rlang::as_name(category_sym),
     if (has_shape) ".shape",
@@ -265,11 +252,8 @@ plot_location_scale <- function(
       .groups = "drop"
     )
 
-  # stat_ellipse() needs at least 4 points per group; below that it warns
-  # "Too few points to calculate an ellipse" - once per ellipse layer, so
-  # 2-3 times by default - and quietly draws nothing for that group, naming
-  # neither the offending condition nor this function. Say which condition
-  # it is, once, before the build gets there.
+  # stat_ellipse() draws nothing for a group of fewer than 4 points, and its
+  # warning names neither the group nor this function.
   thin <- point_data[point_data$.n < 4, , drop = FALSE]
   if (nrow(thin) > 0) {
     ids <- apply(thin[group_cols], 1, paste, collapse = "/")
@@ -293,11 +277,9 @@ plot_location_scale <- function(
     group = !!group_expr
   )
   point_mapping <- mapping
-  # An explicit `shape` column wins; otherwise category itself drives the
-  # glyph, so the plot doesn't rest on hue alone (see `category_shape`).
-  # Mapping color, fill and shape to the same variable with the same title
-  # makes ggplot2 merge all three into one legend rather than adding a
-  # second key block.
+  # An explicit `shape` column wins; otherwise category drives the glyph as
+  # well (see `category_shape`). Colour, fill and shape mapped to the same
+  # variable with the same title merge into one legend.
   if (has_shape) {
     point_mapping$shape <- rlang::expr(.data$.shape)
   } else if (category_shape) {
@@ -312,20 +294,19 @@ plot_location_scale <- function(
       x = curve_x,
       y = sqrt((curve_x - bounds[1]) * (bounds[2] - curve_x))
     )
+    curve_colour <- .colour_spec(
+      curve_color, "colour", mt_colors[2], dark_mt_colors[2]
+    )
     p <- p +
-      geom_line(
+      .annotation_layer(
+        GeomLine,
         data = curve_data,
-        mapping = aes(x = .data$x, y = .data$y),
-        inherit.aes = FALSE,
-        color = curve_color,
-        linewidth = .7,
-        linetype = "dashed"
+        mapping = .merge_aes(aes(x = .data$x, y = .data$y), curve_colour$mapping),
+        params = c(list(linewidth = .7, linetype = "dashed"), curve_colour$params)
       )
   }
 
-  # widest level first, narrowest last, so the narrowest (highest-alpha)
-  # ellipse renders on top of the others instead of getting buried under a
-  # wider one added afterward.
+  # Widest level first, so the narrowest (most opaque) ellipse is on top.
   draw_order <- order(ellipse_level, decreasing = TRUE)
   for (i in draw_order) {
     ellipse_args <- list(
@@ -336,34 +317,20 @@ plot_location_scale <- function(
       alpha = ellipse_alpha[i]
     )
     if (ellipse_geom == "polygon") {
-      # a literal (not mapped) colour = NA override drops the border
-      # entirely, leaving a plain shaded region - fill stays mapped to
-      # category via the inherited top-level aes(), so the shading itself
-      # is still colored per condition.
+      # No outline; the fill stays mapped to category.
       ellipse_args$colour <- NA
     } else if (category_linetype) {
-      # "path" ellipses are outline-only, so the outline's dash pattern is
-      # a second non-color channel available for free. Mapped on this layer
-      # rather than in the top-level aes() so it reaches the ellipses
-      # without leaking into any other inheriting layer. Same variable and
-      # title as color/fill/shape, so it merges into the one legend.
+      # Outline-only ellipses get linetype as a second non-colour channel,
+      # mapped on this layer so it does not reach other layers; with the same
+      # variable and title it joins the single legend.
       ellipse_args$mapping <- aes(linetype = !!category_sym)
     }
     p <- p + do.call(stat_ellipse, ellipse_args)
   }
 
-  # An explicit shape scale rather than ggplot2's default, for two reasons.
-  # First, the default stops at 6 values: past that it warns and hands back
-  # NA for the extra levels, i.e. silently undrawn points - and since
-  # category-to-shape is a default here rather than something the caller
-  # asked for, it has to survive a 7+-category plot on its own. Second, the
-  # default mixes solid and open glyphs early (its fourth value is a thin
-  # `+`), which reads noticeably weaker next to the three filled ones at
-  # this point size. `.mt_shapes` keeps the filled forms together at the
-  # front. Past twelve it cycles, which is no worse than what the five-hue
-  # palette already does at that many categories. A caller who adds their
-  # own scale_shape_*() on top replaces this one, with ggplot2's usual
-  # "Scale for shape is already present" message.
+  # ggplot2's default shape scale stops at 6 values (further levels get no
+  # point) and puts an open `+` fourth. `.mt_shapes` has twelve, filled forms
+  # first, and cycles beyond that. A caller's own shape scale replaces it.
   if (!has_shape && category_shape) {
     n_categories <- length(unique(stats::na.omit(
       plot_data[[rlang::as_name(category_sym)]]
@@ -389,18 +356,16 @@ plot_location_scale <- function(
         rlang::as_name(category_sym)
       }
     ) +
-    # unlike plot_ridge_hdi()/plot_coef_grid_hdi(), there's no coord_flip()
-    # here, so both axis titles (not just x) carry a user-settable label -
-    # forced to element_markdown() (base + position-suffixed forms, see
-    # plot_ridge_hdi()'s own comment on why both are needed) so a custom
-    # xlab/ylab containing markdown/HTML doesn't silently render as literal
-    # tags. Neither default label uses markdown today, so this is
-    # future-proofing, not a fix for a currently-visible bug.
+    # Both axis titles carry user-settable labels, so both are made
+    # markdown-aware (base and position-specific elements, as in
+    # plot_ridge_hdi()), as are the facet strips.
     theme(
       axis.title.x = element_markdown(),
       axis.title.x.top = element_markdown(),
       axis.title.y = element_markdown(),
-      axis.title.y.right = element_markdown()
+      axis.title.y.right = element_markdown(),
+      strip.text.x = element_markdown(),
+      strip.text.x.top = element_markdown()
     )
 
   if (has_facet) {

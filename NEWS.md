@@ -1,7 +1,80 @@
 # emptyviz (development version)
 
-Fixes from the 2026-08-22 code review (see `CODE_REVIEW.md`), plus the
+Fixes from the code reviews of 2026-08-22 and 2026-10-02, plus the
 violin-geom parity fixes below.
+
+* **Fixed:** `dual_render` emitted raw HTML whatever the output format, so in
+  a project that also renders to PDF or Word every dual-rendered figure was
+  silently missing from those formats, and in HTML not produced by Quarto
+  both images were shown. Dual rendering now applies only to HTML output
+  rendered by Quarto. For PDF or Word output figures are rendered normally;
+  for HTML not rendered by Quarto they are too, with one warning per render.
+* **Fixed:** the default colours of the plot builders (`layer_halfeye_hdi()`,
+  `plot_ridge_hdi()`, `plot_coef_grid_hdi()`, `plot_location_scale()`,
+  `layer_bf_evidence_scale()`, `plot_bf_forest()`) were fixed light-palette
+  values that neither `theme_mt(dark = TRUE)` nor the dual-render overlay
+  could change; negative-evidence marks, reference lines and the sigma_max
+  curve measured 1.92:1 against the dark page. Unset colours now follow the
+  theme the plot is drawn with: `mt_colors12` tints under a light theme,
+  the matching `dark_mt_colors12` tints under a dark one. Slab outlines and
+  interval point fills use the theme's page colour instead of white. Colours
+  passed explicitly are used as given. `hline_color` and `curve_color` now
+  default to `NULL`.
+* **Fixed:** `theme_mt()` set unsized `geom_text()`/`geom_label()` text at 5pt
+  (`element_geom(fontsize = 5)` is in points, not millimetres). It is now
+  `base_size`.
+* **Fixed:** `layer_halfeye_hdi()` hid the shape legend of every other layer
+  in the plot.
+* **Fixed:** `plot_ridge_hdi()` sorted categories by their median while the
+  documentation, and the point drawn, use the mean. It now sorts by the
+  mean.
+* **Fixed:** `geom_violin_sd()`/`geom_half_violin_sd()` failed on `data` given
+  as a function or lambda formula, which ggplot2 layers accept.
+* **Fixed:** the "Weak evidence region" label of `layer_bf_evidence_scale()`
+  measured 2.74:1 against its band in light mode; it now uses a darker shade
+  of the same hue (4.75:1).
+* **Breaking (API):** `layer_bf_evidence_scale()`'s `range` argument is now
+  `arrow_range`, so that it no longer shadows `base::range()`.
+* **New:** `use_theme_mt(dual_render = FALSE)` sets the theme without
+  registering the dual-render `knit_print` method, and removes it if an
+  earlier call registered it.
+* **Changed:** aesthetic aliases passed to the `_sd` geoms (`col`, `lwd`,
+  `bg`, ...) are caught like their standard names (`colour`, `linewidth`,
+  `fill`), with the package's own warning.
+* **Docs:** the `_sd` geoms' help pages gain a Background section with
+  references; `?use_theme_mt` states that a dual-rendered chunk's `fig.cap`
+  is shown as plain text unless the chunk has a `fig-` label.
+* **Breaking (visual):** `plot_ridge_hdi()` now puts the category with the
+  highest mean at the top (it was at the bottom), matching `plot_bf_forest()`.
+* **Fixed:** dual-rendered figures were shown at their full pixel width
+  rather than their nominal size: the numeric `out.width` knitr sets for
+  retina figures was written into the `<img>` tag without a CSS unit, so
+  browsers ignored it. A vector `out.width` is now applied per plot.
+* **Changed:** dual-rendered figures use the chunk's `dev` when a browser can
+  show it (`png`, `ragg_png`, `jpeg`, `svg`, `svglite`); other devices fall
+  back to PNG.
+* **Changed:** the facet strips of `plot_ridge_hdi()`, `plot_coef_grid_hdi()`
+  and `plot_location_scale()` render markdown under any theme, not only
+  under `theme_mt()`; their styling still comes from the theme.
+* **Changed:** `plot_location_scale()` errors on an `ellipse_level` outside
+  (0, 1) (e.g. `95` instead of `.95`), which previously drew no ellipse, and
+  on a `bounds_n` below 2. `plot_bf_forest()` warns when one contrast label
+  names several rows, which then share one line of the plot.
+* **Internal:** the dual-render overlay completes a plot's theme with the
+  exported `complete_theme()` instead of `ggplot2:::plot_theme()`. CI also
+  checks the package against the minimum dependency versions in
+  `DESCRIPTION`.
+* **Changed:** `prepare_bf_contrasts()`'s `value` accepts several columns
+  (e.g. `value = c(log_BF, estimate)`), must select numeric columns, and is
+  documented as requiring log or difference scales: a ratio-scale Bayes
+  factor is inverted, not negated, when a contrast is reversed.
+* **Changed:** `draw_quantiles` and the `quantile.*` arguments of the `_sd`
+  geoms are dropped with a warning. They previously warned as unknown
+  parameters on one sub-layer and drew nothing visible.
+* **Changed:** `plot_bf_forest()` draws its points (and error bars) as one
+  layer per sign rather than through a colour scale.
+* **Docs:** `?believe_projection` described `which` as languages; it is a
+  debrief response (`"Text"`, `"Bild"`, `"beides"`).
 
 * **Fixed:** with `dual_render`, a chunk with a `fig-` label showed its
   caption twice in Quarto, once from emptyviz and once numbered by Quarto's

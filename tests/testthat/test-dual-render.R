@@ -10,6 +10,7 @@
 
 test_that("knit_print_ggplot_dual() falls through to a normal print when dual_render isn't set", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
 
   out <- withVisible(emptyviz:::knit_print_ggplot_dual(p, options = list(label = "fig-x")))
@@ -18,6 +19,7 @@ test_that("knit_print_ggplot_dual() falls through to a normal print when dual_re
 
 test_that("knit_print_ggplot_dual() saves two PNGs and emits light/dark-wrapped output when dual_render is TRUE", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   tmp <- tempfile("dual-render-test-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
@@ -44,7 +46,7 @@ test_that("knit_print_ggplot_dual() saves two PNGs and emits light/dark-wrapped 
   # the light/dark-content divs. That only renders as an image on chunks
   # Quarto re-parses as markdown (labeled `fig-*` with a fig-cap, which
   # triggers its crossref/figure filter) - an ordinary chunk (no fig-cap,
-  # like this book's plot-crit/plot-control/plot-subsamples) left the raw
+  # e.g. one without a `fig-` label) left the raw
   # "![](path)" text showing on the page instead of the image. Raw <img>
   # tags render correctly regardless of which path a chunk hits.
   expect_match(unclass(out), '<img src="', fixed = TRUE)
@@ -53,6 +55,7 @@ test_that("knit_print_ggplot_dual() saves two PNGs and emits light/dark-wrapped 
 
 test_that("knit_print_ggplot_dual()'s dark render applies the overlay to every sub-plot of a patchwork combo", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   skip_if_not_installed("patchwork")
   library(patchwork)
 
@@ -89,7 +92,7 @@ test_that("knit_print_ggplot_dual()'s dark render applies the overlay to every s
 test_that(".dark_mode_overlay() doesn't un-blank elements a plot deliberately hid (e.g. via theme_void())", {
   p <- ggplot(mtcars, aes(wt, mpg)) + geom_point() + theme_void()
   dark <- p + emptyviz:::.dark_mode_overlay(p)
-  resolved <- ggplot2:::plot_theme(dark)
+  resolved <- complete_theme(dark$theme)
 
   expect_true(inherits(calc_element("panel.grid", resolved), "element_blank"))
   expect_true(inherits(calc_element("axis.text", resolved), "element_blank"))
@@ -97,47 +100,30 @@ test_that(".dark_mode_overlay() doesn't un-blank elements a plot deliberately hi
 })
 
 test_that(".dark_mode_overlay() correctly colors axis text even when the chunk has its own partial override on the same specific element", {
-  # Regression test for the actual reported bug: a chunk that partially
-  # overrides one specific axis text element (e.g. `axis.text.x.bottom =
-  # element_markdown(family = "Cascadia Code")`, used in this book to render
-  # condition-name tick labels in a monospace font) "poisons" ggplot2's
-  # element merge for that exact name - it fills the missing `colour` field
-  # from the *active default theme* (still light, since dark = FALSE is the
-  # session default), not from a parent-level override in this overlay. A
-  # plain `axis.text = element_markdown(colour = ...)` in the overlay isn't
-  # enough; every position-suffixed element theme_mt() itself sets has to be
-  # set explicitly here too.
+  # A chunk that overrides one property of a position-specific element
+  # (here the family of axis.text.x.bottom) gets that element's missing
+  # colour from the active light theme, not from a parent set by the overlay.
+  # The overlay therefore sets every position-specific element theme_mt()
+  # sets.
   old <- theme_get()
   on.exit(theme_set(old), add = TRUE)
-  use_theme_mt() # light, the actual book/template setup
+  use_theme_mt() # the light session default
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point() +
     theme(axis.text.x.bottom = element_markdown(family = "Cascadia Code"))
 
   dark <- p + emptyviz:::.dark_mode_overlay(p)
-  resolved <- ggplot2:::plot_theme(dark)
+  resolved <- complete_theme(dark$theme)
   el <- calc_element("axis.text.x.bottom", resolved)
 
   expect_equal(el$family, "Cascadia Code") # the chunk's own override survives
   expect_equal(el$colour, emptyviz:::.dark_axis_text) # but color still flips
 })
 
-test_that(".dark_mode_overlay() warns (rather than silently mis-rendering) if ggplot2:::plot_theme() fails", {
-  # Regression test: the tryCatch() around ggplot2:::plot_theme() used to
-  # fall back to theme_get() (the *global* active theme, not necessarily
-  # this plot's own) with no signal at all - meaning a future ggplot2
-  # release that renames/restructures plot_theme() would silently start
-  # un-blanking elements a plot deliberately hid (e.g. via theme_void()),
-  # confirmed by simulating the failure directly, with zero test coverage
-  # before this. It should now warn instead.
-  local_mocked_bindings(plot_theme = function(...) stop("simulated failure"), .package = "ggplot2")
-  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
-  expect_warning(emptyviz:::.dark_mode_overlay(p), "plot_theme")
-})
-
 test_that("knit_print_ggplot_dual() called twice for the same chunk label doesn't collide on output filenames", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   tmp <- tempfile("dual-render-test-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
@@ -165,6 +151,7 @@ test_that("knit_print_ggplot_dual() called twice for the same chunk label doesn'
 
 test_that("use_theme_mt() registers a knit_print method for ggplot objects", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   old <- theme_get()
   on.exit(theme_set(old), add = TRUE)
 
@@ -192,6 +179,7 @@ test_that(".dark_mode_overlay() resolves default geom colors to the dark ink, no
 
 test_that("knit_print_ggplot_dual() honours fig.alt, falling back to fig.cap, and always emits an alt attribute", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   tmp <- tempfile("dual-render-alt-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
@@ -248,6 +236,7 @@ test_that("knit_print_ggplot_dual() honours fig.alt, falling back to fig.cap, an
 
 test_that("knit_print_ggplot_dual() warns once per chunk when neither fig.alt nor fig.cap is set", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   tmp <- tempfile("dual-render-warn-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
@@ -275,6 +264,7 @@ test_that("knit_print_ggplot_dual() warns once per chunk when neither fig.alt no
 
 test_that("knit_print_ggplot_dual() escapes HTML-special characters in every interpolated attribute", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   tmp <- tempfile("dual-render-esc-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
@@ -300,6 +290,7 @@ test_that("knit_print_ggplot_dual() escapes HTML-special characters in every int
 
 test_that("knit_print_ggplot_dual() recycles vector fig.alt across plots in one chunk", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   tmp <- tempfile("dual-render-vec-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
@@ -321,6 +312,7 @@ test_that("knit_print_ggplot_dual() recycles vector fig.alt across plots in one 
 
 test_that("repeat renders in one session reuse the same figure filenames instead of accumulating new ones", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   tmp <- tempfile("dual-render-reset-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
@@ -354,6 +346,7 @@ test_that("repeat renders in one session reuse the same figure filenames instead
 
 test_that("multiple plots within one chunk still get distinct filenames", {
   skip_if_not_installed("knitr")
+  local_quarto_html()
   tmp <- tempfile("dual-render-multi2-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
@@ -377,4 +370,118 @@ test_that("multiple plots within one chunk still get distinct filenames", {
     sort(list.files(fig_dir)),
     c("fig-two-dark-1.png", "fig-two-dark-2.png", "fig-two-light-1.png", "fig-two-light-2.png")
   )
+})
+
+test_that("knit_print_ggplot_dual() renders normally for output other than Quarto HTML", {
+  skip_if_not_installed("knitr")
+  old <- knitr::opts_knit$get(c("rmarkdown.pandoc.to", "quarto.version"))
+  on.exit(knitr::opts_knit$set(old), add = TRUE)
+  emptyviz:::.register_dual_render() # resets the once-per-render warning
+  tmp <- tempfile("dual-render-fallback-")
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  opts <- list(
+    dual_render = TRUE, label = "fig-x", fig.path = paste0(tmp, "/"),
+    fig.alt = "Scatter plot."
+  )
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+
+  # LaTeX/PDF output, e.g. the PDF build of a project that also renders HTML:
+  # pandoc would drop the raw HTML, and the figure with it. This is expected
+  # in a multi-format project, so it is silent.
+  knitr::opts_knit$set(rmarkdown.pandoc.to = "latex", quarto.version = "1.6.0")
+  expect_no_warning(out <- emptyviz:::knit_print_ggplot_dual(p, options = opts))
+  expect_null(out)
+  expect_false(dir.exists(tmp))
+
+  # HTML without Quarto has no CSS for the light/dark classes: a
+  # misconfiguration, warned about once per render
+  knitr::opts_knit$set(rmarkdown.pandoc.to = "html", quarto.version = NULL)
+  expect_warning(
+    out <- emptyviz:::knit_print_ggplot_dual(p, options = opts),
+    "needs HTML output rendered by Quarto"
+  )
+  expect_null(out)
+  expect_false(dir.exists(tmp))
+  expect_no_warning(emptyviz:::knit_print_ggplot_dual(p, options = opts))
+})
+
+test_that("dual-rendered figures keep knitr's retina sizing and honour the chunk's device", {
+  skip_if_not_installed("knitr")
+  local_quarto_html()
+  tmp <- tempfile("dual-render-device-")
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  render <- function(label, ...) {
+    emptyviz:::knit_print_ggplot_dual(p, options = list(
+      dual_render = TRUE, label = label, fig.path = paste0(tmp, "/"),
+      fig.width = 4, fig.height = 3, fig.alt = "Scatter plot.", ...
+    ))
+  }
+  png_width <- function(path) {
+    # IHDR: the width is the big-endian integer at bytes 17-20
+    bytes <- readBin(path, "raw", 24)
+    sum(as.integer(bytes[17:20]) * 256^(3:0))
+  }
+
+  # What knitr passes for an HTML figure with fig.retina = 2 and dpi = 72:
+  # the dpi already doubled, out.width set to the nominal width in pixels.
+  out <- render("fig-retina", dpi = 144, fig.retina = 2, out.width = 288L, dev = "png")
+  expect_equal(png_width(file.path(tmp, "fig-retina-light-1.png")), 4 * 144)
+  expect_match(unclass(out), 'style="width:288px"', fixed = TRUE)
+
+  out <- render("fig-plain", dpi = 72, dev = "png")
+  expect_equal(png_width(file.path(tmp, "fig-plain-light-1.png")), 4 * 72)
+  expect_no_match(unclass(out), "style=", fixed = TRUE)
+
+  # a width with a unit is used as given
+  out <- render("fig-out", dpi = 72, out.width = "50%")
+  expect_match(unclass(out), 'style="width:50%"', fixed = TRUE)
+
+  # a vector device: browsers can show SVG (grDevices::svg() needs cairo)
+  if (capabilities("cairo")) {
+    render("fig-svg", dpi = 72, dev = "svg")
+    expect_true(file.exists(file.path(tmp, "fig-svg-dark-1.svg")))
+  }
+
+  # a device a browser cannot display falls back to PNG
+  render("fig-pdf", dpi = 72, dev = "pdf")
+  expect_true(file.exists(file.path(tmp, "fig-pdf-light-1.png")))
+})
+
+test_that("use_theme_mt(dual_render = FALSE) leaves knitr's ggplot printing alone", {
+  skip_if_not_installed("knitr")
+  old <- theme_get()
+  on.exit(theme_set(old), add = TRUE)
+  registered <- function() {
+    getS3method("knit_print", "ggplot", optional = TRUE, envir = asNamespace("knitr"))
+  }
+  use_theme_mt()
+  expect_identical(registered(), emptyviz:::knit_print_ggplot_dual)
+  use_theme_mt(dual_render = FALSE)
+  expect_null(registered())
+  # the theme is still set
+  expect_identical(theme_get(), theme_mt())
+  use_theme_mt() # restore the registration other tests expect
+})
+
+test_that("a vector out.width gives each plot of a chunk its own width", {
+  skip_if_not_installed("knitr")
+  local_quarto_html()
+  tmp <- tempfile("dual-render-outwidth-")
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  emptyviz:::.register_dual_render()
+  opts <- list(
+    dual_render = TRUE, label = "fig-w", fig.path = paste0(tmp, "/"),
+    fig.width = 3, fig.height = 2, dpi = 36, fig.alt = "Plot.",
+    out.width = c("40%", "60%")
+  )
+  p <- ggplot(mtcars, aes(wt, mpg)) + geom_point()
+  out1 <- unclass(emptyviz:::knit_print_ggplot_dual(p, options = opts))
+  out2 <- unclass(emptyviz:::knit_print_ggplot_dual(p, options = opts))
+  expect_length(out1, 1)
+  expect_match(out1, "width:40%", fixed = TRUE)
+  expect_no_match(out1, "width:60%", fixed = TRUE)
+  expect_match(out2, "width:60%", fixed = TRUE)
 })

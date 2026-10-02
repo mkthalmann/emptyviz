@@ -209,29 +209,16 @@ test_that("axis text has a non-zero margin from the axis, in both light and dark
   }
 })
 
-test_that("theme_mt(dark = FALSE)'s complete output matches its recorded snapshot", {
-  # Every other test here checks individual fields, so a change to, say,
-  # plot.margin or panel.spacing would pass all of them silently. This pins
-  # the FULL theme object (all 153-ish elements),
-  # confirmed deterministic across calls (identical(theme_mt(), theme_mt())
-  # is TRUE - no environment/pointer noise), so any future accidental
-  # change shows up as a snapshot diff instead of nothing at all. Run
-  # `testthat::snapshot_review()`/`snapshot_accept()` if a change here is
-  # deliberate, not a regression.
-  #
-  # Note that theme_mt(dark = FALSE) is NOT byte-stable across releases any
-  # more: 0.2.0's NEWS entry recorded it as pixel-identical to 0.1.0, but
-  # base_size moved from 19 to 10 to match use_theme_mt()'s (see that
-  # release's NEWS). This snapshot is the record going forward; the old
-  # claim is history, not an invariant.
-  #
-  # Re-recorded again for the type-scale/spacing revision in the current
-  # development version (see NEWS.md): sizes, plot.margin, the legend
-  # metrics, the grid and caption colours, plot.background, geom.paper,
-  # plot.tag, legend.frame and the continuous palettes all moved at once.
-  # The tests above pin each of those individually; this pins everything
-  # else that came along with them.
-  expect_snapshot(print(theme_mt()))
+test_that("the elements theme_mt() sets match their recorded snapshot", {
+  # The other tests pin individual fields; this records every element
+  # theme_mt() changes relative to the theme_minimal() it builds on, so that
+  # any other change shows up as a snapshot diff. Only those elements are
+  # recorded, in a plain-text form built here, so that a ggplot2 release that
+  # adds theme elements or changes how themes print does not fail it. Accept
+  # a deliberate change with testthat::snapshot_accept().
+  for (dark in c(FALSE, TRUE)) {
+    expect_snapshot(cat(describe_theme_changes(dark), sep = "\n"))
+  }
 })
 
 test_that("theme_mt(dark = TRUE) resolves default geom colors to the dark ink, not black", {
@@ -434,4 +421,15 @@ test_that("without blanking, the position-specific axis text stays markdown", {
   t <- theme_mt(base_family = "")
   expect_s3_class(calc_element("axis.text.y.left", t), "element_markdown")
   expect_s3_class(calc_element("axis.text.x.bottom", t), "element_markdown")
+})
+
+test_that("unsized geom text and labels are set at base_size points, not 5pt", {
+  p <- ggplot(data.frame(x = 1, y = 1, l = "a"), aes(x, y, label = l)) +
+    geom_text() +
+    geom_label()
+  for (base_size in c(10, 14)) {
+    built <- ggplot_build(p + theme_mt(base_size = base_size, base_family = ""))
+    expect_equal(built$data[[1]]$size * .pt, base_size)
+    expect_equal(built$data[[2]]$size * .pt, base_size)
+  }
 })

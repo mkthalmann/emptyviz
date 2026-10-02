@@ -1,7 +1,5 @@
-# Counters avoid filename collisions if a single chunk prints more than one
-# ggplot/patchwork object (rare, but each needs a distinct file name).
-# Reset per render by .register_dual_render() below - see the comment there
-# for why the counter's lifetime can't be the R session.
+# Per-chunk counters, so that a chunk printing several plots gives each a
+# distinct file name. Reset at every render by .register_dual_render().
 .dual_render_counters <- new.env(parent = emptyenv())
 
 .next_dual_render_index <- function(label) {
@@ -11,69 +9,25 @@
   n
 }
 
-# Color-only theme overlay for the "dark" half of a dual render: overrides
-# just the colour/fill of each element (never family/size/margin/etc.), so it
-# composes safely on top of a plot that already carries its own
-# theme_mt()-plus-chunk-level customizations (e.g. a one-off axis.text family
-# override) without clobbering them the way adding a second full
-# theme_mt(dark = TRUE) would. Every markdown-aware element here uses
-# ggtext::element_markdown() rather than element_text(), matching the class
-# theme_mt() itself uses for that slot - ggplot2 4.0's element merging errors
-# ("Only elements of the same class can be merged") if the classes disagree.
+# Colour-only theme overlay for the dark half of a dual render. It sets only
+# colours and fills, never sizes, families or margins, so it can be added on
+# top of a plot's own theme customizations. Text elements use
+# element_markdown(), the class theme_mt() uses for them: ggplot2 4 refuses to
+# merge elements of different classes.
 #
-# Every position-suffixed element theme_mt() itself sets explicitly
-# (axis.text.x/.y/.x.bottom/.x.top/.y.left/.y.right, axis.title.x/.x.top/
-# .y/.y.right, strip.text.x/.y/.y.left) is set explicitly here too, not just
-# the parent (axis.text, axis.title, strip.text) - confirmed empirically
-# that a plain parent-level override doesn't reliably reach these children.
-# The active default theme (theme_mt(), light) already sets these specific
-# elements' `colour` explicitly, and ggplot2's element merging resolves a
-# same-named element against the default *before* falling back to the
-# parent's inheritance chain - so a plot with any chunk-level partial
-# override on one of these exact names (e.g. this book's
-# `axis.text.x.bottom = element_markdown(family = "Cascadia Code")`, used to
-# render condition-name tick labels in a monospace font) keeps the light
-# theme's colour there even after `+ .dark_mode_overlay()`, since merging
-# that partial override against the (colour-bearing) default fills in the
-# missing colour from the default, not from this overlay's parent-level
-# axis.text. That produced dark, low-contrast tick labels on dark-themed
-# pages - only on axes that happened to have such a chunk-level override,
-# which is why it looked inconsistent rather than uniformly broken.
+# Every position-specific element that theme_mt() sets is set here as well,
+# not only its parent. theme_mt() gives those children a colour of their own,
+# and when a plot overrides another property of one of them (say, the family
+# of axis.text.x.bottom), merging fills in the colour from theme_mt(), not
+# from a parent set by the overlay.
 #
-# `plot` is the plot this overlay is about to be added to (for a patchwork
-# combo, pass a representative sub-plot, e.g. plot[[1]]) - only used to check
-# which elements it has deliberately blanked (e.g. via `+ theme_void()`, used
-# by the sitzung-04 orbital diagram for a clean, axis-free look), so those
-# stay blank instead of this overlay un-blanking them. A plot's own
-# `$theme` only records elements set directly on it, not ones it inherits
-# blank via a parent (theme_void() blanks panel.grid/axis.line/axis.ticks by
-# blanking the root `line`/`rect` elements, not those specific names) -
-# ggplot2:::plot_theme() + calc_element() resolve the full inheritance chain
-# (merged with the active default theme) to get the real effective element,
-# confirmed empirically against both a theme_void() plot and a normal one.
-# Verified against ggplot2 4.0.3; if a future release renames/restructures
-# plot_theme(), the tryCatch below falls back to theme_get() (the *global*
-# active theme, not this specific plot's own resolved one) rather than
-# erroring outright - deliberately, so a dual-render chunk still emits
-# something instead of failing the whole knit - but that fallback can
-# silently un-blank elements a plot deliberately hid (e.g. theme_void()'s
-# panel.grid/axis.line), confirmed by simulating plot_theme()'s failure
-# directly. A warning surfaces that instead of letting it pass silently.
+# `plot` (for a patchwork, its first sub-plot) is used only to find the
+# elements it has blanked, which the overlay must leave blank. Elements can
+# be blank by inheritance (theme_void() blanks the root `line` and `rect`),
+# so the plot's theme is completed against the active default theme, as
+# ggplot2 does when it draws the plot.
 .dark_mode_overlay <- function(plot) {
-  resolved <- tryCatch(
-    ggplot2:::plot_theme(plot),
-    error = function(e) {
-      warning(
-        ".dark_mode_overlay(): ggplot2:::plot_theme() failed (", conditionMessage(e),
-        ") - falling back to the global active theme, which may not reflect ",
-        "this plot's own theme and can un-blank elements (e.g. from ",
-        "theme_void()) it deliberately hid. Likely means this internal ",
-        "ggplot2 function changed shape; see the comment above this function.",
-        call. = FALSE
-      )
-      theme_get()
-    }
-  )
+  resolved <- complete_theme(plot$theme)
   is_blank <- function(name) inherits(calc_element(name, resolved), "element_blank")
 
   axis_text <- function() element_markdown(colour = .dark_axis_text)
@@ -101,9 +55,7 @@
     axis.line = element_line(colour = .dark_axis_line),
     legend.text = element_markdown(colour = .dark_axis_text),
     legend.title = element_markdown(colour = .dark_axis_text),
-    # theme_mt(dark = TRUE) frames a continuous colourbar in
-    # .dark_axis_line; without this the light render's gray70 frame came
-    # through onto the dark page.
+    # Mirrors the colourbar frame of theme_mt(dark = TRUE).
     legend.frame = element_rect(colour = .dark_axis_line),
     strip.text.x = strip_text(),
     strip.text.y = strip_text(),
@@ -115,15 +67,10 @@
   candidates <- candidates[!vapply(names(candidates), is_blank, logical(1))]
 
   do.call(theme, c(candidates, list(
-    # `ink` here is what makes unmapped geoms (geom_point/line/segment/
-    # text/errorbar/rug) draw in a light color on the dark page - without
-    # it they inherit ggplot2's factory "black" default and vanish against
-    # the dark background. Mirrors the same `ink` on theme_mt(dark = TRUE)'s
-    # own `geom` element; the two must stay in sync.
-    # `paper` is the #151515 page background this whole dark mode is tuned
-    # for, matching theme_mt(dark = TRUE)'s own geom_paper. It used to be
-    # alpha("black", 0.3), which made every dual-rendered geom_label()
-    # 30%-transparent, so the marks underneath showed through the text.
+    # `ink` colours unmapped geoms, and it is what the plot builders' default
+    # colours read to choose their dark tints (R/utils-theme-colour.R).
+    # `paper` is the #151515 page dark mode is tuned for. Both mirror the
+    # `geom` element of theme_mt(dark = TRUE).
     geom = element_geom(paper = "#151515", ink = .dark_ink),
     geom.density = element_geom(fill = alpha(dark_mt_colors[1], .5)),
     geom.bar = element_geom(fill = dark_mt_colors[1]),
@@ -132,33 +79,36 @@
     geom.ribbon = element_geom(fill = dark_mt_colors[1]),
     palette.colour.discrete = dark_mt_colors12,
     palette.fill.discrete = dark_mt_colors12,
-    # Mirrors theme_mt(dark = TRUE)'s continuous_palette default. Without
-    # it, a dual-rendered continuous scale kept the light render's teal
-    # ramp, whose light end is tuned for white paper.
+    # Mirrors theme_mt(dark = TRUE)'s continuous_palette default.
     palette.colour.continuous = c("#13414f", dark_mt_colors[1]),
     palette.fill.continuous = c("#13414f", dark_mt_colors[1])
   )))
 }
 
-# Dual light/dark knit_print method for ggplot/patchwork objects. Registered
-# by use_theme_mt() (only if knitr is installed) as the knit_print method for
-# objects of class "ggplot" - which patchwork objects also carry, so this
-# covers combined plots too.
-#
-# For an ordinary chunk (no `dual_render` chunk option set to TRUE), this
-# prints x exactly as knitr would with no custom method registered at all.
-# For a chunk with `#| dual_render: true` (set directly, or via a project-
-# wide `knitr: opts_chunk: dual_render: true` default in _quarto.yml), it
-# instead saves two PNGs - one from x completely unchanged, one with a
-# color-only dark-mode overlay applied - and emits both wrapped in Quarto's
-# .light-content/.dark-content classes, so the browser's light/dark toggle
-# shows the right one with no client-side re-rendering.
-#
-# x: a ggplot/patchwork object. options: the chunk's knitr options, supplied
-# automatically by knitr's knit_print dispatch. Returns invisible(NULL) for a
-# normal render, or a knitr::asis_output() for a dual-mode render.
+# knit_print method for ggplot objects (patchwork objects are ggplots too),
+# registered by use_theme_mt(). Chunks without `dual_render: true` print as
+# they would without the method. With it, and for HTML output from Quarto,
+# the plot is saved twice, unchanged and with .dark_mode_overlay() added, and
+# both images are emitted inside Quarto's .light-content/.dark-content
+# classes, so the page's light/dark toggle shows the matching one. Returns
+# invisible(NULL) or a knitr::asis_output().
 knit_print_ggplot_dual <- function(x, options, ...) {
-  if (!isTRUE(options$dual_render) || !requireNamespace("knitr", quietly = TRUE)) {
+  if (!isTRUE(options$dual_render)) {
+    print(x)
+    return(invisible(NULL))
+  }
+  # The output below is raw HTML that relies on Quarto's light/dark CSS.
+  # Pandoc drops raw HTML when writing LaTeX or Word, so for those formats
+  # the plot is rendered the ordinary way; that is the expected behaviour of
+  # a project-wide `dual_render` default in a multi-format project, so it is
+  # silent. HTML without Quarto would show both images, which points to a
+  # misconfiguration, so that case warns.
+  if (!knitr::is_html_output()) {
+    print(x)
+    return(invisible(NULL))
+  }
+  if (is.null(knitr::opts_knit$get("quarto.version"))) {
+    .warn_no_quarto()
     print(x)
     return(invisible(NULL))
   }
@@ -168,46 +118,42 @@ knit_print_ggplot_dual <- function(x, options, ...) {
   fig_path <- options$fig.path %||% ""
   width <- options$fig.width %||% 7
   height <- options$fig.height %||% 5
+  # For HTML output knitr has already applied `fig.retina`: `dpi` arrives
+  # multiplied by it, and `out.width` set to the figure's nominal width in
+  # pixels.
   dpi <- options$dpi %||% 96
+  device <- .dual_render_device(options$dev)
 
-  light_path <- paste0(fig_path, label, "-light-", idx, ".png")
-  dark_path <- paste0(fig_path, label, "-dark-", idx, ".png")
+  light_path <- paste0(fig_path, label, "-light-", idx, ".", device$ext)
+  dark_path <- paste0(fig_path, label, "-dark-", idx, ".", device$ext)
   dir.create(dirname(light_path), recursive = TRUE, showWarnings = FALSE)
 
-  # patchwork's `+` only applies a theme addition to the last-added
-  # sub-plot (it treats `+` as "keep composing the current plot"); `&` is
-  # patchwork's own operator for applying an addition to every sub-plot
-  # uniformly. Confirmed empirically: without this, only one panel of a
-  # combined plot would pick up the dark-mode overlay, leaving the rest
-  # still light-themed underneath. The blank-check inside
-  # .dark_mode_overlay() uses the first sub-plot as representative - fine
-  # for a patchwork built from visually-consistent panels (the only real
-  # case in this book), not guaranteed if sub-plots blank differently.
+  # For a patchwork, `&` adds the overlay to every sub-plot (`+` would reach
+  # only the last). Blanked elements are read from the first sub-plot, which
+  # assumes the sub-plots blank the same elements.
   is_patchwork <- inherits(x, "patchwork")
   overlay <- .dark_mode_overlay(if (is_patchwork) x[[1]] else x)
   x_dark <- if (is_patchwork) x & overlay else x + overlay
 
-  ggsave(light_path, x, width = width, height = height, dpi = dpi, bg = "transparent")
-  ggsave(dark_path, x_dark, width = width, height = height, dpi = dpi, bg = "transparent")
+  save <- function(path, plot) {
+    ggsave(
+      path, plot,
+      device = device$fun,
+      width = width, height = height, dpi = dpi,
+      bg = "transparent"
+    )
+  }
+  save(light_path, x)
+  save(dark_path, x_dark)
 
-  # Hand-built <img> tags mean nothing adds the accessibility attributes
-  # knitr/Quarto would normally add for us, so `fig.alt`/`fig.cap` have to be
-  # read out of the chunk options explicitly. They used to be ignored
-  # entirely: the emitted tag carried no `alt` attribute at all (worse than
-  # alt="", since screen readers then commonly fall back to announcing the
-  # file name), and an author's `fig.cap` vanished with no warning.
-  #
-  # Falling back to fig.cap for the alt text mirrors knitr's own documented
-  # behaviour for a normal chunk (`fig.alt` defaults to `fig.cap`), so a
-  # dual-rendered chunk and an ordinary one treat the same options the same
-  # way. Both are recycled across plots by index, also matching knitr, for
-  # the multi-plot-per-chunk case the counter above exists for.
+  # The <img> tags are built by hand, so `fig.alt` and `fig.cap` are read
+  # here. As in knitr, the alt text falls back to the caption, and vector
+  # values are recycled across the plots of a chunk.
   alt <- .chunk_option_at(options$fig.alt %||% options$fig.cap, idx)
   caption <- .chunk_option_at(options$fig.cap, idx)
 
-  # Surface the omission at knit time rather than shipping a figure with no
-  # text equivalent. Only on the chunk's first plot, so a multi-plot chunk
-  # warns once.
+  # Without alt text the images would be skipped by assistive technology;
+  # warn once per chunk.
   if (idx == 1L && !nzchar(alt)) {
     warning(
       "knit_print_ggplot_dual(): chunk '", label, "' has dual_render = TRUE ",
@@ -219,25 +165,16 @@ knit_print_ggplot_dual <- function(x, options, ...) {
     )
   }
 
-  # Raw <img> tags, not markdown `![]()` - confirmed by direct comparison that
-  # a chunk with a `fig-` prefixed label + fig-cap gets its output re-parsed
-  # as markdown by Quarto's crossref/figure filter (so `![]()` there becomes
-  # a real <img>), but an ordinary chunk (any other label, no fig-cap - like
-  # this book's plot-crit/plot-control/plot-subsamples chunks) does not: the
-  # `<div>...![]()...</div>` this used to emit came through completely
-  # unprocessed, showing the literal "![](path)" text on the page instead of
-  # the image. Raw HTML <img> tags render correctly either way, sidestepping
-  # that dependency on which processing path a given chunk happens to hit.
-  # class + width replicate what Quarto's own figure output uses (confirmed
-  # by comparing against a plain out.width-driven image), since bypassing
-  # markdown parsing means those aren't added automatically anymore.
-  #
-  # Everything interpolated into an attribute goes through .escape_html()
-  # first: a figure path or an out.width containing a quote or an ampersand
-  # would otherwise break the markup, and alt/caption text is free-form prose
-  # where that's likely rather than hypothetical.
-  width_style <- if (!is.null(options$out.width)) {
-    sprintf(' style="width:%s"', .escape_html(options$out.width))
+  # Raw <img> tags rather than markdown `![]()`: Quarto parses the output of
+  # an ordinary chunk (no `fig-` label and caption) as raw HTML, where
+  # markdown image syntax would appear as literal text. The classes match
+  # Quarto's own figure output. Every interpolated value is HTML-escaped.
+  # A bare number (as knitr sets for retina figures) is a width in pixels;
+  # CSS needs the unit.
+  out_width <- .chunk_option_at(options$out.width, idx)
+  if (grepl("^[0-9.]+$", out_width)) out_width <- paste0(out_width, "px")
+  width_style <- if (nzchar(out_width)) {
+    sprintf(' style="width:%s"', .escape_html(out_width))
   } else {
     ""
   }
@@ -248,16 +185,10 @@ knit_print_ggplot_dual <- function(x, options, ...) {
     )
   }
 
-  # No `id` on the <figure>: the same figure is emitted twice (once per
-  # colour scheme) and duplicate element ids are invalid HTML. Quarto's
-  # light/dark CSS hides the inactive half with display:none, so only one
-  # copy of the caption reaches the accessibility tree at a time.
-  #
-  # A chunk with a `fig-` label is wrapped by Quarto's crossref filter in its
-  # own numbered <figure> with the fig-cap as caption, so adding ours as well
-  # would show the caption twice. Other chunks still need ours, because
-  # Quarto does not caption raw asis output for them. `alt` is unaffected:
-  # the <img> tags need it either way.
+  # The figure is emitted twice, so the <figure> carries no `id` (ids must be
+  # unique); Quarto hides the inactive copy with display: none. Quarto wraps
+  # a chunk with a `fig-` label in its own numbered figure with the caption,
+  # so a caption is added here only for other chunks.
   quarto_captions <- startsWith(label, "fig-")
   fig_wrap <- function(inner) {
     if (!nzchar(caption) || quarto_captions) {
@@ -274,6 +205,40 @@ knit_print_ggplot_dual <- function(x, options, ...) {
     '<div class="light-content">\n', fig_wrap(img_tag(light_path)), "\n</div>\n\n",
     '<div class="dark-content">\n', fig_wrap(img_tag(dark_path)), "\n</div>"
   ))
+}
+
+# The graphics device for a dual-rendered figure: the chunk's own `dev` when
+# it is one a browser can display, the same device knitr would use for it,
+# and PNG otherwise (e.g. for `dev = "pdf"`). `fun = NULL` lets ggsave()
+# choose by file extension.
+.dual_render_device <- function(dev) {
+  dev <- if (is.character(dev) && length(dev) > 0) dev[[1]] else "png"
+  installed <- function(pkg) requireNamespace(pkg, quietly = TRUE)
+  switch(dev,
+    png = list(fun = grDevices::png, ext = "png"),
+    ragg_png = if (installed("ragg")) {
+      list(fun = getExportedValue("ragg", "agg_png"), ext = "png")
+    },
+    jpeg = list(fun = grDevices::jpeg, ext = "jpeg"),
+    svg = list(fun = grDevices::svg, ext = "svg"),
+    svglite = if (installed("svglite")) {
+      list(fun = getExportedValue("svglite", "svglite"), ext = "svg")
+    }
+  ) %||% list(fun = NULL, ext = "png")
+}
+
+# Warns once per render (the flag is reset by .register_dual_render()). Quarto
+# sets the `quarto.version` knitr option when it knits a document.
+.warn_no_quarto <- function() {
+  if (isTRUE(.dual_render_counters$.warned_unsupported)) {
+    return(invisible(NULL))
+  }
+  assign(".warned_unsupported", TRUE, envir = .dual_render_counters)
+  warning(
+    "knit_print_ggplot_dual(): `dual_render` needs HTML output rendered by ",
+    "Quarto; rendering figures normally instead.",
+    call. = FALSE
+  )
 }
 
 # Minimal HTML-attribute escaping for values interpolated into the hand-built
@@ -298,37 +263,35 @@ knit_print_ggplot_dual <- function(x, options, ...) {
   if (is.na(out)) "" else out
 }
 
-# Registers knit_print_ggplot_dual() as the knit_print method for "ggplot"
-# objects, in knitr's own S3 method table (registerS3method's `envir`
-# argument controls where the generic is looked up from, not where the
-# method function itself lives) - the standard pattern for a package
-# providing a knit_print method for a Suggests-only knitr, since a static
-# NAMESPACE S3method() entry can't reference a generic that might not be
-# installed. A no-op if knitr isn't installed. `asNamespace("knitr")` (not
-# `:::`) is used only to get a namespace *environment* to pass as
-# registerS3method()'s `envir` - both are base R, not reaching into any
-# unexported knitr object/internal, so this is far less fragile than the
-# gghalves/ggplot2 internals this package reaches into elsewhere; still
-# worth flagging as "if S3 method registration for Suggests-only packages
-# ever changes recommended shape, revisit this."
+# Registers knit_print_ggplot_dual() as knitr's knit_print method for ggplot
+# objects. knitr is only suggested, so the method cannot be declared in
+# NAMESPACE; registerS3method() with knitr's namespace as `envir` is the
+# usual way to register it at run time. A no-op if knitr is not installed.
 .register_dual_render <- function() {
-  # Clearing the counters here is what makes dual-render filenames
-  # deterministic. They're keyed by chunk label and were never reset, so
-  # their lifetime was the whole R session rather than one render - and
-  # repeated renders in one session are the normal workflow (quarto
-  # preview, RStudio's Knit button, devtools::build_vignettes()). Every
-  # render therefore wrote a fresh pair of PNGs under a new name, nothing
-  # was overwritten and nothing cleaned up: a book with 40 dual-rendered
-  # figures previewed ten times left ~800 orphaned files, and each render's
-  # HTML pointed at different ones, defeating asset caching, incremental
-  # deploys and content-hash diffing. use_theme_mt() calls this at the top
-  # of a document's setup chunk, which is exactly one reset per render.
+  # Resetting the counters (and the once-per-render warning) here, at the
+  # start of each render, keeps figure file names the same across repeated
+  # renders in one session, so earlier files are overwritten rather than
+  # accumulating.
   rm(
     list = ls(.dual_render_counters, all.names = TRUE),
     envir = .dual_render_counters
   )
   if (requireNamespace("knitr", quietly = TRUE)) {
     registerS3method("knit_print", "ggplot", knit_print_ggplot_dual, envir = asNamespace("knitr"))
+  }
+  invisible(NULL)
+}
+
+# Removes the method .register_dual_render() added, and only that one: a
+# knit_print method for ggplot objects registered by anything else is left
+# alone.
+.unregister_dual_render <- function() {
+  if (!requireNamespace("knitr", quietly = TRUE)) {
+    return(invisible(NULL))
+  }
+  methods <- asNamespace("knitr")[[".__S3MethodsTable__."]]
+  if (identical(methods[["knit_print.ggplot"]], knit_print_ggplot_dual)) {
+    rm("knit_print.ggplot", envir = methods)
   }
   invisible(NULL)
 }

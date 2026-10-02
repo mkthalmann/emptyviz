@@ -106,8 +106,10 @@ light/dark figure rendering: set the `dual_render` chunk option to
 `ggplot`/`patchwork` figure in that chunk renders twice - once normally,
 once with the dark variant - wrapped for Quarto’s
 `.light-content`/`.dark-content` toggle, so a light/dark theme-switching
-site shows the right one without any client-side re-rendering. Chunks
-that don’t set the option are unaffected.
+site shows the right one without any client-side re-rendering. This
+applies to HTML output only: when the same project renders to PDF or
+Word, those figures are rendered normally, since raw HTML would be
+dropped. Chunks that don’t set the option are unaffected.
 
 ## Development
 

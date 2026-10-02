@@ -422,3 +422,17 @@ test_that("ellipse_geom = 'path' maps category to linetype as a second non-colou
     category = category, location = location, sigma = sigma
   )$labels$linetype)
 })
+
+test_that("`ellipse_level` and `bounds_n` are validated", {
+  build <- function(...) {
+    plot_location_scale(
+      location_scale_fixture,
+      category = category, location = location, sigma = sigma, ...
+    )
+  }
+  expect_error(build(ellipse_level = 95), "probabilities between 0 and 1")
+  expect_error(build(ellipse_level = c(.5, 1)), "probabilities between 0 and 1")
+  expect_error(build(ellipse_level = NA_real_), "probabilities between 0 and 1")
+  expect_error(build(bounds = c(-3, 3), bounds_n = 1), "bounds_n")
+  expect_no_error(build(ellipse_level = c(.5, .95)))
+})

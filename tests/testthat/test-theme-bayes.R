@@ -120,9 +120,9 @@ test_that("`gap` scales with how many categories share a panel, so rendered gap 
   # constant fraction of *panel height*, achieved by scaling the row-unit
   # shift by each panel's own category count.
   make_draws <- function(n_cats) {
-    purrr::map_dfr(seq_len(n_cats), function(i) {
+    do.call(rbind, lapply(seq_len(n_cats), function(i) {
       data.frame(cond = paste0("c", i), .value = rnorm(50, i, .2))
-    })
+    }))
   }
 
   shift_for <- function(n_cats, gap = .02) {
@@ -159,16 +159,16 @@ test_that("plot_ridge_hdi() builds without error and honors category_reorder", {
   )
   expect_no_error(ggplot_build(p_unsorted))
 
-  # sorted (descending by mean .value) should NOT reproduce the fixture's
-  # original first-appearance order, since the fixture is deliberately not
-  # already sorted that way (true-without/false-with have mu = 1.5, the
-  # other two mu = 0). The category axis is `x` pre-coord_flip(), so the
-  # rendered order lives in the built plot's x (not y) discrete scale.
+  # Sorted by ascending mean .value, i.e. from the bottom of the flipped plot
+  # to the top, which differs from the fixture's first-appearance order
+  # (true-without/false-with have mu = 1.5, the other two mu = 0). The
+  # category axis is `x` before coord_flip(), so the order lives in the
+  # built plot's x scale.
   labels_sorted <- ggplot_build(p_sorted)$layout$panel_scales_x[[1]]$get_labels()
   labels_unsorted <- ggplot_build(p_unsorted)$layout$panel_scales_x[[1]]$get_labels()
   expect_equal(
     labels_sorted,
-    c("false-with", "true-without", "undefined-without", "critical-with")
+    c("critical-with", "undefined-without", "true-without", "false-with")
   )
   expect_equal(
     labels_unsorted,
@@ -299,14 +299,28 @@ test_that("plot_coef_grid_hdi() blanks both base and position-suffixed y-axis te
   expect_true(inherits(th$axis.text.y.right, "element_blank"))
 })
 
-test_that("plot_coef_grid_hdi() doesn't override strip.text.x - falls back to theme_mt()'s own default", {
-  # regression test: plot_coef_grid_hdi() used to force strip.text.x to a
-  # hardcoded family/size, while plot_ridge_hdi()/plot_location_scale()
-  # (which also facet) left it at theme_mt()'s default - confirmed desired
-  # resolution was to drop the override here instead of spreading it to
-  # the other two, so all faceted plots share one consistent strip look.
-  p <- plot_coef_grid_hdi(bayes_coef_fixture, category = coef)
-  expect_null(p$theme$strip.text.x)
+test_that("faceting builders make strips markdown-aware without styling them", {
+  old <- theme_get()
+  on.exit(theme_set(old), add = TRUE)
+  plots <- list(
+    plot_coef_grid_hdi(bayes_coef_fixture, category = coef),
+    plot_ridge_hdi(bayes_draws_fixture, category = cond, facet = facet_grp),
+    plot_location_scale(
+      location_scale_fixture,
+      category = category, location = location, sigma = sigma, facet = trigger
+    )
+  )
+  for (p in plots) {
+    # no family, size or margin of their own, so theme_mt()'s strip look holds
+    expect_s3_class(p$theme$strip.text.x, "element_markdown")
+    expect_null(p$theme$strip.text.x$family)
+    expect_null(p$theme$strip.text.x$size)
+    # and markdown labels render under a theme without markdown elements
+    theme_set(theme_bw())
+    strip <- calc_element("strip.text.x.top", complete_theme(p$theme))
+    expect_s3_class(strip, "element_markdown")
+    expect_equal(strip$size, calc_element("strip.text.x.top", theme_bw())$size)
+  }
 })
 
 test_that("plot_ridge_hdi()/plot_coef_grid_hdi() pass ... through to layer_halfeye_hdi()", {
@@ -320,4 +334,71 @@ test_that("plot_ridge_hdi()/plot_coef_grid_hdi() pass ... through to layer_halfe
     p_grid$layers[[3]]$position$width,
     .13
   )
+})
+
+test_that("layer_halfeye_hdi() leaves a caller's shape legend alone", {
+  points <- data.frame(cond = c("a", "b"), .value = c(0, 1), kind = c("x", "y"))
+  p <- ggplot(bayes_draws_fixture, aes(cond, .value)) +
+    layer_halfeye_hdi() +
+    geom_point(data = points, aes(shape = kind)) +
+    coord_flip()
+  expect_equal(n_legend_boxes(p), 1)
+})
+
+test_that("plot_ridge_hdi() orders categories by mean, the value the point marks, highest at the top", {
+  # A's mean (4) is above B's (2), its median (0) below
+  skewed <- data.frame(
+    cond = rep(c("A", "B"), each = 100),
+    .value = c(rep(0, 60), rep(10, 40), rep(2, 100))
+  )
+  p <- plot_ridge_hdi(skewed, category = cond)
+  # labels from bottom to top: the highest mean is at the top
+  bottom_to_top <- ggplot_build(p)$layout$panel_params[[1]]$y$get_labels()
+  expect_equal(bottom_to_top, c("B", "A"))
+})
+
+test_that("under a dark theme, every builder's default colours clear 3:1 against the page", {
+  page <- "#151515"
+  plots <- list(
+    ridge = plot_ridge_hdi(bayes_draws_fixture, category = cond, hline = 0),
+    coef = plot_coef_grid_hdi(bayes_coef_fixture, category = coef),
+    location = plot_location_scale(
+      location_scale_fixture,
+      category = category, location = location, sigma = sigma,
+      bounds = c(-3, 3)
+    ),
+    forest = plot_bf_forest(
+      bf_forest_fixture,
+      contrast = contrast, log_bf = log_bf, se = se,
+      direction_labels = c("difference", "equivalence")
+    )
+  )
+  # the page colour itself is used on purpose, for outlines and point fills
+  drawn_colours <- function(built) {
+    cols <- unlist(lapply(built$data, function(d) c(d$colour, d$fill)))
+    unique(cols[!is.na(cols) & !cols %in% c(page, "transparent")])
+  }
+  for (name in names(plots)) {
+    p <- plots[[name]]
+    dark_builds <- list(
+      theme = ggplot_build(p + theme_mt(dark = TRUE, base_family = "")),
+      overlay = ggplot_build(p + theme_mt(base_family = "") + .dark_mode_overlay(p))
+    )
+    for (path in names(dark_builds)) {
+      for (col in drawn_colours(dark_builds[[path]])) {
+        expect_gte(
+          wcag_contrast(col, page), 3,
+          label = paste(name, path, col)
+        )
+      }
+    }
+  }
+})
+
+test_that("an explicit colour argument stays literal under a dark theme", {
+  p <- plot_ridge_hdi(bayes_draws_fixture, category = cond, hline = 0, hline_color = "red") +
+    theme_mt(dark = TRUE, base_family = "")
+  built <- ggplot_build(p)
+  hline_idx <- which(vapply(p$layers, function(l) inherits(l$geom, "GeomHline"), logical(1)))
+  expect_equal(built$data[[hline_idx]]$colour, "red")
 })

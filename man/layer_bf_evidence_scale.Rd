@@ -12,7 +12,7 @@ layer_bf_evidence_scale(
   weak_color = NULL,
   direction_labels = NULL,
   direction_colors = NULL,
-  range = NULL,
+  arrow_range = NULL,
   secondary_axis = FALSE,
   secondary_breaks = c(1, 2, 5, 15, 50, 150),
   secondary_name = "Bayes factor (BF)"
@@ -32,17 +32,21 @@ Default \code{log(3)}, the Jeffreys/Lee "weak/anecdotal evidence" convention
 via \code{Inf} + hjust/vjust to the relevant panel edge rather than a
 data-dependent position.}
 
-\item{weak_fill, weak_color}{Fill/text color for the shaded band and its
-label; default to \code{mt_colors5[3]}.}
+\item{weak_fill, weak_color}{Fill of the shaded band and colour of its
+label. \code{NULL} (default) uses \code{mt_colors5[3]} for the band and a darker
+shade of it for the label, chosen so the label keeps 4.5:1 contrast
+against the band; under a dark theme, such as \code{theme_mt(dark = TRUE)},
+both use \code{dark_mt_colors5[3]}.}
 
 \item{direction_labels}{\code{c(positive, negative)} - text naming what a
 positive/negative log-BF supports (e.g. \code{c("supports a real difference", "supports practical equivalence")} for a ROPE comparison).
 \code{NULL} (default) omits the arrows and labels entirely.}
 
 \item{direction_colors}{Length-2 colors for the positive/negative
-arrows/labels; defaults to \code{mt_colors[1:2]}.}
+arrows/labels. \code{NULL} (default) uses \code{mt_colors[1:2]}, or
+\code{dark_mt_colors[1:2]} under a dark theme.}
 
-\item{range}{\code{c(min, max)} the arrows should span along the BF axis.
+\item{arrow_range}{\code{c(min, max)} the arrows should span along the BF axis.
 Only used when \code{direction_labels} is given; \code{NULL} falls back to a
 generic \code{c(-1, 1) * weak_threshold * 3}.}
 

@@ -264,19 +264,19 @@ test_that("thin/one-sided (x, split) cells warn, balanced cells don't", {
 })
 
 test_that("a thin (n=1) one-sided cell warns but no longer crashes render", {
-  # Regression test for a real crash (traced to a gghalves 0.1.4 bug in
-  # GeomHalfViolin$setup_params()'s own `side` recycling, not this
-  # package's stat logic - see GeomHalfViolinSD's own comment in
-  # R/geom-violin-sd.R): "missing value where TRUE/FALSE needed" once the
-  # thin cell's density got dropped by the underlying stat's own n >= 2
-  # floor. The warning above already covers this fixture's construction;
-  # this test is specifically about what used to happen next, at render.
+  # A thin cell dropped by the density stat made gghalves 0.1.4's `side`
+  # recycling fail with "missing value where TRUE/FALSE needed" (see
+  # GeomHalfViolinSD in R/geom-violin-sd.R). The test is about rendering;
+  # the construction warning is expected.
   thin_but_present <- split_fixture
   thin_but_present <- thin_but_present[
     -which(thin_but_present$grp == "a" & thin_but_present$split == "ungrammatical")[-1],
   ]
-  p <- ggplot(thin_but_present, aes(x = grp, y = y)) +
-    geom_split_violin_sd(aes(x = grp, y = y), data = thin_but_present, split = split)
+  expect_warning(
+    p <- ggplot(thin_but_present, aes(x = grp, y = y)) +
+      geom_split_violin_sd(aes(x = grp, y = y), data = thin_but_present, split = split),
+    "thin or one-sided"
+  )
   expect_no_error(suppressWarnings(ggplot_build(p)))
   expect_no_error(suppressWarnings(render_plot(p)))
 })

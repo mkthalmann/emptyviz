@@ -1,47 +1,17 @@
-# Visualization helpers for Bayesian distributional models (location + scale
-# submodels fit via brms), built on top of ggdist's halfeye machinery
-# (stat_slab() + stat_pointinterval()) and styled to match theme.R's
-# theme_mt()/`mt_colors` palette.
-#
-# Motivated by believe-projection/scripts/belproj-paper.R, which builds the
-# same stat_slab()+stat_pointinterval() "halfeye ridgeline" block four times
-# by hand: once for posterior marginal means (location), once for posterior
-# marginal SDs (scale, modeled on the log scale), and twice more for two
-# grids of raw brms coefficients. All four share one visual grammar (an
-# HDI-shaded density plus a multi-width ETI point-interval per category) but
-# split into two different *layouts*: the marginal-means/SDs plots stack
-# every category as rows in one shared-scale panel, because the categories
-# themselves are what's being compared and a shared axis matters for that;
-# the coefficient grids give each coefficient its own free-scale panel,
-# because coefficients differ wildly in natural magnitude and a shared axis
-# would flatten the small ones. Rather than force both into one geom, the
-# shared block is factored into layer_halfeye_hdi() and each layout gets its
-# own thin wrapper (plot_ridge_hdi(), plot_coef_grid_hdi()).
+# Plot builders for posterior draws, built on ggdist's halfeye layers
+# (stat_slab() + stat_pointinterval()). The shared layer bundle is
+# layer_halfeye_hdi(); plot_ridge_hdi() stacks categories as rows of one
+# shared-scale panel (for comparing the categories themselves), and
+# plot_coef_grid_hdi() gives each coefficient a free-scale panel (because
+# coefficients differ widely in magnitude).
 
-# stat_slab()'s density is drawn from a baseline (its own dodge slot's edge)
-# growing outward by `thickness * scale`; stat_pointinterval(), positioned
-# via plain position_dodge(), lands exactly on that same baseline - hence
-# the slab and the point-interval visually touch with zero gap between them
-# (verified via ggplot_build(): both layers' x sit at the identical dodge
-# position). position_dodge() alone can't add a gap - dodge only spreads
-# *sibling* groups sharing one x apart from each other, it has no concept of
-# "push this glyph away from that one".
-#
-# A *fixed* row-unit shift is the wrong invariant to hold, though: a panel's
-# rendered height is divided among however many categories share it, so "1
-# row-unit" is panel_height/N of the actual rendered space - tiny for
-# plot_ridge_hdi()'s typical N=8 categories stacked in one panel, but the
-# *entire* panel for plot_coef_grid_hdi()'s free-scale grid, which puts
-# exactly one category (one glyph) per panel. A single fixed `gap` in
-# row-units therefore renders as a barely-there sliver in the first case and
-# a comically large gap in the second (confirmed both ways via
-# ggplot_build() + rendering: N is 8 vs. 1 in those two callers'
-# PANEL-grouped x values). `gap` here is instead a target fraction of *panel
-# height*, made constant regardless of N by counting each panel's own
-# category count (via its rows' rounded, pre-shift x - dodge sub-spreads a
-# shared category's groups by less than 0.5, so rounding safely recovers
-# "which category" without conflating dodged siblings with separate rows)
-# and scaling the shift up by that count, canceling the 1/N dilution.
+# stat_pointinterval() under position_dodge() lands on the slab's baseline,
+# so slab and interval touch. This position shifts the interval by `gap` as a
+# fraction of panel height. A shift in axis units would shrink with the
+# number of categories sharing a panel (8 rows in a ridge plot, 1 in a
+# coefficient grid), so the shift is multiplied by each panel's category
+# count. Categories are recovered by rounding x: dodging moves the groups of
+# one category by less than 0.5.
 position_dodge_gap <- function(dodge_width, gap, preserve = "single") {
   dodge <- position_dodge(width = dodge_width, preserve = preserve)
   ggproto(
@@ -68,6 +38,19 @@ position_dodge_gap <- function(dodge_width, gap, preserve = "single") {
   )
 }
 
+# The dashed reference line of plot_ridge_hdi()/plot_coef_grid_hdi(), drawn
+# from its own data so that its default colour can follow the theme
+# (geom_hline()'s `yintercept` argument would overwrite the mapping).
+.reference_hline <- function(yintercept, colour) {
+  spec <- .colour_spec(colour, "colour", mt_colors[2], dark_mt_colors[2])
+  .annotation_layer(
+    GeomHline,
+    data = data.frame(yintercept = yintercept),
+    mapping = .merge_aes(aes(yintercept = .data$yintercept), spec$mapping),
+    params = c(list(linetype = "dashed", alpha = .5), spec$params)
+  )
+}
+
 #' The recurring halfeye (HDI slab + ETI point-interval) layer bundle
 #'
 #' The `stat_slab()`+`stat_pointinterval()` block that recurs, nearly
@@ -84,13 +67,9 @@ position_dodge_gap <- function(dodge_width, gap, preserve = "single") {
 #' pass whatever fits your panel count and coefficient spread.
 #'
 #' `gap` is how far the point-interval is shifted away from the slab's
-#' baseline, as a target fraction of *panel height* (see
-#' `position_dodge_gap()`'s own comment for why this - not a row-unit
-#' fraction - is the right invariant to hold constant across callers with
-#' different category counts per panel). Default `.02` (~2% of panel
-#' height) looks right both for many-categories-sharing-one-panel layouts
-#' and one-category-per-panel grids; `0` reproduces a touching layout with
-#' no gap at all.
+#' baseline, as a fraction of panel height, so the same value suits a panel
+#' of many categories and a grid of one category per panel. The default
+#' `.02` is about 2% of panel height; `0` lets slab and interval touch.
 #'
 #' @param slab_widths HDI width(s) for the slab shading, passed to
 #'   `stat_slab()`'s `.width`.
@@ -107,15 +86,16 @@ position_dodge_gap <- function(dodge_width, gap, preserve = "single") {
 #'   panel height (see Details).
 #' @param n Passed to `stat_slab()`'s `n` (density resolution), if given.
 #' @param point_size Size of the point-interval's point.
-#' @param fill Base slab color, ramped by HDI width (see `fill_range`);
-#'   defaults to `mt_colors[1]`.
+#' @param fill Base slab color, ramped by HDI width (see `fill_range`).
+#'   `NULL` (default) uses `mt_colors[1]`, or `dark_mt_colors[1]` when the
+#'   plot is drawn with a dark theme such as `theme_mt(dark = TRUE)`.
 #' @param fill_range Two-value alpha/lightness range (passed to
 #'   [ggdist::scale_fill_ramp_discrete()]'s `range`) the slab's HDI widths
 #'   are shaded across, from the widest (most faded, closer to white) to
 #'   the narrowest (most saturated, `fill` at full strength). Default
 #'   `c(.4, 1)`.
-#' @param interval_color Color of the point-interval; defaults to
-#'   `mt_colors[1]`.
+#' @param interval_color Color of the point-interval. `NULL` (default)
+#'   follows the theme in the same way as `fill`.
 #' @return A list of `ggplot2`/`ggdist` layers, scales, and guides.
 #' @examples
 #' library(ggplot2)
@@ -142,43 +122,44 @@ layer_halfeye_hdi <- function(
   fill_range = c(.4, 1),
   interval_color = NULL
 ) {
-  fill <- fill %||% mt_colors[1]
-  interval_color <- interval_color %||% mt_colors[1]
+  slab_fill <- .colour_spec(fill, "fill", mt_colors[1], dark_mt_colors[1])
+  interval_colour <- .colour_spec(
+    interval_color, "colour", mt_colors[1], dark_mt_colors[1]
+  )
 
-  # HDI-width shading is mapped to `fill_ramp` (a dedicated ggdist
-  # aesthetic for exactly this - ramping a single base color's
-  # alpha/lightness across discrete levels), not `fill` directly. An
-  # earlier version mapped `aes(fill = after_stat(level))` plus a
-  # plot-global `scale_fill_manual()` - since ggplot2 scales are per-
-  # aesthetic and global to the whole plot, that silently claimed the
-  # entire `fill` aesthetic: adding ANY other fill-mapped layer to a plot
-  # built on this (directly, or via plot_ridge_hdi()/plot_coef_grid_hdi())
-  # crashed with "Insufficient values in manual scale" (confirmed
-  # empirically). `fill_ramp` is its own aesthetic slot, so it can't
-  # collide with a caller's own `fill` mapping - verified working
-  # standalone and with an extra fill-mapped layer added.
-  slab_args <- list(
-    mapping = aes(fill_ramp = after_stat(level)),
-    position = "dodgejust",
-    point_interval = ggdist::mean_hdi,
-    .width = slab_widths,
-    fill = fill,
-    color = "white",
-    scale = scale,
-    linewidth = .1
+  # HDI width is mapped to `fill_ramp`, ggdist's aesthetic for ramping one
+  # base colour across discrete levels, rather than to `fill`: a fill scale
+  # would be plot-global and collide with any other fill-mapped layer. The
+  # slab outline and the interval point's fill take the theme's page colour.
+  slab_args <- c(
+    list(
+      mapping = .merge_aes(
+        aes(fill_ramp = after_stat(level)),
+        slab_fill$mapping,
+        .paper_aes("colour")
+      ),
+      position = "dodgejust",
+      point_interval = ggdist::mean_hdi,
+      .width = slab_widths,
+      scale = scale,
+      linewidth = .1
+    ),
+    slab_fill$params
   )
   if (!is.null(slab_limits)) slab_args$limits <- slab_limits
   if (!is.null(n)) slab_args$n <- n
 
-  interval_args <- list(
-    position = position_dodge_gap(dodge_width = dodge_width, gap = gap),
-    .width = interval_widths,
-    point_size = point_size,
-    fill = "white",
-    color = interval_color,
-    pch = 22,
-    stroke = .1,
-    point_interval = ggdist::mean_qi
+  interval_args <- c(
+    list(
+      mapping = .merge_aes(interval_colour$mapping, .paper_aes("fill")),
+      position = position_dodge_gap(dodge_width = dodge_width, gap = gap),
+      .width = interval_widths,
+      point_size = point_size,
+      shape = 22,
+      stroke = .1,
+      point_interval = ggdist::mean_qi
+    ),
+    interval_colour$params
   )
   if (!is.null(pointinterval_limits)) {
     interval_args$limits <- pointinterval_limits
@@ -188,16 +169,10 @@ layer_halfeye_hdi <- function(
     do.call(ggdist::stat_slab, slab_args),
     do.call(ggdist::stat_pointinterval, interval_args),
     ggdist::scale_fill_ramp_discrete(range = fill_range),
-    # `fill_ramp` and `pch` are this bundle's own aesthetics - it maps them
-    # itself and their keys would be noise - so suppressing them is scoped to
-    # what this layer actually owns. `color` is NOT: it's set here as a
-    # literal parameter (`interval_color`), never mapped, so it contributes no
-    # key of its own and needs no suppression. Since guides() is plot-global
-    # rather than layer-scoped, listing it here silently killed the colour
-    # legend of every OTHER layer in a plot this bundle was composed into -
-    # the same class of bug the fill/fill_ramp comment above documents
-    # fixing, which was applied to `fill` and missed for `color`.
-    guides(fill_ramp = "none", pch = "none")
+    # guides() is plot-global, so only `fill_ramp`, the one aesthetic this
+    # bundle maps to a scale of its own, is hidden. Hiding anything else
+    # would remove the legends of other layers in the same plot.
+    guides(fill_ramp = "none")
   )
 }
 
@@ -222,13 +197,16 @@ layer_halfeye_hdi <- function(
 #'   `facet` is given.
 #' @param hline Optional y-intercept for a dashed reference line (`NULL`
 #'   omits it).
-#' @param hline_color Color of the reference line.
+#' @param hline_color Color of the reference line. `NULL` (default) uses
+#'   `mt_colors[2]`, or `dark_mt_colors[2]` under a dark theme.
 #' @param value_transform Applied to `value` before plotting (e.g. `exp` for
 #'   a sigma submodel estimated on the log scale).
 #' @param value_limits,value_breaks Passed to `scale_y_continuous()`.
-#' @param category_reorder `TRUE` (default) sorts categories by their mean
-#'   transformed `value` (descending) via [forcats::fct_reorder()]; `FALSE`
-#'   keeps whatever factor-level order `category` already has.
+#' @param category_reorder `TRUE` (default) sorts categories by the mean of
+#'   their transformed `value`, the same mean the point-interval marks, with
+#'   the highest mean at the top (as in [plot_bf_forest()]). `FALSE` keeps
+#'   the factor-level order `category` already has, with the first level at
+#'   the bottom.
 #' @param xlab,ylab Axis labels.
 #' @param ... Passed through to [layer_halfeye_hdi()].
 #' @return A `ggplot` object.
@@ -245,7 +223,7 @@ plot_ridge_hdi <- function(
   facet_ncol = NULL,
   facet_scales = "fixed",
   hline = NULL,
-  hline_color = mt_colors[2],
+  hline_color = NULL,
   value_transform = identity,
   value_limits = NULL,
   value_breaks = waiver(),
@@ -263,15 +241,9 @@ plot_ridge_hdi <- function(
   has_facet <- !rlang::quo_is_null(facet_quo)
 
   x_expr <- if (category_reorder) {
-    # forcats::fct_reorder() fails deep inside ggplot2's own aesthetic
-    # evaluation (a cryptic "`idx` must contain one integer for each level
-    # of `f`" from forcats:::lvls_reorder(), not this function) whenever a
-    # category has no non-NA `value` left to order by - checked eagerly
-    # here, rather than left to fail lazily at build/print time, since
-    # forcats' own error gives no hint this function or its
-    # category_reorder argument is involved at all. See
-    # .check_reorder_values() for the exact condition; note it's per
-    # category, so an entirely-NA `value` is only its most extreme case.
+    # Checked now, so that a category without a non-NA value fails with an
+    # error naming this function rather than inside forcats at build time
+    # (see .check_reorder_values()).
     resolved_value <- tryCatch(
       value_transform(rlang::eval_tidy(value_sym, data)),
       error = function(e) NULL
@@ -292,7 +264,7 @@ plot_ridge_hdi <- function(
       forcats::fct_reorder(
         !!category_sym,
         value_transform(!!value_sym),
-        .desc = TRUE
+        .fun = mean
       )
     )
   } else {
@@ -306,12 +278,7 @@ plot_ridge_hdi <- function(
 
   if (!is.null(hline)) {
     p <- p +
-      geom_hline(
-        yintercept = hline,
-        color = hline_color,
-        lty = "dashed",
-        alpha = .5
-      )
+      .reference_hline(hline, hline_color)
   }
 
   p <- p +
@@ -319,13 +286,11 @@ plot_ridge_hdi <- function(
     scale_x_discrete(expand = c(0, 0)) +
     coord_flip(clip = "off") +
     labs(x = xlab, y = ylab) +
-    # axis.text.y/.x and axis.title.x are set both in their base form and in
-    # their position-suffixed form (.left/.right/.bottom/.top) for the same
-    # reason theme_mt() itself does (see theme.R): ggplot2 >= 4.0 resolves
-    # axis labels through the position-suffixed elements, which theme_mt()
-    # (the active default theme) has already set explicitly - so a later
-    # plain axis.text.y here would silently lose to theme_mt()'s own
-    # axis.text.y.left otherwise.
+    # Both the base and the position-specific elements are set: ggplot2 4
+    # draws axis labels through the position-specific ones, which theme_mt()
+    # sets explicitly, so setting only the base element would have no
+    # effect. Strips are made markdown-aware without styling them, so that
+    # markdown facet labels render under any theme.
     theme(
       panel.grid.minor.y = element_blank(),
       axis.text.y = element_markdown(hjust = 1),
@@ -335,7 +300,9 @@ plot_ridge_hdi <- function(
       axis.title.x.top = element_markdown(),
       axis.text.x = element_markdown(),
       axis.text.x.bottom = element_markdown(),
-      axis.text.x.top = element_markdown()
+      axis.text.x.top = element_markdown(),
+      strip.text.x = element_markdown(),
+      strip.text.x.top = element_markdown()
     )
 
   if (!is.null(value_limits) || !identical(value_breaks, waiver())) {
@@ -375,7 +342,8 @@ plot_ridge_hdi <- function(
 #' @param ncol,nrow Passed to `facet_wrap()`.
 #' @param hline Y-intercept for a dashed reference line; defaults to `0`
 #'   (the null-effect reference line), pass `NULL` to omit it.
-#' @param hline_color Color of the reference line.
+#' @param hline_color Color of the reference line. `NULL` (default) uses
+#'   `mt_colors[2]`, or `dark_mt_colors[2]` under a dark theme.
 #' @param ylab Axis label.
 #' @param ... Passed through to [layer_halfeye_hdi()].
 #' @return A `ggplot` object.
@@ -390,7 +358,7 @@ plot_coef_grid_hdi <- function(
   ncol = 4,
   nrow = NULL,
   hline = 0,
-  hline_color = mt_colors[2],
+  hline_color = NULL,
   ylab = "Posterior coefficients \u00b1HDI<sub>95</sub> \u00b1ETI<sub>50;90;95</sub>",
   ...
 ) {
@@ -404,12 +372,7 @@ plot_coef_grid_hdi <- function(
 
   if (!is.null(hline)) {
     p <- p +
-      geom_hline(
-        yintercept = hline,
-        color = hline_color,
-        lty = "dashed",
-        alpha = .5
-      )
+      .reference_hline(hline, hline_color)
   }
 
   p +
@@ -423,8 +386,7 @@ plot_coef_grid_hdi <- function(
     ) +
     coord_flip(clip = "off") +
     labs(y = ylab) +
-    # see plot_ridge_hdi()'s comment on why both the base and
-    # position-suffixed axis elements are set here.
+    # Base and position-specific elements, as in plot_ridge_hdi().
     theme(
       axis.text.y = element_blank(),
       axis.text.y.left = element_blank(),
@@ -433,6 +395,8 @@ plot_coef_grid_hdi <- function(
       axis.title.x.top = element_markdown(),
       axis.title.y = element_blank(),
       panel.grid.major.y = element_blank(),
-      panel.grid.minor.y = element_blank()
+      panel.grid.minor.y = element_blank(),
+      strip.text.x = element_markdown(),
+      strip.text.x.top = element_markdown()
     )
 }

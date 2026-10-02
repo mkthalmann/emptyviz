@@ -90,6 +90,15 @@ side is silently dropped by the underlying density stat (same as
 \code{\link[=geom_half_violin_sd]{geom_half_violin_sd()}}), it doesn't stop the rest of the plot from
 drawing.
 }
+\section{Background}{
+
+The SD band shows how much the observations vary, not how precisely their
+mean is estimated. Readers, experts included, readily take intervals of
+inferential uncertainty for the spread of outcomes (Zhang et al. 2023; see
+also Hoekstra et al. 2014). The geoms draw on these results and on
+Hofmann (2025).
+}
+
 \examples{
 library(ggplot2)
 set.seed(1)
@@ -100,4 +109,18 @@ df <- data.frame(
 )
 ggplot(df, aes(grp, y)) +
   geom_split_violin_sd(data = df, split = cond)
+}
+\references{
+Hoekstra, R., Morey, R. D., Rouder, J. N., & Wagenmakers, E.-J. (2014).
+Robust misinterpretation of confidence intervals. \emph{Psychonomic Bulletin &
+Review}, 21(5), 1157-1164. \doi{10.3758/s13423-013-0572-3}
+
+Hofmann, L. (2025). Anaphoric accessibility with flat update. \emph{Semantics &
+Pragmatics}, 18(3), 1-69. \doi{10.3765/sp.18.3}
+
+Zhang, S., Heck, P. R., Meyer, M. N., Chabris, C. F., Goldstein, D. G., &
+Hofman, J. M. (2023). An illusion of predictability in scientific results:
+Even experts confuse inferential uncertainty and outcome variability.
+\emph{Proceedings of the National Academy of Sciences}, 120(33).
+\doi{10.1073/pnas.2302491120}
 }

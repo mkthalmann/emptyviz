@@ -1,6 +1,6 @@
 Package: emptyviz
 Title: Markdown-Aware ggplot2 Theme and Plot Helpers for Frequentist and Bayesian Analyses
-Version: 0.2.0
+Version: 0.2.0.9000
 Authors@R:
     person("Maik", "Thalmann", email = "maik.thalmann@gmail.com", role = c("aut", "cre"))
 Description: A ggplot2 theme (theme_mt()) plus a set of composable geoms and
@@ -36,15 +36,13 @@ Suggests:
     farver,
     knitr,
     patchwork,
-    purrr,
     rmarkdown,
     testthat (>= 3.0.0),
-    tibble,
     tidybayes,
     tidyr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-URL: https://github.com/mkthalmann/emptyviz
+URL: https://mkthalmann.github.io/emptyviz/, https://github.com/mkthalmann/emptyviz
 BugReports: https://github.com/mkthalmann/emptyviz/issues
 Config/roxygen2/version: 8.1.0
 LazyData: true
