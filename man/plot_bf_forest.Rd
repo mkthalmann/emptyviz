@@ -22,6 +22,7 @@ plot_bf_forest(
   weak_threshold = log(3),
   weak_label = "Weak evidence region",
   direction_labels = NULL,
+  arrow_range = NULL,
   secondary_axis = FALSE,
   secondary_breaks = c(1, 2, 5, 15, 50, 150),
   xlab = NULL,
@@ -84,6 +85,12 @@ when \code{evidence_scale = TRUE}.}
 
 \item{direction_labels, secondary_axis, secondary_breaks}{Passed through to
 \code{layer_bf_evidence_scale()} when \code{evidence_scale = TRUE}.}
+
+\item{arrow_range}{\code{c(min, max)} the direction arrows span, with \verb{min < 0 < max}; only used when \code{direction_labels} is given. \code{NULL} (default)
+makes the range symmetric around zero, reaching 15\% past the largest
+absolute log Bayes factor (or \code{weak_threshold}, whichever is larger).
+Pass an asymmetric range when the log Bayes factors lie mostly on one
+side of zero, so that the arrows do not widen the axis on the other.}
 
 \item{xlab, ylab}{Axis labels.}
 }

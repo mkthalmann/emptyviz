@@ -458,6 +458,12 @@ prepare_bf_contrasts <- function(
 #'   when `evidence_scale = TRUE`.
 #' @param direction_labels,secondary_axis,secondary_breaks Passed through to
 #'   `layer_bf_evidence_scale()` when `evidence_scale = TRUE`.
+#' @param arrow_range `c(min, max)` the direction arrows span, with `min < 0
+#'   < max`; only used when `direction_labels` is given. `NULL` (default)
+#'   makes the range symmetric around zero, reaching 15% past the largest
+#'   absolute log Bayes factor (or `weak_threshold`, whichever is larger).
+#'   Pass an asymmetric range when the log Bayes factors lie mostly on one
+#'   side of zero, so that the arrows do not widen the axis on the other.
 #' @param xlab,ylab Axis labels.
 #' @return A `ggplot` object.
 #' @examples
@@ -490,6 +496,7 @@ plot_bf_forest <- function(
   weak_threshold = log(3),
   weak_label = "Weak evidence region",
   direction_labels = NULL,
+  arrow_range = NULL,
   secondary_axis = FALSE,
   secondary_breaks = c(1, 2, 5, 15, 50, 150),
   xlab = NULL,
@@ -500,6 +507,19 @@ plot_bf_forest <- function(
   }
   if (missing(log_bf)) {
     stop("plot_bf_forest(): `log_bf` is required.", call. = FALSE)
+  }
+  # Each arrow runs from zero to one end of the range, so both ends must lie
+  # on their own side of zero.
+  valid_arrow_range <- is.null(arrow_range) || (
+    is.numeric(arrow_range) && length(arrow_range) == 2 &&
+      all(is.finite(arrow_range)) && arrow_range[1] < 0 && arrow_range[2] > 0
+  )
+  if (!valid_arrow_range) {
+    stop(
+      "plot_bf_forest(): `arrow_range` must be two finite numbers ",
+      "c(min, max) with min < 0 < max.",
+      call. = FALSE
+    )
   }
   contrast_sym <- rlang::ensym(contrast)
   log_bf_sym <- rlang::ensym(log_bf)
@@ -586,7 +606,8 @@ plot_bf_forest <- function(
     )
     extent_values <- extent_values[is.finite(extent_values)]
     abs_extent <- if (length(extent_values) > 0) max(abs(extent_values)) else 0
-    arrow_range <- c(-1, 1) * max(abs_extent, weak_threshold) * 1.15
+    arrow_range <- arrow_range %||%
+      (c(-1, 1) * max(abs_extent, weak_threshold) * 1.15)
 
     p <- p +
       layer_bf_evidence_scale(

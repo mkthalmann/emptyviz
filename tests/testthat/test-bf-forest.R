@@ -412,6 +412,39 @@ test_that("plot_bf_forest()'s `pairs` keeps the log BF of a reversed-order pair 
   expect_equal(built_points(p_direct)$x, 8.2)
 })
 
+test_that("plot_bf_forest()'s `arrow_range` reaches the arrows; NULL keeps the symmetric default", {
+  arrow_ends <- function(p) {
+    arrows <- Filter(function(l) inherits(l$geom, "GeomArrow"), p$layers)
+    unname(vapply(arrows, function(l) l$data$x[2], numeric(1)))
+  }
+  labels <- c("supports difference", "supports equivalence")
+  p_default <- plot_bf_forest(
+    bf_forest_fixture,
+    contrast = contrast, log_bf = log_bf, direction_labels = labels
+  )
+  extent <- max(abs(bf_forest_fixture$log_bf), log(3)) * 1.15
+  expect_equal(arrow_ends(p_default), c(extent, -extent))
+
+  p_custom <- plot_bf_forest(
+    bf_forest_fixture,
+    contrast = contrast, log_bf = log_bf, direction_labels = labels,
+    arrow_range = c(-2, 9)
+  )
+  expect_equal(arrow_ends(p_custom), c(9, -2))
+})
+
+test_that("plot_bf_forest() rejects an `arrow_range` that does not straddle zero", {
+  for (bad in list(c(1, 9), c(-2, 0), 5, c(-2, Inf), c("a", "b"))) {
+    expect_error(
+      plot_bf_forest(
+        bf_forest_fixture,
+        contrast = contrast, log_bf = log_bf, arrow_range = bad
+      ),
+      "arrow_range"
+    )
+  }
+})
+
 test_that("plot_bf_forest() works with no `se` column present at all in `data` (not just se = NULL on a table that has one)", {
   # bf_raw_contrasts_fixture has no `se`/`log_bf_se` column whatsoever,
   # matching bayesfactor_rope()'s actual output shape (no per-contrast SE,

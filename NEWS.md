@@ -16,6 +16,10 @@ violin-geom parity fixes below.
   pair matches in reversed order and `value` is not given, since unchanged
   values are then the correct result; its documentation now says which
   columns belong in `value`.
+* **New:** `plot_bf_forest()` gains `arrow_range`, passed to
+  `layer_bf_evidence_scale()`. The default (`NULL`) keeps the symmetric range;
+  an asymmetric range keeps the direction arrows from widening the axis on the
+  side of zero where few or no log Bayes factors lie.
 * **Fixed:** `dual_render` emitted raw HTML whatever the output format, so in
   a project that also renders to PDF or Word every dual-rendered figure was
   silently missing from those formats, and in HTML not produced by Quarto

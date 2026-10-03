@@ -442,6 +442,10 @@ plot_bf_forest(
 )
 ```
 
+The arrows span a range that is symmetric around zero, so here they widen the
+axis on the left, where only small negative values lie. `arrow_range`
+sets the two ends directly, e.g. `arrow_range = c(-6, 37)`.
+
 ### `secondary_axis`
 
 A dual log/linear Bayes Factor axis - opt-in, since a log-only axis is
