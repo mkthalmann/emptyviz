@@ -1,7 +1,7 @@
-# emptyviz (development version)
+# emptyviz 0.3.0
 
 Fixes from the code reviews of 2026-08-22 and 2026-10-02, plus the
-violin-geom parity fixes below.
+violin-geom parity fixes and the Bayes factor sign fix below.
 
 * **Fixed (breaking):** `plot_bf_forest(pairs = ...)` negated the log Bayes
   factor of every pair it matched in reversed order. That is wrong for the
