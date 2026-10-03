@@ -1,7 +1,5 @@
 # Changelog
 
-## emptyviz (development version)
-
 ## emptyviz 0.3.0
 
 Fixes from the code reviews of 2026-08-22 and 2026-10-02, plus the
