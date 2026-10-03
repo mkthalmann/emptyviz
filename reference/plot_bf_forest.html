@@ -11,7 +11,7 @@ by default."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,6 +56,7 @@ by default.</p>
 <span>  <span class="va">log_bf</span>,</span>
 <span>  se <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pairs <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  negate_reversed <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  contrast_strip <span class="op">=</span> <span class="st">" NA$"</span>,</span>
 <span>  contrast_reorder <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  positive_color <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -67,6 +68,7 @@ by default.</p>
 <span>  weak_threshold <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span>,</span>
 <span>  weak_label <span class="op">=</span> <span class="st">"Weak evidence region"</span>,</span>
 <span>  direction_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  arrow_range <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  secondary_axis <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  secondary_breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">5</span>, <span class="fl">15</span>, <span class="fl">50</span>, <span class="fl">150</span><span class="op">)</span>,</span>
 <span>  xlab <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -103,9 +105,19 @@ fallback).</p></dd>
 
 <dt id="arg-pairs">pairs<a class="anchor" aria-label="anchor" href="#arg-pairs"></a></dt>
 <dd><p>Optional list of <code>c(left, right)</code> pairs; see
-<code><a href="prepare_bf_contrasts.html">prepare_bf_contrasts()</a></code>. A pair matched in reversed order gets its
-sign flipped automatically (via <code>log_bf</code> passed as <code><a href="prepare_bf_contrasts.html">prepare_bf_contrasts()</a></code>'s
-<code>value</code>).</p></dd>
+<code><a href="prepare_bf_contrasts.html">prepare_bf_contrasts()</a></code>. A pair matched in reversed order is relabeled
+to the requested order; whether its <code>log_bf</code> changes sign is set by
+<code>negate_reversed</code>.</p></dd>
+
+
+<dt id="arg-negate-reversed">negate_reversed<a class="anchor" aria-label="anchor" href="#arg-negate-reversed"></a></dt>
+<dd><p>Whether <code>log_bf</code> is negated for a pair that <code>pairs</code>
+matches in reversed order. <code>FALSE</code> (default) is correct for Bayes
+factors whose hypotheses are symmetric in the two conditions, such as a
+ROPE test (<code><a href="https://easystats.github.io/bayestestR/reference/bayesfactor_parameters.html" class="external-link">bayestestR::bayesfactor_rope()</a></code>) or a two-sided point null:
+reversing the contrast does not change them. Set <code>TRUE</code> only when
+reversing the contrast swaps the two hypotheses, as for an
+order-restricted test of H1: A &gt; B against H2: A &lt; B.</p></dd>
 
 
 <dt id="arg-contrast-strip">contrast_strip<a class="anchor" aria-label="anchor" href="#arg-contrast-strip"></a></dt>
@@ -150,6 +162,14 @@ when <code>evidence_scale = TRUE</code>.</p></dd>
 <dt id="arg-direction-labels-secondary-axis-secondary-breaks">direction_labels, secondary_axis, secondary_breaks<a class="anchor" aria-label="anchor" href="#arg-direction-labels-secondary-axis-secondary-breaks"></a></dt>
 <dd><p>Passed through to
 <code><a href="layer_bf_evidence_scale.html">layer_bf_evidence_scale()</a></code> when <code>evidence_scale = TRUE</code>.</p></dd>
+
+
+<dt id="arg-arrow-range">arrow_range<a class="anchor" aria-label="anchor" href="#arg-arrow-range"></a></dt>
+<dd><p><code>c(min, max)</code> the direction arrows span, with <code>min &lt; 0 &lt; max</code>; only used when <code>direction_labels</code> is given. <code>NULL</code> (default)
+makes the range symmetric around zero, reaching 15% past the largest
+absolute log Bayes factor (or <code>weak_threshold</code>, whichever is larger).
+Pass an asymmetric range when the log Bayes factors lie mostly on one
+side of zero, so that the arrows do not widen the axis on the other.</p></dd>
 
 
 <dt id="arg-xlab-ylab">xlab, ylab<a class="anchor" aria-label="anchor" href="#arg-xlab-ylab"></a></dt>

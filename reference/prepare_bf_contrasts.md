@@ -36,15 +36,19 @@ prepare_bf_contrasts(
   Optional column(s) to negate on any row matched via a swapped pair
   (see `pairs`), so that a positive value still favours the caller's
   first-named condition. Takes a bare column name or a tidyselect
-  selection such as `c(log_BF, estimate)`. Every selected column must be
-  on a log or difference scale, where reversing a contrast flips the
-  sign: a log Bayes factor, an estimated difference. A ratio-scale Bayes
-  factor is inverted, not negated, by a reversal; take its
-  [`log()`](https://rdrr.io/r/base/Log.html) first. Interval bounds need
-  swapping as well as negating, so negating them here would produce a
-  reversed interval. Columns not selected keep their original direction.
-  `NULL` (default) selects nothing; if any pair needed swapping and no
-  `value` is given, a warning names how many rows were affected.
+  selection such as `c(estimate, log_BF)`. Select only columns whose
+  sign depends on the direction of the contrast: an estimated
+  difference, or the log Bayes factor of an order-restricted test (H1: A
+  \> B against H2: A \< B). Do *not* select the log Bayes factor of a
+  ROPE test
+  ([`bayestestR::bayesfactor_rope()`](https://easystats.github.io/bayestestR/reference/bayesfactor_parameters.html))
+  or of a two-sided point null: their hypotheses are symmetric in the
+  two conditions, so reversing the contrast leaves the Bayes factor
+  unchanged. A ratio-scale Bayes factor is inverted, not negated, by a
+  reversal; take its [`log()`](https://rdrr.io/r/base/Log.html) first.
+  Interval bounds need swapping as well as negating, so negating them
+  here would produce a reversed interval. Columns not selected keep
+  their values. `NULL` (default) selects nothing.
 
 - strip:
 
@@ -66,15 +70,16 @@ prepare_bf_contrasts(
   `"<left> - <right>"` order for that contrast - a pair that only
   matches once `.left`/`.right` are swapped is accepted the same as a
   direct match; `.left`/`.right`/`.contrast_label` are then set to the
-  *requested* order regardless of which way `data` actually had it.
+  *requested* order regardless of which way `data` actually had it, and
+  the columns selected by `value` are negated.
 
   Two entries can therefore resolve to the *same* row of `data` - either
   as an outright repeat, or as the two directions of one contrast
-  (`c("a", "b")` and `c("b", "a")`, the second relabeled and
-  sign-flipped). Both are allowed and warn: each becomes its own output
-  row, so a forest plot built from the result shows one estimate as
-  several, which reads as several independent ones. Drop the duplicate
-  if that wasn't the intent.
+  (`c("a", "b")` and `c("b", "a")`, the second relabeled, with its
+  `value` columns negated). Both are allowed and warn: each becomes its
+  own output row, so a forest plot built from the result shows one
+  estimate as several, which reads as several independent ones. Drop the
+  duplicate if that wasn't the intent.
 
 ## Value
 
@@ -85,15 +90,17 @@ prepare_bf_contrasts(
 
 ``` r
 bf <- data.frame(
-  contrast = c("a - b NA", "c - d NA", "b - a NA"),
-  log_BF = c(1.2, -0.3, 0.8)
+  contrast = c("a - b NA", "c - d NA"),
+  estimate = c(0.9, -0.2),
+  log_BF = c(1.2, -0.3)
 )
 prepare_bf_contrasts(bf)
-#>   contrast log_BF .left .right .contrast_label
-#> 1 a - b NA    1.2     a      b         a vs. b
-#> 2 c - d NA   -0.3     c      d         c vs. d
-#> 3 b - a NA    0.8     b      a         b vs. a
-prepare_bf_contrasts(bf, value = log_BF, pairs = list(c("a", "b")))
-#>   contrast log_BF .left .right .contrast_label
-#> 1 a - b NA    1.2     a      b         a vs. b
+#>   contrast estimate log_BF .left .right .contrast_label
+#> 1 a - b NA      0.9    1.2     a      b         a vs. b
+#> 2 c - d NA     -0.2   -0.3     c      d         c vs. d
+# "b vs. a" matches "a - b" reversed: the estimated difference is negated,
+# the ROPE log Bayes factor is not
+prepare_bf_contrasts(bf, value = estimate, pairs = list(c("b", "a")))
+#>   contrast estimate log_BF .left .right .contrast_label
+#> 1 a - b NA     -0.9    1.2     b      a         b vs. a
 ```

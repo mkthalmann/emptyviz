@@ -13,6 +13,7 @@ plot_bf_forest(
   log_bf,
   se = NULL,
   pairs = NULL,
+  negate_reversed = FALSE,
   contrast_strip = " NA$",
   contrast_reorder = TRUE,
   positive_color = NULL,
@@ -24,6 +25,7 @@ plot_bf_forest(
   weak_threshold = log(3),
   weak_label = "Weak evidence region",
   direction_labels = NULL,
+  arrow_range = NULL,
   secondary_axis = FALSE,
   secondary_breaks = c(1, 2, 5, 15, 50, 150),
   xlab = NULL,
@@ -61,10 +63,19 @@ plot_bf_forest(
 
   Optional list of `c(left, right)` pairs; see
   [`prepare_bf_contrasts()`](https://mkthalmann.github.io/emptyviz/reference/prepare_bf_contrasts.md).
-  A pair matched in reversed order gets its sign flipped automatically
-  (via `log_bf` passed as
-  [`prepare_bf_contrasts()`](https://mkthalmann.github.io/emptyviz/reference/prepare_bf_contrasts.md)'s
-  `value`).
+  A pair matched in reversed order is relabeled to the requested order;
+  whether its `log_bf` changes sign is set by `negate_reversed`.
+
+- negate_reversed:
+
+  Whether `log_bf` is negated for a pair that `pairs` matches in
+  reversed order. `FALSE` (default) is correct for Bayes factors whose
+  hypotheses are symmetric in the two conditions, such as a ROPE test
+  ([`bayestestR::bayesfactor_rope()`](https://easystats.github.io/bayestestR/reference/bayesfactor_parameters.html))
+  or a two-sided point null: reversing the contrast does not change
+  them. Set `TRUE` only when reversing the contrast swaps the two
+  hypotheses, as for an order-restricted test of H1: A \> B against H2:
+  A \< B.
 
 - contrast_strip:
 
@@ -112,6 +123,15 @@ plot_bf_forest(
   Passed through to
   [`layer_bf_evidence_scale()`](https://mkthalmann.github.io/emptyviz/reference/layer_bf_evidence_scale.md)
   when `evidence_scale = TRUE`.
+
+- arrow_range:
+
+  `c(min, max)` the direction arrows span, with `min < 0 < max`; only
+  used when `direction_labels` is given. `NULL` (default) makes the
+  range symmetric around zero, reaching 15% past the largest absolute
+  log Bayes factor (or `weak_threshold`, whichever is larger). Pass an
+  asymmetric range when the log Bayes factors lie mostly on one side of
+  zero, so that the arrows do not widen the axis on the other.
 
 - xlab, ylab:
 

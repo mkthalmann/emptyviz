@@ -2,8 +2,34 @@
 
 ## emptyviz (development version)
 
+## emptyviz 0.3.0
+
 Fixes from the code reviews of 2026-08-22 and 2026-10-02, plus the
-violin-geom parity fixes below.
+violin-geom parity fixes and the Bayes factor sign fix below.
+
+- **Fixed (breaking):** `plot_bf_forest(pairs = ...)` negated the log
+  Bayes factor of every pair it matched in reversed order. That is wrong
+  for the Bayes factors the function is meant for: a ROPE test
+  ([`bayestestR::bayesfactor_rope()`](https://easystats.github.io/bayestestR/reference/bayesfactor_parameters.html))
+  or a two-sided point-null test has hypotheses that are symmetric in
+  the two conditions, so reversing the contrast leaves its Bayes factor
+  unchanged. With `believe_projection_bf`, “with true vs. without false”
+  was drawn at +3.8 instead of -3.8. A reversed pair is now only
+  relabeled. The new argument `negate_reversed = TRUE` restores the
+  negation, which is correct for order-restricted tests (H1: A \> B
+  against H2: A \< B).
+  [`prepare_bf_contrasts()`](https://mkthalmann.github.io/emptyviz/reference/prepare_bf_contrasts.md)
+  no longer warns when a pair matches in reversed order and `value` is
+  not given, since unchanged values are then the correct result; its
+  documentation now says which columns belong in `value`.
+
+- **New:**
+  [`plot_bf_forest()`](https://mkthalmann.github.io/emptyviz/reference/plot_bf_forest.md)
+  gains `arrow_range`, passed to
+  [`layer_bf_evidence_scale()`](https://mkthalmann.github.io/emptyviz/reference/layer_bf_evidence_scale.md).
+  The default (`NULL`) keeps the symmetric range; an asymmetric range
+  keeps the direction arrows from widening the axis on the side of zero
+  where few or no log Bayes factors lie.
 
 - **Fixed:** `dual_render` emitted raw HTML whatever the output format,
   so in a project that also renders to PDF or Word every dual-rendered

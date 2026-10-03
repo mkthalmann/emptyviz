@@ -15,7 +15,7 @@ the pairs the caller actually wants to show."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">emptyviz</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,15 +84,17 @@ format).</p></dd>
 <dd><p>Optional column(s) to negate on any row matched via a swapped
 pair (see <code>pairs</code>), so that a positive value still favours the caller's
 first-named condition. Takes a bare column name or a tidyselect
-selection such as <code>c(log_BF, estimate)</code>. Every selected column must be
-on a log or difference scale, where reversing a contrast flips the
-sign: a log Bayes factor, an estimated difference. A ratio-scale Bayes
-factor is inverted, not negated, by a reversal; take its <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log()</a></code> first.
+selection such as <code>c(estimate, log_BF)</code>. Select only columns whose sign
+depends on the direction of the contrast: an estimated difference, or
+the log Bayes factor of an order-restricted test (H1: A &gt; B against H2:
+A &lt; B). Do <em>not</em> select the log Bayes factor of a ROPE test
+(<code><a href="https://easystats.github.io/bayestestR/reference/bayesfactor_parameters.html" class="external-link">bayestestR::bayesfactor_rope()</a></code>) or of a two-sided point null: their
+hypotheses are symmetric in the two conditions, so reversing the
+contrast leaves the Bayes factor unchanged. A ratio-scale Bayes factor
+is inverted, not negated, by a reversal; take its <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">log()</a></code> first.
 Interval bounds need swapping as well as negating, so negating them
 here would produce a reversed interval. Columns not selected keep their
-original direction. <code>NULL</code> (default) selects nothing; if any pair needed
-swapping and no <code>value</code> is given, a warning names how many rows were
-affected.</p></dd>
+values. <code>NULL</code> (default) selects nothing.</p></dd>
 
 
 <dt id="arg-strip">strip<a class="anchor" aria-label="anchor" href="#arg-strip"></a></dt>
@@ -112,11 +114,12 @@ pair isn't found. <code>NULL</code> (default) keeps every row, unfiltered and in
 <p>A pair's order does NOT have to match bayestestR's own <code>"&lt;left&gt; - &lt;right&gt;"</code> order for that contrast - a pair that only matches once
 <code>.left</code>/<code>.right</code> are swapped is accepted the same as a direct match;
 <code>.left</code>/<code>.right</code>/<code>.contrast_label</code> are then set to the <em>requested</em>
-order regardless of which way <code>data</code> actually had it.</p>
+order regardless of which way <code>data</code> actually had it, and the columns
+selected by <code>value</code> are negated.</p>
 <p>Two entries can therefore resolve to the <em>same</em> row of <code>data</code> - either
 as an outright repeat, or as the two directions of one contrast
-(<code>c("a", "b")</code> and <code>c("b", "a")</code>, the second relabeled and
-sign-flipped). Both are allowed and warn: each becomes its own output
+(<code>c("a", "b")</code> and <code>c("b", "a")</code>, the second relabeled, with its <code>value</code>
+columns negated). Both are allowed and warn: each becomes its own output
 row, so a forest plot built from the result shows one estimate as
 several, which reads as several independent ones. Drop the duplicate if
 that wasn't the intent.</p></dd>
@@ -132,17 +135,19 @@ match).</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">bf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  contrast <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a - b NA"</span>, <span class="st">"c - d NA"</span>, <span class="st">"b - a NA"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  log_BF <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.2</span>, <span class="op">-</span><span class="fl">0.3</span>, <span class="fl">0.8</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  contrast <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a - b NA"</span>, <span class="st">"c - d NA"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  estimate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.9</span>, <span class="op">-</span><span class="fl">0.2</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  log_BF <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.2</span>, <span class="op">-</span><span class="fl">0.3</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">prepare_bf_contrasts</span><span class="op">(</span><span class="va">bf</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   contrast log_BF .left .right .contrast_label</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 a - b NA    1.2     a      b         a vs. b</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 c - d NA   -0.3     c      d         c vs. d</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 b - a NA    0.8     b      a         b vs. a</span>
-<span class="r-in"><span><span class="fu">prepare_bf_contrasts</span><span class="op">(</span><span class="va">bf</span>, value <span class="op">=</span> <span class="va">log_BF</span>, pairs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   contrast log_BF .left .right .contrast_label</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 a - b NA    1.2     a      b         a vs. b</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   contrast estimate log_BF .left .right .contrast_label</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 a - b NA      0.9    1.2     a      b         a vs. b</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 c - d NA     -0.2   -0.3     c      d         c vs. d</span>
+<span class="r-in"><span><span class="co"># "b vs. a" matches "a - b" reversed: the estimated difference is negated,</span></span></span>
+<span class="r-in"><span><span class="co"># the ROPE log Bayes factor is not</span></span></span>
+<span class="r-in"><span><span class="fu">prepare_bf_contrasts</span><span class="op">(</span><span class="va">bf</span>, value <span class="op">=</span> <span class="va">estimate</span>, pairs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"b"</span>, <span class="st">"a"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   contrast estimate log_BF .left .right .contrast_label</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 a - b NA     -0.9    1.2     b      a         b vs. a</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

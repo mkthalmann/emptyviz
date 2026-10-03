@@ -389,8 +389,12 @@ reorders for you - and errors, naming the exact pair, if one isn’t
 found, instead of the filter silently matching nothing. You don’t need
 to know which order `bayesfactor_rope()`’s reference grid happened to
 enumerate a given pair in either - a pair matched in the opposite order
-gets relabeled *and* sign-flipped to the order you asked for,
-automatically.
+is relabeled to the order you asked for. Its log Bayes factor stays as
+it is: a ROPE test (like a two-sided point-null test) asks whether the
+difference lies near zero, and that hypothesis is the same whichever
+condition comes first. Only for an order-restricted test (H1: A \> B
+against H2: A \< B) does reversing the contrast swap the hypotheses;
+pass `negate_reversed = TRUE` in that case.
 
 `believe_projection_bf` (see
 [`?believe_projection_bf`](https://mkthalmann.github.io/emptyviz/reference/believe_projection_bf.md))
@@ -428,15 +432,15 @@ plot_bf_forest(mu_bf, contrast = contrast, log_bf = log_BF, pairs = bf_pairs)
 
 ![A log Bayes factor forest plot with nine contrast rows, sorted from
 largest to smallest. The three with-versus-without contrasts for true,
-critical and false sit far right at roughly 32, 27 and 25; three more
-(with undef vs with critical, with false vs with critical, with true vs
-without false) sit between about 4 and 8; and the last three - without
-true vs with false, without false vs without critical, with undef vs
-without undef - sit just left of zero at about -2 to -3, drawn as
-triangles rather than circles to mark their negative sign. A narrow
-shaded band around zero marks the weak-evidence region; only those three
-negative contrasts come close to it, and none falls
-inside.](bayesian-plots_files/figure-html/bf-forest-basic-1.png)
+critical and false sit far right at roughly 32, 28 and 25; with undef vs
+with critical and with false vs with critical follow at about 8 and 5;
+without true vs with false sits at about 1, just right of zero. The last
+three - without false vs without critical, with undef vs without undef,
+with true vs without false - sit left of zero at about -2, -3 and -4,
+drawn as triangles rather than circles to mark their negative sign. A
+narrow shaded band around zero marks the weak-evidence region; without
+true vs with false lies just outside its right edge, and no contrast
+falls inside.](bayesian-plots_files/figure-html/bf-forest-basic-1.png)
 
 The trailing `" NA"` (emmeans’ placeholder for a reference-grid variable
 marginalized out via e.g. `at = list(trigger = NA)`) is stripped
@@ -476,6 +480,11 @@ labelled supports equivalence and one pointing right labelled supports
 difference, each in the colour used for that sign's points. The x range
 widens to about -40 to 40 to make room, and the data itself is
 unchanged.](bayesian-plots_files/figure-html/bf-forest-arrows-1.png)
+
+The arrows span a range that is symmetric around zero, so here they
+widen the axis on the left, where only small negative values lie.
+`arrow_range` sets the two ends directly,
+e.g. `arrow_range = c(-6, 37)`.
 
 ### `secondary_axis`
 
