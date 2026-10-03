@@ -230,15 +230,17 @@ layer_bf_evidence_scale <- function(
 #' @param value Optional column(s) to negate on any row matched via a swapped
 #'   pair (see `pairs`), so that a positive value still favours the caller's
 #'   first-named condition. Takes a bare column name or a tidyselect
-#'   selection such as `c(log_BF, estimate)`. Every selected column must be
-#'   on a log or difference scale, where reversing a contrast flips the
-#'   sign: a log Bayes factor, an estimated difference. A ratio-scale Bayes
-#'   factor is inverted, not negated, by a reversal; take its `log()` first.
+#'   selection such as `c(estimate, log_BF)`. Select only columns whose sign
+#'   depends on the direction of the contrast: an estimated difference, or
+#'   the log Bayes factor of an order-restricted test (H1: A > B against H2:
+#'   A < B). Do *not* select the log Bayes factor of a ROPE test
+#'   (`bayestestR::bayesfactor_rope()`) or of a two-sided point null: their
+#'   hypotheses are symmetric in the two conditions, so reversing the
+#'   contrast leaves the Bayes factor unchanged. A ratio-scale Bayes factor
+#'   is inverted, not negated, by a reversal; take its `log()` first.
 #'   Interval bounds need swapping as well as negating, so negating them
 #'   here would produce a reversed interval. Columns not selected keep their
-#'   original direction. `NULL` (default) selects nothing; if any pair needed
-#'   swapping and no `value` is given, a warning names how many rows were
-#'   affected.
+#'   values. `NULL` (default) selects nothing.
 #' @param strip A regular expression removed from each side after splitting
 #'   (default `" NA$"`, since a reference grid that marginalizes over a
 #'   grouping variable leaves a literal trailing "NA" token in emmeans'
@@ -254,12 +256,13 @@ layer_bf_evidence_scale <- function(
 #'   <right>"` order for that contrast - a pair that only matches once
 #'   `.left`/`.right` are swapped is accepted the same as a direct match;
 #'   `.left`/`.right`/`.contrast_label` are then set to the *requested*
-#'   order regardless of which way `data` actually had it.
+#'   order regardless of which way `data` actually had it, and the columns
+#'   selected by `value` are negated.
 #'
 #'   Two entries can therefore resolve to the *same* row of `data` - either
 #'   as an outright repeat, or as the two directions of one contrast
-#'   (`c("a", "b")` and `c("b", "a")`, the second relabeled and
-#'   sign-flipped). Both are allowed and warn: each becomes its own output
+#'   (`c("a", "b")` and `c("b", "a")`, the second relabeled, with its `value`
+#'   columns negated). Both are allowed and warn: each becomes its own output
 #'   row, so a forest plot built from the result shows one estimate as
 #'   several, which reads as several independent ones. Drop the duplicate if
 #'   that wasn't the intent.
@@ -268,11 +271,14 @@ layer_bf_evidence_scale <- function(
 #'   match).
 #' @examples
 #' bf <- data.frame(
-#'   contrast = c("a - b NA", "c - d NA", "b - a NA"),
-#'   log_BF = c(1.2, -0.3, 0.8)
+#'   contrast = c("a - b NA", "c - d NA"),
+#'   estimate = c(0.9, -0.2),
+#'   log_BF = c(1.2, -0.3)
 #' )
 #' prepare_bf_contrasts(bf)
-#' prepare_bf_contrasts(bf, value = log_BF, pairs = list(c("a", "b")))
+#' # "b vs. a" matches "a - b" reversed: the estimated difference is negated,
+#' # the ROPE log Bayes factor is not
+#' prepare_bf_contrasts(bf, value = estimate, pairs = list(c("b", "a")))
 #' @export
 prepare_bf_contrasts <- function(
   data,
@@ -377,7 +383,8 @@ prepare_bf_contrasts <- function(
         " resolve to the same row of `data`, so the same estimate appears ",
         "more than once in the output - on a forest plot that reads as ",
         "several independent estimates. Requesting both directions of a ",
-        "pair is supported (the reversed one is relabeled and sign-flipped); ",
+        "pair is supported (the reversed one is relabeled, with its `value` ",
+        "columns negated); ",
         "drop the duplicate if it wasn't intended.",
         call. = FALSE
       )
@@ -391,22 +398,11 @@ prepare_bf_contrasts <- function(
     data$.left <- pair_left
     data$.right <- pair_right
 
-    if (any(reversed)) {
-      if (has_value) {
-        for (col in value_names) {
-          data[[col]][reversed] <- -data[[col]][reversed]
-        }
-      } else {
-        warning(
-          "prepare_bf_contrasts(): ", sum(reversed), " of ", length(pairs),
-          " requested pair(s) matched `data` in reversed order; pass ",
-          "`value` (e.g. the log-BF column) so it can be sign-flipped to ",
-          "match the requested order - otherwise the returned rows are ",
-          "relabeled but their value column(s) still reflect the original ",
-          "direction.",
-          call. = FALSE
-        )
-      }
+    # Only the columns `value` names change sign. A reversed match without
+    # `value` is not an error: the log Bayes factors of ROPE and two-sided
+    # point-null tests do not depend on the direction of the contrast.
+    for (col in value_names) {
+      data[[col]][reversed] <- -data[[col]][reversed]
     }
   }
 
@@ -432,9 +428,16 @@ prepare_bf_contrasts <- function(
 #'   SE at all, and that's a fully supported, first-class case here, not a
 #'   fallback).
 #' @param pairs Optional list of `c(left, right)` pairs; see
-#'   [prepare_bf_contrasts()]. A pair matched in reversed order gets its
-#'   sign flipped automatically (via `log_bf` passed as `prepare_bf_contrasts()`'s
-#'   `value`).
+#'   [prepare_bf_contrasts()]. A pair matched in reversed order is relabeled
+#'   to the requested order; whether its `log_bf` changes sign is set by
+#'   `negate_reversed`.
+#' @param negate_reversed Whether `log_bf` is negated for a pair that `pairs`
+#'   matches in reversed order. `FALSE` (default) is correct for Bayes
+#'   factors whose hypotheses are symmetric in the two conditions, such as a
+#'   ROPE test (`bayestestR::bayesfactor_rope()`) or a two-sided point null:
+#'   reversing the contrast does not change them. Set `TRUE` only when
+#'   reversing the contrast swaps the two hypotheses, as for an
+#'   order-restricted test of H1: A > B against H2: A < B.
 #' @param contrast_strip Passed to `prepare_bf_contrasts()`'s `strip` when
 #'   `pairs` is given.
 #' @param contrast_reorder `TRUE` (default) sorts rows by `log_bf`; `FALSE`
@@ -475,6 +478,7 @@ plot_bf_forest <- function(
   log_bf,
   se = NULL,
   pairs = NULL,
+  negate_reversed = FALSE,
   contrast_strip = " NA$",
   contrast_reorder = TRUE,
   positive_color = NULL,
@@ -506,7 +510,7 @@ plot_bf_forest <- function(
     data <- rlang::inject(prepare_bf_contrasts(
       data,
       contrast = !!contrast_sym,
-      value = !!log_bf_sym,
+      value = !!(if (negate_reversed) log_bf_sym),
       strip = contrast_strip,
       pairs = pairs
     ))

@@ -340,16 +340,17 @@ test_that("prepare_bf_contrasts()'s `pairs` matches a pair given in the opposite
   expect_equal(res$log_BF, -8.2)
 })
 
-test_that("prepare_bf_contrasts()'s `pairs` leaves `value` untouched (and warns) on a reversed match when `value` isn't given", {
-  expect_warning(
+test_that("prepare_bf_contrasts()'s `pairs` leaves values untouched, without a warning, on a reversed match when `value` isn't given", {
+  # the log BF of a ROPE or two-sided point-null test does not depend on the
+  # direction of the contrast, so an unchanged value is the correct result
+  expect_no_warning(
     res <- prepare_bf_contrasts(
       bf_raw_contrasts_fixture,
       pairs = list(c("true without", "true with"))
-    ),
-    "reversed order"
+    )
   )
   expect_equal(res$.contrast_label, "true without vs. true with")
-  expect_equal(res$log_BF, 8.2) # NOT flipped - no `value` column was named
+  expect_equal(res$log_BF, 8.2)
 })
 
 test_that("prepare_bf_contrasts()'s `pairs` handles direct- and reversed-order pairs together in one call", {
@@ -388,25 +389,27 @@ test_that("prepare_bf_contrasts()'s `pairs` prefers the direct-order row when `d
   expect_equal(res$.contrast_label, "true with vs. true without")
 })
 
-test_that("plot_bf_forest()'s `pairs` sign-flips a reversed-order pair automatically end to end", {
-  p_direct <- plot_bf_forest(
-    bf_raw_contrasts_fixture,
-    contrast = contrast,
-    log_bf = log_BF,
-    pairs = list(c("true with", "true without")),
-    contrast_reorder = FALSE
-  )
-  p_reversed <- plot_bf_forest(
-    bf_raw_contrasts_fixture,
-    contrast = contrast,
-    log_bf = log_BF,
-    pairs = list(c("true without", "true with")),
-    contrast_reorder = FALSE
-  )
-  x_direct <- built_points(p_direct)$x
-  x_reversed <- built_points(p_reversed)$x
-  expect_equal(x_direct, 8.2)
-  expect_equal(x_reversed, -8.2)
+test_that("plot_bf_forest()'s `pairs` keeps the log BF of a reversed-order pair by default and negates it with `negate_reversed = TRUE`", {
+  plot_pair <- function(pair, ...) {
+    plot_bf_forest(
+      bf_raw_contrasts_fixture,
+      contrast = contrast,
+      log_bf = log_BF,
+      pairs = list(pair),
+      contrast_reorder = FALSE,
+      ...
+    )
+  }
+  # a ROPE/point-null BF is symmetric in the two conditions
+  expect_equal(built_points(plot_pair(c("true with", "true without")))$x, 8.2)
+  expect_no_warning(p_reversed <- plot_pair(c("true without", "true with")))
+  expect_equal(built_points(p_reversed)$x, 8.2)
+  # an order-restricted BF swaps its hypotheses under reversal
+  p_negated <- plot_pair(c("true without", "true with"), negate_reversed = TRUE)
+  expect_equal(built_points(p_negated)$x, -8.2)
+  # a direct match is never negated
+  p_direct <- plot_pair(c("true with", "true without"), negate_reversed = TRUE)
+  expect_equal(built_points(p_direct)$x, 8.2)
 })
 
 test_that("plot_bf_forest() works with no `se` column present at all in `data` (not just se = NULL on a table that has one)", {

@@ -23,15 +23,17 @@ format).}
 \item{value}{Optional column(s) to negate on any row matched via a swapped
 pair (see \code{pairs}), so that a positive value still favours the caller's
 first-named condition. Takes a bare column name or a tidyselect
-selection such as \code{c(log_BF, estimate)}. Every selected column must be
-on a log or difference scale, where reversing a contrast flips the
-sign: a log Bayes factor, an estimated difference. A ratio-scale Bayes
-factor is inverted, not negated, by a reversal; take its \code{log()} first.
+selection such as \code{c(estimate, log_BF)}. Select only columns whose sign
+depends on the direction of the contrast: an estimated difference, or
+the log Bayes factor of an order-restricted test (H1: A > B against H2:
+A < B). Do \emph{not} select the log Bayes factor of a ROPE test
+(\code{bayestestR::bayesfactor_rope()}) or of a two-sided point null: their
+hypotheses are symmetric in the two conditions, so reversing the
+contrast leaves the Bayes factor unchanged. A ratio-scale Bayes factor
+is inverted, not negated, by a reversal; take its \code{log()} first.
 Interval bounds need swapping as well as negating, so negating them
 here would produce a reversed interval. Columns not selected keep their
-original direction. \code{NULL} (default) selects nothing; if any pair needed
-swapping and no \code{value} is given, a warning names how many rows were
-affected.}
+values. \code{NULL} (default) selects nothing.}
 
 \item{strip}{A regular expression removed from each side after splitting
 (default \code{" NA$"}, since a reference grid that marginalizes over a
@@ -48,12 +50,13 @@ pair isn't found. \code{NULL} (default) keeps every row, unfiltered and in
 A pair's order does NOT have to match bayestestR's own \code{"<left> - <right>"} order for that contrast - a pair that only matches once
 \code{.left}/\code{.right} are swapped is accepted the same as a direct match;
 \code{.left}/\code{.right}/\code{.contrast_label} are then set to the \emph{requested}
-order regardless of which way \code{data} actually had it.
+order regardless of which way \code{data} actually had it, and the columns
+selected by \code{value} are negated.
 
 Two entries can therefore resolve to the \emph{same} row of \code{data} - either
 as an outright repeat, or as the two directions of one contrast
-(\code{c("a", "b")} and \code{c("b", "a")}, the second relabeled and
-sign-flipped). Both are allowed and warn: each becomes its own output
+(\code{c("a", "b")} and \code{c("b", "a")}, the second relabeled, with its \code{value}
+columns negated). Both are allowed and warn: each becomes its own output
 row, so a forest plot built from the result shows one estimate as
 several, which reads as several independent ones. Drop the duplicate if
 that wasn't the intent.}
@@ -72,9 +75,12 @@ the pairs the caller actually wants to show.
 }
 \examples{
 bf <- data.frame(
-  contrast = c("a - b NA", "c - d NA", "b - a NA"),
-  log_BF = c(1.2, -0.3, 0.8)
+  contrast = c("a - b NA", "c - d NA"),
+  estimate = c(0.9, -0.2),
+  log_BF = c(1.2, -0.3)
 )
 prepare_bf_contrasts(bf)
-prepare_bf_contrasts(bf, value = log_BF, pairs = list(c("a", "b")))
+# "b vs. a" matches "a - b" reversed: the estimated difference is negated,
+# the ROPE log Bayes factor is not
+prepare_bf_contrasts(bf, value = estimate, pairs = list(c("b", "a")))
 }

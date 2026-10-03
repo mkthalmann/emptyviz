@@ -3,6 +3,19 @@
 Fixes from the code reviews of 2026-08-22 and 2026-10-02, plus the
 violin-geom parity fixes below.
 
+* **Fixed (breaking):** `plot_bf_forest(pairs = ...)` negated the log Bayes
+  factor of every pair it matched in reversed order. That is wrong for the
+  Bayes factors the function is meant for: a ROPE test
+  (`bayestestR::bayesfactor_rope()`) or a two-sided point-null test has
+  hypotheses that are symmetric in the two conditions, so reversing the
+  contrast leaves its Bayes factor unchanged. With `believe_projection_bf`,
+  "with true vs. without false" was drawn at +3.8 instead of -3.8. A reversed
+  pair is now only relabeled. The new argument `negate_reversed = TRUE`
+  restores the negation, which is correct for order-restricted tests (H1:
+  A > B against H2: A < B). `prepare_bf_contrasts()` no longer warns when a
+  pair matches in reversed order and `value` is not given, since unchanged
+  values are then the correct result; its documentation now says which
+  columns belong in `value`.
 * **Fixed:** `dual_render` emitted raw HTML whatever the output format, so in
   a project that also renders to PDF or Word every dual-rendered figure was
   silently missing from those formats, and in HTML not produced by Quarto

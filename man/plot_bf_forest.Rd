@@ -10,6 +10,7 @@ plot_bf_forest(
   log_bf,
   se = NULL,
   pairs = NULL,
+  negate_reversed = FALSE,
   contrast_strip = " NA$",
   contrast_reorder = TRUE,
   positive_color = NULL,
@@ -44,9 +45,17 @@ SE at all, and that's a fully supported, first-class case here, not a
 fallback).}
 
 \item{pairs}{Optional list of \code{c(left, right)} pairs; see
-\code{\link[=prepare_bf_contrasts]{prepare_bf_contrasts()}}. A pair matched in reversed order gets its
-sign flipped automatically (via \code{log_bf} passed as \code{prepare_bf_contrasts()}'s
-\code{value}).}
+\code{\link[=prepare_bf_contrasts]{prepare_bf_contrasts()}}. A pair matched in reversed order is relabeled
+to the requested order; whether its \code{log_bf} changes sign is set by
+\code{negate_reversed}.}
+
+\item{negate_reversed}{Whether \code{log_bf} is negated for a pair that \code{pairs}
+matches in reversed order. \code{FALSE} (default) is correct for Bayes
+factors whose hypotheses are symmetric in the two conditions, such as a
+ROPE test (\code{bayestestR::bayesfactor_rope()}) or a two-sided point null:
+reversing the contrast does not change them. Set \code{TRUE} only when
+reversing the contrast swaps the two hypotheses, as for an
+order-restricted test of H1: A > B against H2: A < B.}
 
 \item{contrast_strip}{Passed to \code{prepare_bf_contrasts()}'s \code{strip} when
 \code{pairs} is given.}
